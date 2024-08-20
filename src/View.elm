@@ -1,24 +1,29 @@
 module View exposing (view)
 
-import Html exposing (Html, img, text)
-import Html.Attributes exposing (src)
+import Html exposing (Html, img, node, text)
+import Html.Attributes exposing (attribute, property, src)
 import Types exposing (Model, Msg)
-
-
-dataUrlFromImage : String -> String
-dataUrlFromImage pngString =
-    "data:image/png;base64," ++ pngString
+import VegaLite exposing (Position(..), Spec, circle, color, dataFromUrl, encoding, mName, pName, pQuant, position, toVegaLite)
 
 
 view : Model -> Html Msg
 view model =
-    if not model.webRReady then
-        text "Initializing webR"
+    node "vega-plot" [ property "spec" testSpec ] []
 
-    else
-        case model.imgData of
-            Just dataString ->
-                img [ src (dataUrlFromImage dataString) ] []
 
-            Nothing ->
-                text "Waiting for image"
+testSpec : Spec
+testSpec =
+    let
+        path =
+            "https://cdn.jsdelivr.net/npm/vega-datasets@2/data/"
+
+        data =
+            dataFromUrl (path ++ "penguins.json") []
+
+        enc =
+            encoding
+                << position X [ pName "Beak Length (mm)", pQuant ]
+                << position Y [ pName "Body Mass (g)", pQuant ]
+                << color [ mName "Species" ]
+    in
+    toVegaLite [ data, enc [], circle [] ]
