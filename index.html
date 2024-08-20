@@ -18,14 +18,35 @@ var app = Elm.Main.init({
     node: document.getElementById('myapp')
 });
 
+var webR;
+
 app.ports.sendPort.subscribe(function(message) {
-    console.log(message);
+    if(message.msg == "init") {
+        import('https://webr.r-wasm.org/latest/webr.mjs').then(
+        async ({ WebR }) => {
+            webR = new WebR();
+            await webR.init();
+            await webR.installPackages(['ggplot2', 'base64enc'])
+            webR.evalR('library(ggplot2)');
+            app.ports.receivePort.send({msg : "ready"})
+        });
+    } else if(message.msg == "gen") {
+        webR.evalRString(`
+            df <- data.frame(x = rnorm(100))
+p <- ggplot(aes(x), data = df) + geom_histogram()
+tfile <- tempfile(fileext = ".png")
+ggsave(filename = tfile, plot=p)
+base64enc::base64encode(tfile)
+        `).then((img) => {
+            app.ports.receivePort.send({msg : "image", img: img});
+        });
+    } else {
+        console.log(message);
+    }
 });
 
-socket.addEventListener("message", function(event) {
-    app.ports.messageReceiver.send(event.data);
-});
+
+
 
 </script>
-
 </html>
