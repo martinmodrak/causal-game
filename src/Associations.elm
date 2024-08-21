@@ -1,4 +1,4 @@
-module Generators exposing (..)
+module Associations exposing (..)
 
 import Random
 import Random.Float

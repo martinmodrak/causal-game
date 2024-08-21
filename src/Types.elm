@@ -3,10 +3,6 @@ module Types exposing (..)
 import VegaLite
 
 
-type Scenario
-    = Association AssociationSpec
-
-
 type alias AssociationSpec =
     { slope : Float
     , intercept : Float
@@ -14,18 +10,33 @@ type alias AssociationSpec =
     }
 
 
-type alias ScenarioModel =
-    { scenario : Scenario
-    , data : List VegaLite.Data
+type alias AssociationExperiment =
+    Int
+
+
+type alias AssociationScenario =
+    { spec : AssociationSpec
+    , data : List ( AssociationExperiment, VegaLite.Data )
+    }
+
+
+type alias AssociationModel =
+    { scenarios : List AssociationScenario
+    , proposedExperiment : AssociationExperiment
     }
 
 
 type alias Model =
-    { scenarios : List ScenarioModel
+    { association : AssociationModel
     }
 
 
+type AssociationMsg
+    = AssocSpecGenerated AssociationSpec
+    | AssocRunExperiment
+    | AssocData AssociationExperiment VegaLite.Data
+    | AssocSetN String
+
+
 type Msg
-    = ScenarioGenerated Scenario
-    | GetData Scenario
-    | DataGenerated VegaLite.Data
+    = AssocMsg AssociationMsg
