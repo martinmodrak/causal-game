@@ -39,20 +39,29 @@ customElements.define('vega-plot',
             this.renderPlot();
         }
 
-        // Our function to set the textContent based on attributes.
+        // Our function to transform the spec into the plot
         renderPlot()
-        {            
+        {          
+            console.log("Render");  
             const spec = this._spec;
             console.log(spec);
             const thisref = this;
-            vegaEmbed(spec).then((newplot) => {
+            if(!spec) {
                 requestAnimationFrame(function() {
-                while (thisref.firstChild) {
-                    thisref.removeChild(thisref.firstChild);
-                }
-                thisref.appendChild(newplot);
-            }) 
-            });
+                        while (thisref.firstChild) {
+                            thisref.removeChild(thisref.firstChild);
+                        }
+                    }); 
+            } else {
+                vegaEmbed(spec).then((newplot) => {
+                   requestAnimationFrame(function() {
+                        while (thisref.firstChild) {
+                            thisref.removeChild(thisref.firstChild);
+                        }
+                        thisref.appendChild(newplot);
+                    }) 
+                });
+            }
         }
     }
 );

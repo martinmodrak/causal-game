@@ -1,15 +1,17 @@
 module Main exposing (..)
 
 import Browser
-import Types exposing (Model, Msg(..))
+import Generators exposing (associationSpecGenerator)
+import Random
+import Types exposing (Model, Msg(..), Scenario(..))
 import Update exposing (update)
 import View exposing (view)
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( {}
-    , Cmd.none
+    ( { scenarios = [] }
+    , Random.generate ScenarioGenerated (Random.map Association associationSpecGenerator)
     )
 
 
