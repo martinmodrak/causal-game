@@ -1,8 +1,9 @@
 module Association exposing (..)
 
 import Html exposing (..)
-import Html.Attributes as Attr
+import Html.Attributes as Attr exposing (maxlength)
 import Html.Events as Events
+import Html.Lazy
 import Random
 import Random.Extra
 import Random.Float
@@ -70,6 +71,11 @@ maxAbsSlopeNoAssoc =
     0.5
 
 
+allowMoreExperiments : Scenario -> Bool
+allowMoreExperiments scenario =
+    List.length scenario.data < 100
+
+
 slopeGenerator : Random.Generator Float
 slopeGenerator =
     let
@@ -132,7 +138,11 @@ update msg model =
                     ( model, Cmd.none )
 
                 active :: rest ->
-                    ( { model | scenarios = { active | data = ( experiment, data ) :: active.data } :: rest }, Cmd.none )
+                    if allowMoreExperiments active then
+                        ( { model | scenarios = { active | data = ( experiment, data ) :: active.data } :: rest }, Cmd.none )
+
+                    else
+                        ( model, Cmd.none )
 
         SetN newN ->
             case String.toInt newN of
@@ -156,28 +166,30 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    View.scenariosList (viewSingleScenario model.proposedExperiment) model.scenarios
+    View.scenariosList
+        (viewSingleScenario model.proposedExperiment)
+        model.scenarios
 
 
 viewSingleScenario : Experiment -> Bool -> Scenario -> Html Msg
-viewSingleScenario experiment isactive scModel =
+viewSingleScenario experiment isactive scenario =
     View.scenario
-        (viewInfo scModel.guess isactive experiment scModel.spec)
-        (List.map (viewSingleScenarioData scModel.spec) scModel.data)
+        (viewInfo isactive experiment scenario)
+        (List.map (viewSingleScenarioData scenario.spec) scenario.data)
 
 
 viewSingleScenarioData : Spec -> ( Experiment, VL.Data ) -> Html Msg
 viewSingleScenarioData spec ( _, data ) =
-    View.vegaPlot (vegaSpec spec data)
+    Html.Lazy.lazy View.vegaPlot (vegaSpec spec data)
 
 
-viewInfo : Maybe Guess -> Bool -> Experiment -> Spec -> List (Html Msg)
-viewInfo guess isactive experiment spec =
+viewInfo : Bool -> Experiment -> Scenario -> List (Html Msg)
+viewInfo isactive experiment scenario =
     let
         ( wasGuessed, guessElement ) =
-            case guess of
+            case scenario.guess of
                 Just guessVal ->
-                    ( True, viewGuess isactive guessVal spec )
+                    ( True, viewGuess isactive guessVal scenario.spec )
 
                 Nothing ->
                     ( False, text "" )
@@ -186,7 +198,11 @@ viewInfo guess isactive experiment spec =
             if not wasGuessed && isactive then
                 div []
                     [ View.nChooser SetN experiment
-                    , input [ Attr.type_ "button", Events.onClick RunExperiment, Attr.value "Gather more data" ] []
+                    , if allowMoreExperiments scenario then
+                        input [ Attr.type_ "button", Events.onClick RunExperiment, Attr.value "Gather more data" ] []
+
+                      else
+                        text "Reached the maximum number of experiments"
                     , h3 [] [ text "Ready to make a guess?" ]
                     , input [ Attr.type_ "button", Events.onClick (MakeGuess True), Attr.value "There is association" ] []
                     , input [ Attr.type_ "button", Events.onClick (MakeGuess False), Attr.value "There is no association beyond XX" ] []

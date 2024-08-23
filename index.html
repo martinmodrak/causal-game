@@ -17,18 +17,13 @@
 
 <script type="text/javascript">
 
-
 // Custom Vega element
-
 var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 
 customElements.define('vega-plot',
     class extends HTMLElement {
         // things required by Custom Elements
         constructor() { super(); this._spec = null; }
-        //connectedCallback() { this.setTextContent(); }
-        //attributeChangedCallback() { this.setTextContent(); }
-        //static get observedAttributes() { return ['spec']; }
 
         get spec() {
             return(this._spec);

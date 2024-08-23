@@ -3,6 +3,7 @@ module View exposing (..)
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
+import Html.Keyed as Keyed
 import VegaLite
 
 
@@ -16,14 +17,24 @@ scenariosList viewSingle scenarios =
                 )
 
         [] ->
-            div [] [ text "No scenarios yet" ]
+            div [] [ text "N scenarios yet" ]
 
 
 scenario : List (Html msg) -> List (Html msg) -> Html msg
 scenario infoElements dataElements =
+    let
+        nElements =
+            List.length dataElements
+
+        keys =
+            List.range 1 nElements |> List.map (\x -> String.fromInt (nElements - x))
+
+        keyedElements =
+            List.map2 Tuple.pair keys dataElements
+    in
     div [ Attr.class "scenario" ]
         [ div [ Attr.class "info" ] infoElements
-        , div [ Attr.class "data" ] dataElements
+        , Keyed.node "div" [ Attr.class "data" ] keyedElements
         ]
 
 
