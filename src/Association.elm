@@ -1,7 +1,8 @@
 module Association exposing (..)
 
+import Game exposing (Msg(..))
 import Html exposing (..)
-import Html.Attributes as Attr exposing (maxlength)
+import Html.Attributes as Attr
 import Html.Events as Events
 import Html.Lazy
 import Random
@@ -9,15 +10,6 @@ import Random.Extra
 import Random.Float
 import VegaLite as VL
 import View
-
-
-type Msg
-    = SpecGenerated Spec
-    | RunExperiment
-    | DataGenerated Experiment VL.Data
-    | SetN String
-    | MakeGuess Guess
-    | NewScenario
 
 
 type alias Spec =
@@ -35,27 +27,43 @@ type alias Guess =
     Bool
 
 
-type alias Scenario =
-    { spec : Spec
-    , data : List ( Experiment, VL.Data )
-    , guess : Maybe Guess
-    }
+type alias Outcome =
+    VL.Data
+
+
+type ExpMsg
+    = SetN String
+
+
+type GuessMsg
+    = SetGuess Guess
+
+
+type alias Msg =
+    Game.Msg ExpMsg GuessMsg Spec Experiment Outcome Guess
 
 
 type alias Model =
-    { scenarios : List Scenario
-    , proposedExperiment : Experiment
+    Game.Scenario Spec Experiment Outcome Guess
+
+
+adapter : Game.Adapter ExpMsg GuessMsg Spec Experiment Outcome Guess
+adapter =
+    { defaultGuess = False
+    , defaultExperiment = 20
+    , specGenerator = specGenerator
+    , generator = generator
+    , updateExperiment = updateExperiment
+    , updateGuess = updateGuess
+    , guessCorrect = guessCorrect
+    , costExperiment = costExperiment
+    , viewExperiment = viewExperiment
+    , viewProposedExperiment = viewProposedExperiment
+    , viewCostCommentary = viewCostCommentary
+    , viewGuess = viewGuess
+    , viewProposedGuess = viewProposedGuess
+    , scenarioName = "Is there an association?"
     }
-
-
-initModel : Model
-initModel =
-    { scenarios = [], proposedExperiment = 20 }
-
-
-initCmd : Cmd Msg
-initCmd =
-    Random.generate SpecGenerated specGenerator
 
 
 specGenerator : Random.Generator Spec
@@ -69,11 +77,6 @@ specGenerator =
 maxAbsSlopeNoAssoc : Float
 maxAbsSlopeNoAssoc =
     0.5
-
-
-allowMoreExperiments : Scenario -> Bool
-allowMoreExperiments scenario =
-    List.length scenario.data < 100
 
 
 slopeGenerator : Random.Generator Float
@@ -118,107 +121,60 @@ guessCorrect spec guess =
     guess == (abs spec.slope > maxAbsSlopeNoAssoc)
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+updateExperiment : ExpMsg -> Experiment -> Experiment
+updateExperiment msg experiment =
     case msg of
-        SpecGenerated spec ->
-            ( { model | scenarios = { spec = Debug.log "Spec: " spec, data = [], guess = Nothing } :: model.scenarios }, Cmd.none )
-
-        RunExperiment ->
-            case model.scenarios of
-                head :: _ ->
-                    ( model, Random.generate (DataGenerated model.proposedExperiment) (generator head.spec model.proposedExperiment) )
-
-                [] ->
-                    ( model, Cmd.none )
-
-        DataGenerated experiment data ->
-            case model.scenarios of
-                [] ->
-                    ( model, Cmd.none )
-
-                active :: rest ->
-                    if allowMoreExperiments active then
-                        ( { model | scenarios = { active | data = ( experiment, data ) :: active.data } :: rest }, Cmd.none )
-
-                    else
-                        ( model, Cmd.none )
-
         SetN newN ->
             case String.toInt newN of
                 Just n ->
-                    ( { model | proposedExperiment = n }, Cmd.none )
+                    n
 
                 Nothing ->
-                    ( model, Cmd.none )
-
-        MakeGuess guess ->
-            case model.scenarios of
-                [] ->
-                    ( model, Cmd.none )
-
-                active :: rest ->
-                    ( { model | scenarios = { active | guess = Just guess } :: rest }, Cmd.none )
-
-        NewScenario ->
-            ( model, Random.generate SpecGenerated specGenerator )
+                    experiment
 
 
-view : Model -> Html Msg
-view model =
-    View.scenariosList
-        (viewSingleScenario model.proposedExperiment)
-        model.scenarios
+updateGuess : GuessMsg -> Guess -> Guess
+updateGuess msg _ =
+    case msg of
+        SetGuess g ->
+            g
 
 
-viewSingleScenario : Experiment -> Bool -> Scenario -> Html Msg
-viewSingleScenario experiment isactive scenario =
-    View.scenario
-        (viewInfo isactive experiment scenario)
-        (List.map (viewSingleScenarioData scenario.spec) scenario.data)
+viewExperiment : ( Experiment, Outcome ) -> Html ExpMsg
+viewExperiment ( experiment, data ) =
+    div []
+        [ div [] [ text ("N = " ++ String.fromInt experiment ++ ", CZK " ++ String.fromInt (costExperiment experiment)) ]
+        , Html.Lazy.lazy View.vegaPlot (vegaSpec data)
+        ]
 
 
-viewSingleScenarioData : Spec -> ( Experiment, VL.Data ) -> Html Msg
-viewSingleScenarioData spec ( _, data ) =
-    Html.Lazy.lazy View.vegaPlot (vegaSpec spec data)
+viewProposedExperiment : Experiment -> Html ExpMsg
+viewProposedExperiment experiment =
+    View.nChooser SetN experiment
 
 
-viewInfo : Bool -> Experiment -> Scenario -> List (Html Msg)
-viewInfo isactive experiment scenario =
-    let
-        ( wasGuessed, guessElement ) =
-            case scenario.guess of
-                Just guessVal ->
-                    ( True, viewGuess isactive guessVal scenario.spec )
-
-                Nothing ->
-                    ( False, text "" )
-
-        activeElement =
-            if not wasGuessed && isactive then
-                div []
-                    [ View.nChooser SetN experiment
-                    , if allowMoreExperiments scenario then
-                        input [ Attr.type_ "button", Events.onClick RunExperiment, Attr.value "Gather more data" ] []
-
-                      else
-                        text "Reached the maximum number of experiments"
-                    , h3 [] [ text "Ready to make a guess?" ]
-                    , input [ Attr.type_ "button", Events.onClick (MakeGuess True), Attr.value "There is association" ] []
-                    , input [ Attr.type_ "button", Events.onClick (MakeGuess False), Attr.value "There is no association beyond XX" ] []
-                    ]
-
-            else
-                text ""
-    in
-    [ h2 [] [ text "Is there an association?" ]
-    , activeElement
-    , guessElement
-    ]
+costPerParticipant : Int
+costPerParticipant =
+    100
 
 
-viewGuess : Bool -> Guess -> Spec -> Html Msg
-viewGuess isactive guess spec =
+costPerExperiment : Int
+costPerExperiment =
+    2000
+
+
+costExperiment : Experiment -> Int
+costExperiment exp =
+    exp * costPerParticipant + costPerExperiment
+
+
+viewCostCommentary : Html a
+viewCostCommentary =
+    text ("Costs CZK " ++ String.fromInt costPerExperiment ++ " + CZK " ++ String.fromInt costPerParticipant ++ " per participant")
+
+
+viewGuess : Guess -> Html GuessMsg
+viewGuess guess =
     let
         guessDescription =
             if guess then
@@ -226,31 +182,24 @@ viewGuess isactive guess spec =
 
             else
                 "NO association"
-
-        guessResultDescription =
-            if guessCorrect spec guess then
-                "Correct"
-
-            else
-                "Incorrect"
-
-        newScenarioElement =
-            if isactive then
-                div [] [ input [ Attr.type_ "button", Events.onClick NewScenario, Attr.value "New scenario" ] [] ]
-
-            else
-                text ""
     in
+    h3 [] [ text ("Your guess: " ++ guessDescription) ]
+
+
+viewProposedGuess : Guess -> Html GuessMsg
+viewProposedGuess guess =
     div []
-        [ h3 [] [ text ("Your guess:" ++ guessDescription) ]
-        , text "The guess was "
-        , strong [] [ text guessResultDescription ]
-        , newScenarioElement
+        [ text "I believe x "
+        , select []
+            [ option [ Attr.selected guess, Events.onClick (SetGuess True) ] [ text "IS associated" ]
+            , option [ Attr.selected (not guess), Events.onClick (SetGuess False) ] [ text "is NOT associated" ]
+            ]
+        , text " with y"
         ]
 
 
-vegaSpec : Spec -> VL.Data -> VL.Spec
-vegaSpec _ data =
+vegaSpec : Outcome -> VL.Spec
+vegaSpec data =
     let
         enc =
             VL.encoding
