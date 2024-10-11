@@ -140,7 +140,7 @@ updateGuess msg _ =
             g
 
 
-viewExperiment : ( Experiment, Outcome ) -> Html ExpMsg
+viewExperiment : ( Experiment, Outcome ) -> Html Never
 viewExperiment ( experiment, data ) =
     div []
         [ div [] [ text ("N = " ++ String.fromInt experiment ++ ", CZK " ++ String.fromInt (costExperiment experiment)) ]
@@ -150,7 +150,11 @@ viewExperiment ( experiment, data ) =
 
 viewProposedExperiment : Experiment -> Html ExpMsg
 viewProposedExperiment experiment =
-    View.nChooser SetN experiment
+    div []
+        [ text "Run an observational study with "
+        , View.nChooser SetN experiment
+        , text " participants."
+        ]
 
 
 costPerParticipant : Int
@@ -170,10 +174,10 @@ costExperiment exp =
 
 viewCostCommentary : Html a
 viewCostCommentary =
-    text ("Costs CZK " ++ String.fromInt costPerExperiment ++ " + CZK " ++ String.fromInt costPerParticipant ++ " per participant")
+    text ("Observational study costs CZK " ++ String.fromInt costPerExperiment ++ " + CZK " ++ String.fromInt costPerParticipant ++ " per participant")
 
 
-viewGuess : Guess -> Html GuessMsg
+viewGuess : Guess -> Html Never
 viewGuess guess =
     let
         guessDescription =
@@ -188,13 +192,30 @@ viewGuess guess =
 
 viewProposedGuess : Guess -> Html GuessMsg
 viewProposedGuess guess =
+    let
+        xname =
+            "x"
+
+        yname =
+            "y"
+    in
     div []
-        [ text "I believe x "
+        [ text "I believe "
+        , em [] [ text xname ]
+        , text " "
         , select []
             [ option [ Attr.selected guess, Events.onClick (SetGuess True) ] [ text "IS associated" ]
             , option [ Attr.selected (not guess), Events.onClick (SetGuess False) ] [ text "is NOT associated" ]
             ]
-        , text " with y"
+        , text " with "
+        , em [] [ text yname ]
+        , text " (association means at least "
+        , text (String.fromFloat maxAbsSlopeNoAssoc)
+        , text " increase/decrease in "
+        , em [] [ text yname ]
+        , text " for 1 point change in "
+        , em [] [ text yname ]
+        , text "."
         ]
 
 

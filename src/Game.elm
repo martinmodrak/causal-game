@@ -45,10 +45,10 @@ type alias Adapter expMsg guessMsg spec experiment outcome guess =
     , updateGuess : guessMsg -> guess -> guess
     , guessCorrect : spec -> guess -> Bool
     , costExperiment : experiment -> Int
-    , viewExperiment : ( experiment, outcome ) -> Html expMsg
+    , viewExperiment : ( experiment, outcome ) -> Html Never
     , viewProposedExperiment : experiment -> Html expMsg
-    , viewCostCommentary : Html expMsg --TODO try Html Never
-    , viewGuess : guess -> Html guessMsg
+    , viewCostCommentary : Html Never
+    , viewGuess : guess -> Html Never
     , viewProposedGuess : guess -> Html guessMsg
     , scenarioName : String
     }
@@ -166,7 +166,8 @@ viewGameControls adapter scenario =
                         Nothing ->
                             ( False
                             , div [ Attr.class "proposedGuess" ]
-                                [ Html.map GuessChanged (adapter.viewProposedGuess scenario.proposedGuess)
+                                [ h3 [] [ text "Ready to make a guess?" ]
+                                , Html.map GuessChanged (adapter.viewProposedGuess scenario.proposedGuess)
                                 , input [ Attr.type_ "button", Attr.class "guessButton", Events.onClick MakeGuess, Attr.value "Make a guess!" ] []
                                 ]
                             )
@@ -177,8 +178,9 @@ viewGameControls adapter scenario =
                             [ Html.map ExperimentChanged (adapter.viewProposedExperiment scenario.proposedExperiment)
                             , if allowMoreExperiments instance then
                                 div []
-                                    [ input [ Attr.type_ "button", Events.onClick RunExperiment, Attr.value ("Gather more data for CZK " ++ String.fromInt (adapter.costExperiment scenario.proposedExperiment)) ] []
-                                    , Html.map ExperimentChanged adapter.viewCostCommentary
+                                    [ Html.map never adapter.viewCostCommentary
+                                    , br [] []
+                                    , input [ Attr.type_ "button", Events.onClick RunExperiment, Attr.value ("Gather more data for CZK " ++ String.fromInt (adapter.costExperiment scenario.proposedExperiment)) ] []
                                     ]
 
                               else
@@ -285,12 +287,12 @@ viewSingleHistory adapter active item =
                                     "Incorrect"
                         in
                         div [ Attr.class "guess" ]
-                            [ Html.map GuessChanged (adapter.viewGuess guess)
+                            [ Html.map never (adapter.viewGuess guess)
                             , text "The guess was "
                             , strong [] [ text guessResultDescription ]
                             ]
                  )
-                    :: List.map (adapter.viewExperiment >> Html.map ExperimentChanged) instance.data
+                    :: List.map (adapter.viewExperiment >> Html.map never) instance.data
                 )
 
         _ ->
