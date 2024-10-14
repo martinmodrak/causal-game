@@ -1,4 +1,4 @@
-module Association exposing (..)
+module SingleCausality exposing (..)module Association exposing (..)
 
 import Game exposing (GuessEval, Msg(..))
 import Html exposing (..)

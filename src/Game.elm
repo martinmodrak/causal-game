@@ -43,7 +43,7 @@ type alias Adapter expMsg guessMsg spec experiment outcome guess =
     , generator : spec -> experiment -> Random.Generator outcome
     , updateExperiment : expMsg -> experiment -> experiment
     , updateGuess : guessMsg -> guess -> guess
-    , guessCorrect : spec -> guess -> Bool
+    , guessEval : spec -> guess -> GuessEval
     , costExperiment : experiment -> Int
     , viewExperiment : ( experiment, outcome ) -> Html Never
     , viewProposedExperiment : experiment -> Html expMsg
@@ -62,6 +62,10 @@ type Msg expMsg guessMsg spec experiment outcome guess
     | GuessChanged guessMsg
     | MakeGuess
     | NewInstance
+
+
+type alias GuessEval =
+    ( Bool, Html Never )
 
 
 init : Adapter expMsg guessMsg spec experiment outcome guess -> Scenario spec experiment outcome guess
@@ -279,17 +283,28 @@ viewSingleHistory adapter active item =
 
                     Just guess ->
                         let
-                            guessResultDescription =
-                                if adapter.guessCorrect instance.spec guess then
-                                    "Correct"
+                            ( correct, desc ) =
+                                adapter.guessEval instance.spec guess
 
-                                else
-                                    "Incorrect"
+                            guessResultDescription =
+                                div []
+                                    [ text "The guess was "
+                                    , strong []
+                                        [ text
+                                            (if correct then
+                                                "CORRECT"
+
+                                             else
+                                                "INCORRECT"
+                                            )
+                                        ]
+                                    , br [] []
+                                    , Html.map never desc
+                                    ]
                         in
                         div [ Attr.class "guess" ]
                             [ Html.map never (adapter.viewGuess guess)
-                            , text "The guess was "
-                            , strong [] [ text guessResultDescription ]
+                            , guessResultDescription
                             ]
                  )
                     :: List.map (adapter.viewExperiment >> Html.map never) instance.data
