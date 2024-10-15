@@ -36,21 +36,36 @@ type alias ChallengeState =
     }
 
 
-type alias Adapter expMsg guessMsg spec experiment outcome guess =
+type alias InitAdapter guess experiment =
     { defaultGuess : guess
     , defaultExperiment : experiment
-    , specGenerator : Random.Generator spec
+    , scenarioName : String
+    }
+
+
+type alias LogicAdapter expMsg guessMsg spec experiment outcome guess =
+    { specGenerator : Random.Generator spec
     , generator : spec -> experiment -> Random.Generator outcome
     , updateExperiment : expMsg -> experiment -> experiment
     , updateGuess : guessMsg -> guess -> guess
     , guessEval : spec -> guess -> GuessEval
     , costExperiment : experiment -> Int
-    , viewExperiment : ( experiment, outcome ) -> Html Never
-    , viewProposedExperiment : experiment -> Html expMsg
+    }
+
+
+type alias ViewAdapter expMsg guessMsg spec experiment outcome guess =
+    { viewExperiment : spec -> ( experiment, outcome ) -> Html Never
+    , viewProposedExperiment : spec -> experiment -> Html expMsg
     , viewCostCommentary : Html Never
-    , viewGuess : guess -> Html Never
-    , viewProposedGuess : guess -> Html guessMsg
-    , scenarioName : String
+    , viewGuess : spec -> guess -> Html Never
+    , viewProposedGuess : spec -> guess -> Html guessMsg
+    }
+
+
+type alias Adapter expMsg guessMsg spec experiment outcome guess =
+    { init : InitAdapter guess experiment
+    , logic : LogicAdapter expMsg guessMsg spec experiment outcome guess
+    , view : ViewAdapter expMsg guessMsg spec experiment outcome guess
     }
 
 
@@ -71,8 +86,8 @@ type alias GuessEval =
 init : Adapter expMsg guessMsg spec experiment outcome guess -> Scenario spec experiment outcome guess
 init adapter =
     { history = []
-    , proposedExperiment = adapter.defaultExperiment
-    , proposedGuess = adapter.defaultGuess
+    , proposedExperiment = adapter.init.defaultExperiment
+    , proposedGuess = adapter.init.defaultGuess
     , activeChallenge = Nothing
     }
 
@@ -81,7 +96,7 @@ initCmd :
     Adapter expMsg guessMsg spec experiment outcome guess
     -> Cmd (Msg expMsg guessMsg spec experiment outcome guess)
 initCmd adapter =
-    Random.generate SpecGenerated adapter.specGenerator
+    Random.generate SpecGenerated adapter.logic.specGenerator
 
 
 update :
@@ -97,7 +112,7 @@ update adapter msg scenario =
         RunExperiment ->
             case scenario.history of
                 (AnInstance head) :: _ ->
-                    ( scenario, Random.generate (DataGenerated scenario.proposedExperiment) (adapter.generator head.spec scenario.proposedExperiment) )
+                    ( scenario, Random.generate (DataGenerated scenario.proposedExperiment) (adapter.logic.generator head.spec scenario.proposedExperiment) )
 
                 _ ->
                     ( scenario, Cmd.none )
@@ -115,17 +130,17 @@ update adapter msg scenario =
                     ( scenario, Cmd.none )
 
         ExperimentChanged eMsg ->
-            ( { scenario | proposedExperiment = adapter.updateExperiment eMsg scenario.proposedExperiment }, Cmd.none )
+            ( { scenario | proposedExperiment = adapter.logic.updateExperiment eMsg scenario.proposedExperiment }, Cmd.none )
 
         GuessChanged gMsg ->
-            ( { scenario | proposedGuess = adapter.updateGuess gMsg scenario.proposedGuess }, Cmd.none )
+            ( { scenario | proposedGuess = adapter.logic.updateGuess gMsg scenario.proposedGuess }, Cmd.none )
 
         MakeGuess ->
             case scenario.history of
                 (AnInstance active) :: rest ->
                     ( { scenario
                         | history = AnInstance { active | guess = Just scenario.proposedGuess } :: rest
-                        , proposedGuess = adapter.defaultGuess
+                        , proposedGuess = adapter.init.defaultGuess
                       }
                     , Cmd.none
                     )
@@ -135,7 +150,7 @@ update adapter msg scenario =
                     ( scenario, Cmd.none )
 
         NewInstance ->
-            ( scenario, Random.generate SpecGenerated adapter.specGenerator )
+            ( scenario, Random.generate SpecGenerated adapter.logic.specGenerator )
 
 
 allowMoreExperiments : Instance spec experiment outcome guess -> Bool
@@ -171,7 +186,7 @@ viewGameControls adapter scenario =
                             ( False
                             , div [ Attr.class "proposedGuess" ]
                                 [ h3 [] [ text "Ready to make a guess?" ]
-                                , Html.map GuessChanged (adapter.viewProposedGuess scenario.proposedGuess)
+                                , Html.map GuessChanged (adapter.view.viewProposedGuess instance.spec scenario.proposedGuess)
                                 , input [ Attr.type_ "button", Attr.class "guessButton", Events.onClick MakeGuess, Attr.value "Make a guess!" ] []
                                 ]
                             )
@@ -179,12 +194,12 @@ viewGameControls adapter scenario =
                 activeElement =
                     if not wasGuessed then
                         div []
-                            [ Html.map ExperimentChanged (adapter.viewProposedExperiment scenario.proposedExperiment)
+                            [ Html.map ExperimentChanged (adapter.view.viewProposedExperiment instance.spec scenario.proposedExperiment)
                             , if allowMoreExperiments instance then
                                 div []
-                                    [ Html.map never adapter.viewCostCommentary
+                                    [ Html.map never adapter.view.viewCostCommentary
                                     , br [] []
-                                    , input [ Attr.type_ "button", Events.onClick RunExperiment, Attr.value ("Gather more data for CZK " ++ String.fromInt (adapter.costExperiment scenario.proposedExperiment)) ] []
+                                    , input [ Attr.type_ "button", Events.onClick RunExperiment, Attr.value ("Gather more data for CZK " ++ String.fromInt (adapter.logic.costExperiment scenario.proposedExperiment)) ] []
                                     ]
 
                               else
@@ -202,7 +217,7 @@ viewGameControls adapter scenario =
                             ]
             in
             div [ Attr.class "controls" ]
-                [ h2 [] [ text adapter.scenarioName ]
+                [ h2 [] [ text adapter.init.scenarioName ]
                 , viewScenarioControl adapter scenario
                 , activeElement
                 , guessElement
@@ -241,7 +256,7 @@ viewScenarioControl adapter scenario =
 computeCost : Adapter expMsg guessMsg spec experiment outcome guess -> Instance spec experiment outcome guess -> Int
 computeCost adapter instance =
     List.map Tuple.first instance.data
-        |> List.map adapter.costExperiment
+        |> List.map adapter.logic.costExperiment
         |> List.sum
 
 
@@ -284,7 +299,7 @@ viewSingleHistory adapter active item =
                     Just guess ->
                         let
                             ( correct, desc ) =
-                                adapter.guessEval instance.spec guess
+                                adapter.logic.guessEval instance.spec guess
 
                             guessResultDescription =
                                 div []
@@ -303,11 +318,11 @@ viewSingleHistory adapter active item =
                                     ]
                         in
                         div [ Attr.class "guess" ]
-                            [ Html.map never (adapter.viewGuess guess)
+                            [ Html.map never (adapter.view.viewGuess instance.spec guess)
                             , guessResultDescription
                             ]
                  )
-                    :: List.map (adapter.viewExperiment >> Html.map never) instance.data
+                    :: List.map (adapter.view.viewExperiment instance.spec >> Html.map never) instance.data
                 )
 
         _ ->

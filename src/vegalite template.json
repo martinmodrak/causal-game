@@ -1,0 +1,133 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "data": {
+    "values": [
+      {
+        "y": false,
+        "x": true
+      },
+      {
+        "y": false,
+        "x": false
+      },
+      {
+        "y": false,
+        "x": true
+      },
+      {
+        "y": true,
+        "x": true
+      },
+      {
+        "y": false,
+        "x": false
+      },
+      {
+        "y": true,
+        "x": true
+      }
+    ]
+  },
+  "layer" : [
+  {"transform": [
+    {
+      "joinaggregate": [
+        {
+          "op": "mean",
+          "field": "x",
+          "as": "xMean"
+        },
+        {
+          "op": "mean",
+          "field": "y",
+          "as": "yMean"
+        }
+      ],
+      "groupby": []
+    }
+    ,
+    {
+      "calculate": "if(datum.x, datum.xMean + (1 - datum.xMean) * random(), datum.xMean * random())",
+      "as": "xJit"
+    }
+    ,
+    {
+      "calculate": "if(datum.y, datum.yMean + (1 - datum.yMean) * random(), datum.yMean * random())",
+      "as": "yJit"
+    },
+    {"calculate": "toString(datum.x) + toString(datum.y)",
+    "as": "color"}
+  ],
+  "encoding": {
+    "x": {
+      "field": "xJit",
+      "type": "quantitative",
+      "axis": {
+        "title" : "x"
+      }
+    },
+    "y": {
+      "field": "yJit",
+      "type": "quantitative",
+      "axis": {
+        "title" : "y"
+      }
+    },
+    "color": {
+      "field":"color",
+      "type" : "nominal",
+      "legend" : null
+    }
+  },
+  "mark": "circle"
+},
+{
+  "encoding": {
+    "x" : {"field": "x", "aggregate" : "average"}
+  },
+  "mark" : "rule"
+},
+{
+  "encoding": {
+    "y" : {"field": "y", "aggregate" : "average"}
+  },
+  "mark" : "rule"
+},
+{
+  "encoding": {
+    "y" : {"datum": 0}
+  },
+  "mark" : "rule"
+},
+{
+  "encoding": {
+    "y" : {"datum": 1}
+  },
+  "mark" : "rule"
+},
+{
+  "encoding": {
+    "x" : {"datum": 0}
+  },
+  "mark" : "rule"
+},
+{
+  "encoding": {
+    "x" : {"datum": 1}
+  },
+  "mark" : "rule"
+}
+  ],
+  "config": {
+    "view": {
+      "stroke": ""
+    },
+    "axis": {
+      "domain": false,
+      "ticks": false,
+      "labels": false,
+      "grid": false,
+      //"title": false
+    }
+  }
+}

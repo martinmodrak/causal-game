@@ -48,22 +48,41 @@ type alias Model =
     Game.Scenario Spec Experiment Outcome Guess
 
 
-adapter : Game.Adapter ExpMsg GuessMsg Spec Experiment Outcome Guess
-adapter =
+initAdapter : Game.InitAdapter Guess Experiment
+initAdapter =
     { defaultGuess = False
     , defaultExperiment = 20
-    , specGenerator = specGenerator
+    , scenarioName = "Is there an association?"
+    }
+
+
+logicAdapter : Game.LogicAdapter ExpMsg GuessMsg Spec Experiment Outcome Guess
+logicAdapter =
+    { specGenerator = specGenerator
     , generator = generator
     , updateExperiment = updateExperiment
     , updateGuess = updateGuess
     , guessEval = guessEval
     , costExperiment = costExperiment
-    , viewExperiment = viewExperiment
+    }
+
+
+viewAdapter : Game.ViewAdapter ExpMsg GuessMsg Spec Experiment Outcome Guess
+viewAdapter =
+    { viewExperiment = viewExperiment
     , viewProposedExperiment = viewProposedExperiment
     , viewCostCommentary = viewCostCommentary
     , viewGuess = viewGuess
     , viewProposedGuess = viewProposedGuess
-    , scenarioName = "Is there an association?"
+    }
+
+
+adapter : Game.Adapter ExpMsg GuessMsg Spec Experiment Outcome Guess
+adapter =
+    { init = initAdapter
+    , logic =
+        logicAdapter
+    , view = viewAdapter
     }
 
 
@@ -161,16 +180,16 @@ updateGuess msg _ =
             g
 
 
-viewExperiment : ( Experiment, Outcome ) -> Html Never
-viewExperiment ( experiment, data ) =
+viewExperiment : Spec -> ( Experiment, Outcome ) -> Html Never
+viewExperiment _ ( experiment, data ) =
     div []
         [ div [] [ text ("N = " ++ String.fromInt experiment ++ ", CZK " ++ String.fromInt (costExperiment experiment)) ]
         , Html.Lazy.lazy View.vegaPlot (vegaSpec data)
         ]
 
 
-viewProposedExperiment : Experiment -> Html ExpMsg
-viewProposedExperiment experiment =
+viewProposedExperiment : Spec -> Experiment -> Html ExpMsg
+viewProposedExperiment _ experiment =
     div []
         [ text "Run an observational study with "
         , View.nChooser SetN experiment
@@ -198,8 +217,8 @@ viewCostCommentary =
     text ("Observational study costs CZK " ++ String.fromInt costPerExperiment ++ " + CZK " ++ String.fromInt costPerParticipant ++ " per participant")
 
 
-viewGuess : Guess -> Html Never
-viewGuess guess =
+viewGuess : Spec -> Guess -> Html Never
+viewGuess _ guess =
     let
         guessDescription =
             if guess then
@@ -211,8 +230,8 @@ viewGuess guess =
     h3 [] [ text ("Your guess: " ++ guessDescription) ]
 
 
-viewProposedGuess : Guess -> Html GuessMsg
-viewProposedGuess guess =
+viewProposedGuess : Spec -> Guess -> Html GuessMsg
+viewProposedGuess _ guess =
     let
         xname =
             "x"
