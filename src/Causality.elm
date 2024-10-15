@@ -1,16 +1,14 @@
 module Causality exposing (..)
 
-import Association exposing (Experiment)
 import Graph
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
 import IntDict
-import List exposing (range)
+import List
 import Random
 import Random.Float
 import VegaLite as VL
-import View exposing (vegaPlot)
 
 
 type alias Contribution =
@@ -61,20 +59,24 @@ processSingleVar : Int -> ProcessingContribution -> IntDict.IntDict (List Float)
 processSingleVar intervention contrib oldDict =
     let
         oldTo =
-            case IntDict.get contrib.to oldDict of
+            (case IntDict.get contrib.to oldDict of
                 Nothing ->
-                    [ 0.0 ]
+                    [ 0 / 0 ]
 
                 Just x ->
                     x
+            )
+                |> Debug.log "oldTo:"
 
         from =
-            case IntDict.get contrib.from oldDict of
+            (case IntDict.get contrib.from oldDict of
                 Nothing ->
-                    [ 0.0 ]
+                    [ 0 / 0 ]
 
                 Just x ->
                     x
+            )
+                |> Debug.log "from:"
 
         contribMultiplier =
             if intervention == contrib.to then
@@ -98,7 +100,7 @@ processSingleVar intervention contrib oldDict =
                 from
 
         newTo =
-            List.map2 (+) oldTo contribValue
+            List.map2 (+) oldTo contribValue |> Debug.log "Contrib"
     in
     IntDict.insert contrib.to newTo oldDict
 
@@ -146,11 +148,13 @@ dataFromNoise dag intervention probitNoise =
         init =
             List.map2 Tuple.pair dag.variables probitNoise
                 |> List.indexedMap singleInit
+                |> Debug.log "Init: "
                 |> IntDict.fromList
 
         resultsListFloat =
             List.foldl (processSingleVar intervention) init (allContrib dag.sorted)
                 |> IntDict.values
+                |> Debug.log "Res: "
 
         -- columnDefFromVarAndResult =
         --     \var singleRes ->
@@ -198,7 +202,7 @@ singlePairSpec xName yName =
     let
         jitExpr =
             \name ->
-                "if(datum." ++ name ++ ", datum." ++ name ++ "Mean + (1 - datum." ++ name ++ "Mean) * random(), datum." ++ name ++ "Mean * random())"
+                "if(datum." ++ name ++ ", (1 - datum." ++ name ++ "Mean) + datum." ++ name ++ "Mean * random(), (1 - datum." ++ name ++ "Mean) * random())"
 
         transforms =
             VL.transform
@@ -210,7 +214,7 @@ singlePairSpec xName yName =
                 << VL.calculateAs (jitExpr xName) (xName ++ "Jit")
                 << VL.calculateAs (jitExpr yName)
                     (yName ++ "Jit")
-                << VL.calculateAs "toString(datum.x) + toString(datum.y)"
+                << VL.calculateAs ("toString(datum." ++ xName ++ ") + toString(datum." ++ yName ++ ")")
                     (xName ++ "_" ++ yName)
 
         enc =
@@ -229,9 +233,15 @@ singlePairSpec xName yName =
         internalRule =
             \coord name ->
                 VL.asSpec
-                    [ (VL.encoding
+                    [ (VL.transform
+                        << VL.calculateAs ("1 - datum." ++ name) (name ++ "1m")
+                      )
+                        []
+                    , (VL.encoding
                         << VL.position coord
-                            [ VL.pName name, VL.pAggregate VL.opMean ]
+                            [ VL.pName (name ++ "1m")
+                            , VL.pAggregate VL.opMean
+                            ]
                       )
                         []
                     , VL.rule []
@@ -290,7 +300,7 @@ outcomeToSpec varNames outcome =
                 a :: b :: [] ->
                     [ singlePairSpec a b ]
 
-                _ ->
+                _ :: _ :: _ :: _ ->
                     [ VL.hConcat
                         (List.map (plotRow varNames) varNames
                             |> List.map (\x -> VL.asSpec [ x ])
@@ -370,6 +380,11 @@ causeGenerator =
             )
 
 
+interceptGenerator : Random.Generator Float
+interceptGenerator =
+    Random.float -1 1
+
+
 contribGenerator : Random.Generator Float
 contribGenerator =
     let
@@ -381,4 +396,4 @@ contribGenerator =
                 else
                     -val
     in
-    Random.map2 fromSignAndVal (Random.uniform True [ False ]) (Random.float 0.5 1)
+    Random.map2 fromSignAndVal (Random.uniform True [ False ]) (Random.float 1 2.5)

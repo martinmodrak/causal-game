@@ -2,28 +2,44 @@ module Main exposing (..)
 
 import Association
 import Browser
-import Causality exposing (outcomeToSpec)
+import Causality
 import Game
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
+import TwoWayCausality
 import VegaLite as VL
 import View exposing (vegaPlot)
 
 
+type Page
+    = AssocPage
+    | TwoWayPage
+
+
 type alias Model =
-    { association : Association.Model
+    { page : Page
+    , association : Association.Model
+    , twoWay : TwoWayCausality.Model
     }
 
 
 type Msg
     = AssocMsg Association.Msg
+    | TwoWayMsg TwoWayCausality.Msg
+    | ActivatePage Page
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { association = Game.init Association.adapter }
-    , Cmd.map AssocMsg (Game.initCmd Association.adapter)
+    ( { page = TwoWayPage
+      , association = Game.init Association.adapter
+      , twoWay = Game.init TwoWayCausality.adapter
+      }
+    , Cmd.batch
+        [ Cmd.map AssocMsg (Game.initCmd Association.adapter)
+        , Cmd.map TwoWayMsg (Game.initCmd TwoWayCausality.adapter)
+        ]
     )
 
 
@@ -37,43 +53,74 @@ update msg model =
             in
             ( { model | association = newAssocModel }, Cmd.map AssocMsg assocCmd )
 
+        TwoWayMsg twoWayMsg ->
+            let
+                ( newTwoWayModel, twoWayCmd ) =
+                    Game.update TwoWayCausality.adapter twoWayMsg model.twoWay
+            in
+            ( { model | twoWay = newTwoWayModel }, Cmd.map TwoWayMsg twoWayCmd )
+
+        ActivatePage page ->
+            ( { model | page = page }, Cmd.none )
+
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ Html.map AssocMsg (Game.view Association.adapter model.association)
+    div [ Attr.style "margin" "1em" ]
+        [ viewPageSelection model
+        , hr [ Attr.style "clear" "both" ] []
+        , div [ Attr.style "display" (ifActive ( model.page, AssocPage ) ( "block", "none" )) ]
+            [ Html.map AssocMsg (Game.view Association.adapter model.association)
+            ]
+        , div [ Attr.style "display" (ifActive ( model.page, TwoWayPage ) ( "block", "none" )) ]
+            [ Html.map TwoWayMsg (Game.view TwoWayCausality.adapter model.twoWay)
+            ]
         ]
 
 
-meanInner : List Bool -> Int -> Int -> Float
-meanInner remaining total length =
-    case remaining of
-        [] ->
-            toFloat total / toFloat length
-
-        x :: rest ->
-            let
-                inc =
-                    if x then
-                        1
-
-                    else
-                        0
-            in
-            meanInner rest (total + inc) (length + 1)
+viewPageSelection : Model -> Html Msg
+viewPageSelection model =
+    div [] (List.map (viewPageSelectionButton model.page) [ AssocPage, TwoWayPage ])
 
 
-mean : List Bool -> Float
-mean list =
-    case list of
-        [] ->
-            -1
+viewPageSelectionButton : Page -> Page -> Html Msg
+viewPageSelectionButton activePage page =
+    let
+        baseStyle =
+            [ Attr.style "float" "left"
+            , Attr.style "font-decoration" "underline"
+            , Attr.style "border-top" "1px solid"
+            , Attr.style "border-left" "1px solid"
+            , Attr.style "border-right" "1px solid"
+            , Attr.style "margin" "0.5em"
+            , Attr.style "padding" "0.5em"
+            , Attr.style "display" "block"
+            , Attr.style "cursor" "pointer"
+            ]
+    in
+    ifActive ( activePage, page )
+        ( h2 (Attr.style "border-color" "black" :: baseStyle) [ text (pageTitle page) ]
+        , h2 (Attr.style "border-color" "gray" :: Attr.style "color" "gray" :: baseStyle) [ a [ Events.onClick (ActivatePage page) ] [ text (pageTitle page) ] ]
+        )
 
-        True :: xs ->
-            meanInner xs 1 1
 
-        False :: xs ->
-            meanInner xs 0 1
+pageTitle : Page -> String
+pageTitle page =
+    case page of
+        AssocPage ->
+            "Association"
+
+        TwoWayPage ->
+            "Two way causality"
+
+
+ifActive : ( Page, Page ) -> ( a, a ) -> a
+ifActive ( activePage, page ) ( activeOutput, inactiveOutput ) =
+    if page == activePage then
+        activeOutput
+
+    else
+        inactiveOutput
 
 
 main : Program () Model Msg

@@ -1,6 +1,8 @@
 module Association exposing (..)
 
+import Causality
 import Game exposing (GuessEval, Msg(..))
+import Graph
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
@@ -14,9 +16,9 @@ import View
 
 
 type alias Spec =
-    { slope : Float
-    , intercept : Float
-    , noise : Float
+    { sorted : Causality.SortedDAG
+    , association : Bool
+    , contrib : Float
     }
 
 
@@ -29,7 +31,7 @@ type alias Guess =
 
 
 type alias Outcome =
-    VL.Data
+    VL.Spec
 
 
 type ExpMsg
@@ -51,7 +53,7 @@ type alias Model =
 initAdapter : Game.InitAdapter Guess Experiment
 initAdapter =
     { defaultGuess = False
-    , defaultExperiment = 20
+    , defaultExperiment = 100
     , scenarioName = "Is there an association?"
     }
 
@@ -88,76 +90,104 @@ adapter =
 
 specGenerator : Random.Generator Spec
 specGenerator =
-    Random.map3 Spec
-        slopeGenerator
-        (Random.map (\x -> abs x + 10) (Random.Float.normal 0 10))
-        (Random.map (\x -> abs x + 2) (Random.Float.normal 0 5))
-
-
-maxAbsSlopeNoAssoc : Float
-maxAbsSlopeNoAssoc =
-    0.5
-
-
-slopeGenerator : Random.Generator Float
-slopeGenerator =
     let
-        genNoAssoc =
-            Random.float -maxAbsSlopeNoAssoc maxAbsSlopeNoAssoc
+        assoc =
+            Random.uniform True [ False ]
 
-        genAssoc =
-            Random.map2 (*) (Random.Extra.choice -1 1) (Random.float 2 6)
+        contrib =
+            Causality.contribGenerator
+
+        varNames =
+            [ "A", "B" ]
+
+        variables =
+            Random.list 2 Causality.interceptGenerator
+                |> Random.map (\intercepts -> List.map2 Causality.Variable varNames intercepts)
+
+        edgeListFromAssoc =
+            \assocVal contribVal ->
+                if assocVal then
+                    [ { from = 0, to = 1, label = contribVal } ]
+
+                else
+                    []
+
+        graphFromCauses =
+            \assocVal contribVal ->
+                Graph.fromNodesAndEdges
+                    (List.map (\x -> Graph.Node x x) [ 0, 1 ])
+                    (edgeListFromAssoc assocVal contribVal)
+
+        sortedFromCausesAndVars =
+            \assocVal contribVal vars ->
+                { variables = vars
+                , sorted =
+                    case Graph.checkAcyclic (graphFromCauses assocVal contribVal) of
+                        Ok dag ->
+                            Graph.topologicalSort dag
+
+                        Err _ ->
+                            []
+                }
+
+        specFromData =
+            \assocVal contribVal vars ->
+                { sorted = sortedFromCausesAndVars assocVal contribVal vars
+                , association = assocVal
+                , contrib = contribVal
+                }
     in
-    Random.Extra.choices genAssoc [ genNoAssoc ]
+    Random.map3 specFromData assoc contrib variables
 
 
-generator : Spec -> Int -> Random.Generator VL.Data
-generator spec n =
+generator : Spec -> Experiment -> Random.Generator VL.Spec
+generator spec experiment =
     let
-        x =
-            Random.list n Random.Float.standardNormal
-
-        ynoise =
-            Random.list n (Random.Float.normal 0 spec.noise)
+        outcome =
+            Causality.generatorObservational spec.sorted experiment
     in
-    Random.map2 (fromXAndNoise spec) x ynoise
+    Random.map (Causality.outcomeToSpec (List.map .name spec.sorted.variables)) outcome
 
 
-fromXAndNoise : Spec -> List Float -> List Float -> VL.Data
-fromXAndNoise spec x ynoise =
-    let
-        y =
-            List.map2 (\xval noiseval -> spec.intercept + spec.slope * xval + noiseval) x ynoise
-    in
-    (VL.dataFromColumns []
-        << VL.dataColumn "x" (VL.nums x)
-        << VL.dataColumn "y" (VL.nums y)
-    )
-        []
+specToNames : Spec -> ( String, String )
+specToNames spec =
+    case spec.sorted.variables of
+        a :: b :: _ ->
+            ( a.name, b.name )
+
+        _ ->
+            ( "Error", "Error" )
 
 
 guessEval : Spec -> Guess -> GuessEval
 guessEval spec guess =
     let
-        xname =
-            "x"
-
-        yname =
-            "y"
+        ( name1, name2 ) =
+            specToNames spec
     in
-    if guess == (abs spec.slope > maxAbsSlopeNoAssoc) then
+    if guess == spec.association then
         ( True, text "" )
 
     else
         ( False
-        , span []
-            [ text "The average change in "
-            , em [] [ text yname ]
-            , text " for 1 point increase in "
-            , em [] [ text xname ]
-            , text " was "
-            , text (Round.round 2 spec.slope)
-            ]
+        , if spec.association then
+            span []
+                [ text "When "
+                , em [] [ text name1 ]
+                , text " is true "
+                , em [] [ text name2 ]
+                , text " is "
+                , text
+                    (if spec.contrib > 0 then
+                        "more likely"
+
+                     else
+                        "less likely"
+                    )
+                ]
+
+          else
+            span [] [ text "There is no association." ]
         )
 
 
@@ -184,7 +214,7 @@ viewExperiment : Spec -> ( Experiment, Outcome ) -> Html Never
 viewExperiment _ ( experiment, data ) =
     div []
         [ div [] [ text ("N = " ++ String.fromInt experiment ++ ", CZK " ++ String.fromInt (costExperiment experiment)) ]
-        , Html.Lazy.lazy View.vegaPlot (vegaSpec data)
+        , Html.Lazy.lazy View.vegaPlot data
         ]
 
 
@@ -249,22 +279,5 @@ viewProposedGuess _ guess =
             ]
         , text " with "
         , em [] [ text yname ]
-        , text " (association means at least "
-        , text (String.fromFloat maxAbsSlopeNoAssoc)
-        , text " increase/decrease in "
-        , em [] [ text yname ]
-        , text " for 1 point change in "
-        , em [] [ text yname ]
         , text "."
         ]
-
-
-vegaSpec : Outcome -> VL.Spec
-vegaSpec data =
-    let
-        enc =
-            VL.encoding
-                << VL.position VL.X [ VL.pName "x", VL.pQuant ]
-                << VL.position VL.Y [ VL.pName "y", VL.pQuant ]
-    in
-    VL.toVegaLite [ data, enc [], VL.circle [] ]

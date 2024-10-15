@@ -1,6 +1,6 @@
 module TwoWayCausality exposing (..)
 
-import Causality exposing (CauseDirection(..), SortedDAG, Variable, causalityDescription, causeGenerator, contribGenerator, noIntervention, outcomeToSpec)
+import Causality
 import Game exposing (GuessEval, Msg(..))
 import Graph
 import Html exposing (..)
@@ -16,9 +16,9 @@ import View
 
 
 type alias Spec =
-    { sorted : SortedDAG
-    , cause12 : CauseDirection
-    , cause23 : CauseDirection
+    { sorted : Causality.SortedDAG
+    , cause01 : Causality.CauseDirection
+    , cause12 : Causality.CauseDirection
     }
 
 
@@ -27,8 +27,8 @@ type alias Experiment =
 
 
 type alias Guess =
-    { cause12 : CauseDirection
-    , cause23 : CauseDirection
+    { cause01 : Causality.CauseDirection
+    , cause12 : Causality.CauseDirection
     }
 
 
@@ -43,8 +43,8 @@ type ExpMsg
 
 
 type GuessMsg
-    = SetCause12 CauseDirection
-    | SetCause23 CauseDirection
+    = SetCause01 Causality.CauseDirection
+    | SetCause12 Causality.CauseDirection
 
 
 type alias Msg =
@@ -58,8 +58,8 @@ type alias Model =
 adapter : Game.Adapter ExpMsg GuessMsg Spec Experiment Outcome Guess
 adapter =
     { init =
-        { defaultGuess = { cause12 = NoCause, cause23 = NoCause }
-        , defaultExperiment = { randomized = True, n = 50, intervention = 1 }
+        { defaultGuess = { cause01 = Causality.NoCause, cause12 = Causality.NoCause }
+        , defaultExperiment = { randomized = True, n = 500, intervention = 1 }
         , scenarioName = "Two way causality"
         }
     , logic =
@@ -84,13 +84,13 @@ specGenerator : Random.Generator Spec
 specGenerator =
     let
         causes =
-            Random.map2 Tuple.pair causeGenerator causeGenerator
+            Random.map2 Tuple.pair Causality.causeGenerator Causality.causeGenerator
 
         varNames =
             [ "A", "B", "C" ]
 
         variables =
-            Random.list 3 (Random.float -1 1)
+            Random.list 3 Causality.interceptGenerator
                 |> Random.map (\intercepts -> List.map2 Causality.Variable varNames intercepts)
 
         contribs =
@@ -99,21 +99,21 @@ specGenerator =
         edgeListFromCause =
             \id1 id2 cause contrib ->
                 case cause of
-                    NoCause ->
+                    Causality.NoCause ->
                         []
 
-                    Right ->
+                    Causality.Right ->
                         [ { from = id1, to = id2, label = contrib } ]
 
-                    Left ->
+                    Causality.Left ->
                         [ { from = id2, to = id1, label = contrib } ]
 
         graphFromCauses =
-            \( cause12, cause23 ) ( contrib12, contrib23 ) ->
+            \( cause01, cause12 ) ( contrib01, contrib12 ) ->
                 Graph.fromNodesAndEdges
-                    (List.map (\x -> Graph.Node x x) [ 1, 2, 3 ])
-                    (edgeListFromCause 1 2 cause12 contrib12
-                        ++ edgeListFromCause 2 2 cause23 contrib23
+                    (List.map (\x -> Graph.Node x x) [ 0, 1, 2 ])
+                    (edgeListFromCause 0 1 cause01 contrib01
+                        ++ edgeListFromCause 1 2 cause12 contrib12
                     )
 
         sortedFromCausesAndVars =
@@ -129,10 +129,10 @@ specGenerator =
                 }
 
         specFromData =
-            \( cause12, cause23 ) contribVals vars ->
-                { sorted = sortedFromCausesAndVars ( cause12, cause23 ) contribVals vars
+            \( cause01, cause12 ) contribVals vars ->
+                { sorted = sortedFromCausesAndVars ( cause01, cause12 ) contribVals vars
+                , cause01 = cause01
                 , cause12 = cause12
-                , cause23 = cause23
                 }
     in
     Random.map3 specFromData causes contribs variables
@@ -165,24 +165,24 @@ generator spec experiment =
             else
                 Causality.generatorObservational spec.sorted experiment.n
     in
-    Random.map (outcomeToSpec (List.map .name spec.sorted.variables)) outcome
+    Random.map (Causality.outcomeToSpec (List.map .name spec.sorted.variables)) outcome
 
 
 guessEval : Spec -> Guess -> GuessEval
 guessEval spec guess =
     let
-        ( name1, name2, name3 ) =
+        ( name0, name1, name2 ) =
             specToNames spec
     in
-    if guess.cause12 == spec.cause12 && guess.cause23 == spec.cause23 then
+    if guess.cause01 == spec.cause01 && guess.cause12 == spec.cause12 then
         ( True, text "" )
 
     else
         ( False
         , div []
-            [ causalityDescription name1 name2 spec.cause12
+            [ Causality.causalityDescription name0 name1 spec.cause01
             , br [] []
-            , causalityDescription name2 name3 spec.cause23
+            , Causality.causalityDescription name1 name2 spec.cause12
             ]
         )
 
@@ -201,7 +201,7 @@ updateExperiment msg experiment =
         SetRandomized newRand ->
             let
                 newIntervention =
-                    if experiment.intervention == noIntervention then
+                    if experiment.intervention == Causality.noIntervention then
                         1
 
                     else
@@ -216,11 +216,11 @@ updateExperiment msg experiment =
 updateGuess : GuessMsg -> Guess -> Guess
 updateGuess msg old =
     case msg of
+        SetCause01 g ->
+            { old | cause01 = g }
+
         SetCause12 g ->
             { old | cause12 = g }
-
-        SetCause23 g ->
-            { old | cause23 = g }
 
 
 viewExperiment : Spec -> ( Experiment, Outcome ) -> Html Never
@@ -244,6 +244,7 @@ viewExperiment spec ( experiment, data ) =
     div []
         [ div []
             [ strong [] [ text typeText ]
+            , br [] []
             , text ("N = " ++ String.fromInt experiment.n ++ ", CZK " ++ String.fromInt (costExperiment experiment))
             ]
         , Html.Lazy.lazy View.vegaPlot data
@@ -331,28 +332,28 @@ specToNames spec =
 viewGuess : Spec -> Guess -> Html Never
 viewGuess spec guess =
     let
-        ( name1, name2, name3 ) =
+        ( name0, name1, name2 ) =
             specToNames spec
     in
     div []
         [ h3 []
             [ text "Your guess: " ]
-        , causalityDescription name1 name2 guess.cause12
+        , Causality.causalityDescription name0 name1 guess.cause01
         , br [] []
-        , causalityDescription name2 name3 guess.cause23
+        , Causality.causalityDescription name1 name2 guess.cause12
         ]
 
 
 viewProposedGuess : Spec -> Guess -> Html GuessMsg
 viewProposedGuess spec guess =
     let
-        ( name1, name2, name3 ) =
+        ( name0, name1, name2 ) =
             specToNames spec
     in
     div []
         [ text "I believe "
-        , Causality.causalityProposedGuess name1 name2 SetCause12 guess.cause12
+        , Causality.causalityProposedGuess name0 name1 SetCause01 guess.cause01
         , text " AND "
-        , Causality.causalityProposedGuess name2 name3 SetCause12 guess.cause12
+        , Causality.causalityProposedGuess name1 name2 SetCause12 guess.cause12
         , text "."
         ]
