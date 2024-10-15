@@ -8,9 +8,6 @@ import Html.Attributes as Attr
 import Html.Events as Events
 import Html.Lazy
 import Random
-import Random.Extra
-import Random.Float
-import Round
 import VegaLite as VL
 import View
 
@@ -162,7 +159,7 @@ specToNames spec =
 guessEval : Spec -> Guess -> GuessEval
 guessEval spec guess =
     let
-        ( name1, name2 ) =
+        ( name0, name1 ) =
             specToNames spec
     in
     if guess == spec.association then
@@ -173,9 +170,9 @@ guessEval spec guess =
         , if spec.association then
             span []
                 [ text "When "
-                , em [] [ text name1 ]
+                , em [] [ text name0 ]
                 , text " is true "
-                , em [] [ text name2 ]
+                , em [] [ text name1 ]
                 , text " is "
                 , text
                     (if spec.contrib > 0 then
@@ -261,23 +258,20 @@ viewGuess _ guess =
 
 
 viewProposedGuess : Spec -> Guess -> Html GuessMsg
-viewProposedGuess _ guess =
+viewProposedGuess spec guess =
     let
-        xname =
-            "x"
-
-        yname =
-            "y"
+        ( name0, name1 ) =
+            specToNames spec
     in
     div []
         [ text "I believe "
-        , em [] [ text xname ]
+        , em [] [ text name0 ]
         , text " "
         , select []
             [ option [ Attr.selected guess, Events.onClick (SetGuess True) ] [ text "IS associated" ]
             , option [ Attr.selected (not guess), Events.onClick (SetGuess False) ] [ text "is NOT associated" ]
             ]
         , text " with "
-        , em [] [ text yname ]
+        , em [] [ text name1 ]
         , text "."
         ]

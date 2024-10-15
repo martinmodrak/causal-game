@@ -2,14 +2,11 @@ module Main exposing (..)
 
 import Association
 import Browser
-import Causality
 import Game
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
 import TwoWayCausality
-import VegaLite as VL
-import View exposing (vegaPlot)
 
 
 type Page
@@ -32,7 +29,7 @@ type Msg
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { page = TwoWayPage
+    ( { page = AssocPage
       , association = Game.init Association.adapter
       , twoWay = Game.init TwoWayCausality.adapter
       }

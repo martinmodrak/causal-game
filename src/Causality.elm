@@ -59,24 +59,20 @@ processSingleVar : Int -> ProcessingContribution -> IntDict.IntDict (List Float)
 processSingleVar intervention contrib oldDict =
     let
         oldTo =
-            (case IntDict.get contrib.to oldDict of
+            case IntDict.get contrib.to oldDict of
                 Nothing ->
                     [ 0 / 0 ]
 
                 Just x ->
                     x
-            )
-                |> Debug.log "oldTo:"
 
         from =
-            (case IntDict.get contrib.from oldDict of
+            case IntDict.get contrib.from oldDict of
                 Nothing ->
                     [ 0 / 0 ]
 
                 Just x ->
                     x
-            )
-                |> Debug.log "from:"
 
         contribMultiplier =
             if intervention == contrib.to then
@@ -100,7 +96,7 @@ processSingleVar intervention contrib oldDict =
                 from
 
         newTo =
-            List.map2 (+) oldTo contribValue |> Debug.log "Contrib"
+            List.map2 (+) oldTo contribValue
     in
     IntDict.insert contrib.to newTo oldDict
 
@@ -148,13 +144,11 @@ dataFromNoise dag intervention probitNoise =
         init =
             List.map2 Tuple.pair dag.variables probitNoise
                 |> List.indexedMap singleInit
-                |> Debug.log "Init: "
                 |> IntDict.fromList
 
         resultsListFloat =
             List.foldl (processSingleVar intervention) init (allContrib dag.sorted)
                 |> IntDict.values
-                |> Debug.log "Res: "
 
         -- columnDefFromVarAndResult =
         --     \var singleRes ->
