@@ -9,16 +9,19 @@ import List
 import Random
 import Random.Float
 import VegaLite as VL
+import View exposing (vegaPlot)
 
 
 type alias Contribution =
     Float
 
 
-type CauseDirection
+type Category
     = NoCause
-    | Right
-    | Left
+    | RightPos
+    | RightNeg
+    | LeftPos
+    | LeftNeg
 
 
 type alias Experiment =
@@ -149,15 +152,6 @@ dataFromNoise dag intervention probitNoise =
         resultsListFloat =
             List.foldl (processSingleVar intervention) init (allContrib dag.sorted)
                 |> IntDict.values
-
-        -- columnDefFromVarAndResult =
-        --     \var singleRes ->
-        --         VL.dataColumn var.name (VL.nums singleRes)
-        -- allColumnDefs =
-        --     List.map2 columnDefFromVarAndResult dag.variables resultList
-        -- allColumns =
-        --     List.foldl (<|) [] allColumnDefs
-        -- VL.dataFromColumns [] allColumns
     in
     List.map (List.map (\x -> x > 0)) resultsListFloat
 
@@ -191,31 +185,99 @@ generatorRandomized dag intervention nSubj =
         |> Random.map (dataFromNoise dag intervention)
 
 
-singlePairSpec : String -> String -> ( VL.VLProperty, VL.Spec )
-singlePairSpec xName yName =
+positionInGroupInner : { ff : Int, ft : Int, tf : Int, tt : Int } -> List Bool -> List Bool -> ( List ( Float, Float ), { ff : Int, ft : Int, tf : Int, tt : Int } )
+positionInGroupInner countsSoFar xValues yValues =
+    case ( xValues, yValues ) of
+        ( valX :: xRest, valY :: yRest ) ->
+            let
+                ( accessor, recurseWith ) =
+                    if valX then
+                        if valY then
+                            ( .tt, { countsSoFar | tt = countsSoFar.tt + 1 } )
+
+                        else
+                            ( .tf, { countsSoFar | tf = countsSoFar.tf + 1 } )
+
+                    else if valY then
+                        ( .ft, { countsSoFar | ft = countsSoFar.ft + 1 } )
+
+                    else
+                        ( .ff, { countsSoFar | ff = countsSoFar.ff + 1 } )
+
+                ( posRest, totalCounts ) =
+                    positionInGroupInner recurseWith xRest yRest
+
+                totalCount =
+                    accessor totalCounts
+
+                currentCount =
+                    accessor countsSoFar
+
+                rectSize =
+                    ceiling (sqrt (toFloat totalCount))
+
+                stepSize =
+                    1 / toFloat rectSize
+
+                xPos =
+                    stepSize * (0.5 + toFloat (currentCount // rectSize))
+
+                yPos =
+                    stepSize * (0.5 + toFloat (modBy rectSize currentCount))
+            in
+            ( ( xPos, yPos ) :: posRest, totalCounts )
+
+        _ ->
+            ( [], countsSoFar )
+
+
+positionInGroup : List Bool -> List Bool -> List ( Float, Float )
+positionInGroup xValues yValues =
     let
+        ( res, _ ) =
+            positionInGroupInner { ff = 0, ft = 0, tf = 0, tt = 0 } xValues yValues
+    in
+    res
+
+
+singlePairWaffleDataSpec : List Bool -> List Bool -> String -> String -> VL.Spec
+singlePairWaffleDataSpec xValues yValues xName yName =
+    let
+        ( xPos, yPos ) =
+            positionInGroup xValues yValues
+                |> List.unzip
+
+        data =
+            (VL.dataFromColumns []
+                << VL.dataColumn "x" (VL.boos xValues)
+                << VL.dataColumn "y" (VL.boos yValues)
+                << VL.dataColumn "xPos" (VL.nums xPos)
+                << VL.dataColumn "yPos" (VL.nums yPos)
+            )
+                []
+
         jitExpr =
             \name ->
-                "if(datum." ++ name ++ ", (1 - datum." ++ name ++ "Mean) + datum." ++ name ++ "Mean * random(), (1 - datum." ++ name ++ "Mean) * random())"
+                "if(datum." ++ name ++ ", (1 - datum." ++ name ++ "Mean) + datum." ++ name ++ "Mean * datum." ++ name ++ "Pos, (1 - datum." ++ name ++ "Mean) * datum." ++ name ++ "Pos)"
 
         transforms =
             VL.transform
                 << VL.joinAggregate
-                    [ VL.opAs VL.opMean xName (xName ++ "Mean")
-                    , VL.opAs VL.opMean yName (yName ++ "Mean")
+                    [ VL.opAs VL.opMean "x" "xMean"
+                    , VL.opAs VL.opMean "y" "yMean"
                     ]
                     []
-                << VL.calculateAs (jitExpr xName) (xName ++ "Jit")
-                << VL.calculateAs (jitExpr yName)
-                    (yName ++ "Jit")
-                << VL.calculateAs ("toString(datum." ++ xName ++ ") + toString(datum." ++ yName ++ ")")
-                    (xName ++ "_" ++ yName)
+                << VL.calculateAs (jitExpr "x") "xJit"
+                << VL.calculateAs (jitExpr "y")
+                    "yJit"
+                << VL.calculateAs "toString(datum.x) + toString(datum.y)"
+                    "x_y"
 
         enc =
             VL.encoding
-                << VL.position VL.X [ VL.pName (xName ++ "Jit"), VL.pQuant, VL.pAxis [ VL.axTitle xName ] ]
-                << VL.position VL.Y [ VL.pName (yName ++ "Jit"), VL.pQuant, VL.pAxis [ VL.axTitle yName ] ]
-                << VL.color [ VL.mName (xName ++ "_" ++ yName), VL.mNominal, VL.mLegend [] ]
+                << VL.position VL.X [ VL.pName "xJit", VL.pQuant, VL.pAxis [ VL.axTitle xName ] ]
+                << VL.position VL.Y [ VL.pName "yJit", VL.pQuant, VL.pAxis [ VL.axTitle yName ] ]
+                << VL.color [ VL.mName "x_y", VL.mNominal, VL.mLegend [] ]
 
         rule =
             \coord pos ->
@@ -240,50 +302,48 @@ singlePairSpec xName yName =
                         []
                     , VL.rule []
                     ]
-    in
-    VL.layer
-        [ VL.asSpec
-            [ transforms []
-            , enc []
-            , VL.circle []
-            ]
-        , internalRule VL.X xName
-        , internalRule VL.Y yName
-        , rule VL.X 0
-        , rule VL.X 1
-        , rule VL.Y 0
-        , rule VL.Y 1
-        ]
-
-
-outcomeToSpec : List String -> Outcome -> VL.Spec
-outcomeToSpec varNames outcome =
-    let
-        columnDefFromVarAndResult =
-            \var singleRes ->
-                VL.dataColumn var (VL.boos singleRes)
-
-        allColumnDefs =
-            List.map2 columnDefFromVarAndResult varNames outcome
-
-        allColumns =
-            List.foldl (<|) [] allColumnDefs
-
-        data =
-            VL.dataFromColumns [] allColumns
 
         config =
             VL.configure
                 << VL.configuration (VL.coAxis [ VL.axcoDomain False, VL.axcoTicks False, VL.axcoLabels False, VL.axcoGrid False ])
 
+        spec =
+            VL.layer
+                [ VL.asSpec
+                    [ transforms []
+                    , enc []
+                    , VL.circle []
+                    ]
+                , internalRule VL.X "x"
+                , internalRule VL.Y "y"
+                , rule VL.X 0
+                , rule VL.X 1
+                , rule VL.Y 0
+                , rule VL.Y 1
+                ]
+    in
+    VL.toVegaLite
+        [ data
+        , config []
+        , spec
+        ]
+
+
+viewOutcome : SortedDAG -> Outcome -> Html Never
+viewOutcome sorted outcome =
+    let
+        varNames =
+            variableNames sorted
+
         plotRow =
-            \xNames yName ->
-                VL.vConcat
-                    (List.map (\x -> singlePairSpec x yName) xNames
-                        |> List.map (\x -> VL.asSpec [ x ])
+            \yName yVals ->
+                tr []
+                    (List.map2 (\name vals -> singlePairWaffleDataSpec vals yVals name yName) varNames outcome
+                        |> List.map View.vegaPlot
+                        |> List.map (\x -> td [] [ x ])
                     )
 
-        specSet =
+        allRows =
             case varNames of
                 [] ->
                     []
@@ -291,38 +351,32 @@ outcomeToSpec varNames outcome =
                 _ :: [] ->
                     []
 
-                a :: b :: [] ->
-                    [ singlePairSpec a b ]
-
-                _ :: _ :: _ :: _ ->
-                    [ VL.hConcat
-                        (List.map (plotRow varNames) varNames
-                            |> List.map (\x -> VL.asSpec [ x ])
-                        )
-                    ]
+                -- a :: b :: [] ->
+                --     [ singlePairWaffleDataSpec a b ]
+                _ ->
+                    -- _ :: _ :: _ :: _ ->
+                    List.map2 plotRow varNames outcome
     in
-    VL.toVegaLite
-        (data
-            :: config []
-            :: specSet
-        )
+    table [] allRows
 
 
-causalityChooser : (CauseDirection -> msg) -> CauseDirection -> Html msg
+causalityChooser : (Category -> msg) -> Category -> Html msg
 causalityChooser causeMsg currentVal =
     let
         singleOption =
-            \val label ->
-                option [ Attr.selected (currentVal == val), Events.onClick (causeMsg val) ] [ text label ]
+            \val ->
+                option [ Attr.selected (currentVal == val), Events.onClick (causeMsg val) ] [ text (causalityDirectionToString val) ]
     in
     select []
-        [ singleOption NoCause "is not causally related"
-        , singleOption Right "causes"
-        , singleOption Left "is caused by"
+        [ singleOption NoCause
+        , singleOption RightPos
+        , singleOption RightNeg
+        , singleOption LeftPos
+        , singleOption LeftNeg
         ]
 
 
-causalityProposedGuess : String -> String -> (CauseDirection -> msg) -> CauseDirection -> Html msg
+causalityProposedGuess : String -> String -> (Category -> msg) -> Category -> Html msg
 causalityProposedGuess name1 name2 causeMsg currentVal =
     div []
         [ em [] [ text name1 ]
@@ -333,20 +387,42 @@ causalityProposedGuess name1 name2 causeMsg currentVal =
         ]
 
 
-causalityDirectionToString : CauseDirection -> String
+causalityDirectionToString : Category -> String
 causalityDirectionToString dir =
     case dir of
         NoCause ->
             "is not causally related"
 
-        Right ->
-            "causes"
+        RightPos ->
+            "promotes"
 
-        Left ->
-            "is caused by"
+        RightNeg ->
+            "inhibits"
+
+        LeftPos ->
+            "is promoted by"
+
+        LeftNeg ->
+            "is inhibited by"
 
 
-causalityDescription : String -> String -> CauseDirection -> Html msg
+categoryMult : Category -> Float
+categoryMult cat =
+    case cat of
+        RightNeg ->
+            -1
+
+        LeftNeg ->
+            -1
+
+        NoCause ->
+            0
+
+        _ ->
+            1
+
+
+causalityDescription : String -> String -> Category -> Html msg
 causalityDescription name1 name2 val =
     div []
         [ em [] [ text name1 ]
@@ -357,21 +433,9 @@ causalityDescription name1 name2 val =
         ]
 
 
-causeGenerator : Random.Generator CauseDirection
-causeGenerator =
-    Random.int 0 2
-        |> Random.map
-            (\x ->
-                case x of
-                    1 ->
-                        Left
-
-                    2 ->
-                        Right
-
-                    _ ->
-                        NoCause
-            )
+categoryGenerator : Random.Generator Category
+categoryGenerator =
+    Random.uniform NoCause [ RightNeg, RightPos, LeftNeg, LeftPos ]
 
 
 interceptGenerator : Random.Generator Float
@@ -379,15 +443,16 @@ interceptGenerator =
     Random.float -1 1
 
 
-contribGenerator : Random.Generator Float
-contribGenerator =
+contribGenerator : Category -> Random.Generator Float
+contribGenerator cat =
     let
-        fromSignAndVal =
-            \sign val ->
-                if sign then
-                    val
-
-                else
-                    -val
+        fromVal =
+            \val ->
+                val * categoryMult cat
     in
-    Random.map2 fromSignAndVal (Random.uniform True [ False ]) (Random.float 1 2.5)
+    Random.map fromVal (Random.float 1 2.5)
+
+
+variableNames : SortedDAG -> List String
+variableNames sorted =
+    sorted.variables |> List.map .name

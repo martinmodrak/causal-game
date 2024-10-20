@@ -3,6 +3,7 @@ module Game exposing (..)
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
+import Html.Keyed
 import Random
 
 
@@ -291,8 +292,22 @@ viewSingleHistory :
 viewSingleHistory adapter active item =
     case item of
         AnInstance instance ->
+            let
+                experiments =
+                    List.map (adapter.view.viewExperiment instance.spec >> Html.map never) instance.data
+
+                ids =
+                    Debug.log "ids: "
+                        (List.range 1 (List.length experiments)
+                            |> List.reverse
+                            |> List.map String.fromInt
+                        )
+
+                experimentsWithId =
+                    List.map2 Tuple.pair ids experiments
+            in
             div [ Attr.class "instance" ]
-                ((case instance.guess of
+                [ case instance.guess of
                     Nothing ->
                         text ""
 
@@ -321,9 +336,8 @@ viewSingleHistory adapter active item =
                             [ Html.map never (adapter.view.viewGuess instance.spec guess)
                             , guessResultDescription
                             ]
-                 )
-                    :: List.map (adapter.view.viewExperiment instance.spec >> Html.map never) instance.data
-                )
+                , Html.Keyed.node "div" [] experimentsWithId
+                ]
 
         _ ->
             text "Not implemented yet"

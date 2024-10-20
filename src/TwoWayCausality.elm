@@ -17,8 +17,8 @@ import View
 
 type alias Spec =
     { sorted : Causality.SortedDAG
-    , cause01 : Causality.CauseDirection
-    , cause12 : Causality.CauseDirection
+    , cause01 : Causality.Category
+    , cause12 : Causality.Category
     }
 
 
@@ -27,13 +27,13 @@ type alias Experiment =
 
 
 type alias Guess =
-    { cause01 : Causality.CauseDirection
-    , cause12 : Causality.CauseDirection
+    { cause01 : Causality.Category
+    , cause12 : Causality.Category
     }
 
 
 type alias Outcome =
-    VL.Spec
+    Causality.Outcome
 
 
 type ExpMsg
@@ -43,8 +43,8 @@ type ExpMsg
 
 
 type GuessMsg
-    = SetCause01 Causality.CauseDirection
-    | SetCause12 Causality.CauseDirection
+    = SetCause01 Causality.Category
+    | SetCause12 Causality.Category
 
 
 type alias Msg =
@@ -83,8 +83,9 @@ adapter =
 specGenerator : Random.Generator Spec
 specGenerator =
     let
-        causes =
-            Random.map2 Tuple.pair Causality.causeGenerator Causality.causeGenerator
+        causesContribs =
+            Random.map2 Tuple.pair Causality.categoryGenerator Causality.categoryGenerator
+                |> Random.andThen (\( c1, c2 ) -> Random.map (Tuple.pair ( c1, c2 )) (Random.map2 Tuple.pair (Causality.contribGenerator c1) (Causality.contribGenerator c2)))
 
         varNames =
             [ "A", "B", "C" ]
@@ -93,19 +94,22 @@ specGenerator =
             Random.list 3 Causality.interceptGenerator
                 |> Random.map (\intercepts -> List.map2 Causality.Variable varNames intercepts)
 
-        contribs =
-            Random.map2 Tuple.pair Causality.contribGenerator Causality.contribGenerator
-
         edgeListFromCause =
             \id1 id2 cause contrib ->
                 case cause of
                     Causality.NoCause ->
                         []
 
-                    Causality.Right ->
+                    Causality.RightPos ->
                         [ { from = id1, to = id2, label = contrib } ]
 
-                    Causality.Left ->
+                    Causality.RightNeg ->
+                        [ { from = id1, to = id2, label = contrib } ]
+
+                    Causality.LeftPos ->
+                        [ { from = id2, to = id1, label = contrib } ]
+
+                    Causality.LeftNeg ->
                         [ { from = id2, to = id1, label = contrib } ]
 
         graphFromCauses =
@@ -129,13 +133,13 @@ specGenerator =
                 }
 
         specFromData =
-            \( cause01, cause12 ) contribVals vars ->
+            \( ( cause01, cause12 ), contribVals ) vars ->
                 { sorted = sortedFromCausesAndVars ( cause01, cause12 ) contribVals vars
                 , cause01 = cause01
                 , cause12 = cause12
                 }
     in
-    Random.map3 specFromData causes contribs variables
+    Random.map2 specFromData causesContribs variables
 
 
 maxAbsSlopeNoAssoc : Float
@@ -155,17 +159,13 @@ slopeGenerator =
     Random.Extra.choices genAssoc [ genNoAssoc ]
 
 
-generator : Spec -> Experiment -> Random.Generator VL.Spec
+generator : Spec -> Experiment -> Random.Generator Outcome
 generator spec experiment =
-    let
-        outcome =
-            if experiment.randomized then
-                Causality.generatorRandomized spec.sorted experiment.intervention experiment.n
+    if experiment.randomized then
+        Causality.generatorRandomized spec.sorted experiment.intervention experiment.n
 
-            else
-                Causality.generatorObservational spec.sorted experiment.n
-    in
-    Random.map (Causality.outcomeToSpec (List.map .name spec.sorted.variables)) outcome
+    else
+        Causality.generatorObservational spec.sorted experiment.n
 
 
 guessEval : Spec -> Guess -> GuessEval
@@ -247,7 +247,7 @@ viewExperiment spec ( experiment, data ) =
             , br [] []
             , text ("N = " ++ String.fromInt experiment.n ++ ", CZK " ++ String.fromInt (costExperiment experiment))
             ]
-        , Html.Lazy.lazy View.vegaPlot data
+        , Html.Lazy.lazy2 Causality.viewOutcome spec.sorted data
         ]
 
 

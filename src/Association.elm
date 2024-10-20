@@ -14,7 +14,7 @@ import View
 
 type alias Spec =
     { sorted : Causality.SortedDAG
-    , association : Bool
+    , association : Causality.Category
     , contrib : Float
     }
 
@@ -24,11 +24,11 @@ type alias Experiment =
 
 
 type alias Guess =
-    Bool
+    Causality.Category
 
 
 type alias Outcome =
-    VL.Spec
+    Causality.Outcome
 
 
 type ExpMsg
@@ -49,7 +49,7 @@ type alias Model =
 
 initAdapter : Game.InitAdapter Guess Experiment
 initAdapter =
-    { defaultGuess = False
+    { defaultGuess = Causality.NoCause
     , defaultExperiment = 100
     , scenarioName = "Is there an association?"
     }
@@ -88,11 +88,9 @@ adapter =
 specGenerator : Random.Generator Spec
 specGenerator =
     let
-        assoc =
-            Random.uniform True [ False ]
-
-        contrib =
-            Causality.contribGenerator
+        assocContrib =
+            Random.uniform Causality.NoCause [ Causality.RightPos, Causality.RightNeg ]
+                |> Random.andThen (\assocVal -> Random.map (Tuple.pair assocVal) (Causality.contribGenerator assocVal))
 
         varNames =
             [ "A", "B" ]
@@ -103,11 +101,12 @@ specGenerator =
 
         edgeListFromAssoc =
             \assocVal contribVal ->
-                if assocVal then
-                    [ { from = 0, to = 1, label = contribVal } ]
+                case assocVal of
+                    Causality.NoCause ->
+                        []
 
-                else
-                    []
+                    _ ->
+                        [ { from = 0, to = 1, label = contribVal } ]
 
         graphFromCauses =
             \assocVal contribVal ->
@@ -128,22 +127,18 @@ specGenerator =
                 }
 
         specFromData =
-            \assocVal contribVal vars ->
+            \( assocVal, contribVal ) vars ->
                 { sorted = sortedFromCausesAndVars assocVal contribVal vars
                 , association = assocVal
                 , contrib = contribVal
                 }
     in
-    Random.map3 specFromData assoc contrib variables
+    Random.map2 specFromData assocContrib variables
 
 
-generator : Spec -> Experiment -> Random.Generator VL.Spec
+generator : Spec -> Experiment -> Random.Generator Outcome
 generator spec experiment =
-    let
-        outcome =
-            Causality.generatorObservational spec.sorted experiment
-    in
-    Random.map (Causality.outcomeToSpec (List.map .name spec.sorted.variables)) outcome
+    Causality.generatorObservational spec.sorted experiment
 
 
 specToNames : Spec -> ( String, String )
@@ -167,24 +162,7 @@ guessEval spec guess =
 
     else
         ( False
-        , if spec.association then
-            span []
-                [ text "When "
-                , em [] [ text name0 ]
-                , text " is true "
-                , em [] [ text name1 ]
-                , text " is "
-                , text
-                    (if spec.contrib > 0 then
-                        "more likely"
-
-                     else
-                        "less likely"
-                    )
-                ]
-
-          else
-            span [] [ text "There is no association." ]
+        , Causality.causalityDescription name0 name1 spec.association
         )
 
 
@@ -208,10 +186,10 @@ updateGuess msg _ =
 
 
 viewExperiment : Spec -> ( Experiment, Outcome ) -> Html Never
-viewExperiment _ ( experiment, data ) =
+viewExperiment spec ( experiment, data ) =
     div []
         [ div [] [ text ("N = " ++ String.fromInt experiment ++ ", CZK " ++ String.fromInt (costExperiment experiment)) ]
-        , Html.Lazy.lazy View.vegaPlot data
+        , Html.Lazy.lazy2 Causality.viewOutcome spec.sorted data
         ]
 
 
@@ -245,16 +223,15 @@ viewCostCommentary =
 
 
 viewGuess : Spec -> Guess -> Html Never
-viewGuess _ guess =
+viewGuess spec guess =
     let
-        guessDescription =
-            if guess then
-                "There IS an association"
-
-            else
-                "NO association"
+        ( name0, name1 ) =
+            specToNames spec
     in
-    h3 [] [ text ("Your guess: " ++ guessDescription) ]
+    div []
+        [ h3 [] [ text "Your guess: " ]
+        , Causality.causalityDescription name0 name1 guess
+        ]
 
 
 viewProposedGuess : Spec -> Guess -> Html GuessMsg
@@ -262,14 +239,19 @@ viewProposedGuess spec guess =
     let
         ( name0, name1 ) =
             specToNames spec
+
+        singleOption =
+            \val ->
+                option [ Attr.selected (guess == val), Events.onClick (SetGuess val) ] [ text (Causality.causalityDirectionToString val) ]
     in
     div []
         [ text "I believe "
         , em [] [ text name0 ]
         , text " "
         , select []
-            [ option [ Attr.selected guess, Events.onClick (SetGuess True) ] [ text "IS associated" ]
-            , option [ Attr.selected (not guess), Events.onClick (SetGuess False) ] [ text "is NOT associated" ]
+            [ singleOption Causality.NoCause
+            , singleOption Causality.RightPos
+            , singleOption Causality.RightNeg
             ]
         , text " with "
         , em [] [ text name1 ]
