@@ -210,20 +210,62 @@ positionInGroupInner countsSoFar xValues yValues =
                 totalCount =
                     accessor totalCounts
 
-                currentCount =
+                currentOrd =
                     accessor countsSoFar
 
-                rectSize =
-                    ceiling (sqrt (toFloat totalCount))
+                nData =
+                    toFloat (totalCounts.tt + totalCounts.tf + totalCounts.ft + totalCounts.ff)
+
+                rectWidth =
+                    toFloat
+                        (if valX then
+                            totalCounts.tt + totalCounts.tf
+
+                         else
+                            totalCounts.ft + totalCounts.ff
+                        )
+                        / nData
+
+                rectHeight =
+                    toFloat
+                        (if valY then
+                            totalCounts.tt + totalCounts.ft
+
+                         else
+                            totalCounts.tf + totalCounts.ff
+                        )
+                        / nData
+
+                sqrtAreaPerPoint =
+                    sqrt (rectWidth * rectHeight / toFloat totalCount)
+
+                minPerRowX =
+                    ceiling (rectWidth / sqrtAreaPerPoint)
+
+                minPerRowY =
+                    ceiling (rectHeight / sqrtAreaPerPoint)
 
                 stepSize =
-                    1 / toFloat rectSize
+                    min (rectWidth / toFloat minPerRowX) (rectHeight / toFloat minPerRowY)
+
+                remainderX =
+                    max 0 (rectWidth - stepSize * (1 + toFloat ((totalCount - 1) // minPerRowY)))
+
+                maxFilledY =
+                    if totalCount >= minPerRowY then
+                        minPerRowY
+
+                    else
+                        totalCount
+
+                remainderY =
+                    max 0 (rectHeight - stepSize * toFloat maxFilledY)
 
                 xPos =
-                    stepSize * (0.5 + toFloat (currentCount // rectSize))
+                    remainderX * 0.5 + stepSize * (0.5 + toFloat (currentOrd // minPerRowY))
 
                 yPos =
-                    stepSize * (0.5 + toFloat (modBy rectSize currentCount))
+                    remainderY * 0.5 + stepSize * (0.5 + toFloat (modBy minPerRowY currentOrd))
             in
             ( ( xPos, yPos ) :: posRest, totalCounts )
 
@@ -258,7 +300,7 @@ singlePairWaffleDataSpec xValues yValues xName yName =
 
         jitExpr =
             \name ->
-                "if(datum." ++ name ++ ", (1 - datum." ++ name ++ "Mean) + datum." ++ name ++ "Mean * datum." ++ name ++ "Pos, (1 - datum." ++ name ++ "Mean) * datum." ++ name ++ "Pos)"
+                "if(datum." ++ name ++ ", (1 - datum." ++ name ++ "Mean) + datum." ++ name ++ "Pos,  datum." ++ name ++ "Pos)"
 
         transforms =
             VL.transform
