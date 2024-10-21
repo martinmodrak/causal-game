@@ -265,6 +265,17 @@ computeCost adapter instance =
 --todo activeChallenge
 
 
+withReverseIds : List a -> List ( String, a )
+withReverseIds items =
+    let
+        ids =
+            List.range 1 (List.length items)
+                |> List.reverse
+                |> List.map String.fromInt
+    in
+    List.map2 Tuple.pair ids items
+
+
 viewHistory :
     Adapter expMsg guessMsg spec experiment outcome guess
     -> List (HistoryItem spec experiment outcome guess)
@@ -272,13 +283,16 @@ viewHistory :
 viewHistory adapter historyList =
     case historyList of
         head :: rest ->
-            div []
-                [ div [ Attr.class "active" ]
-                    [ viewSingleHistory adapter True head
+            let
+                scenarios =
+                    [ div [ Attr.class "active" ]
+                        [ viewSingleHistory adapter True head
+                        ]
+                    , div [ Attr.class "history" ]
+                        (List.map (viewSingleHistory adapter False) rest)
                     ]
-                , div [ Attr.class "history" ]
-                    (List.map (viewSingleHistory adapter False) rest)
-                ]
+            in
+            Html.Keyed.node "div" [] (withReverseIds scenarios)
 
         [] ->
             div [] [ text "No instances yet" ]
@@ -295,16 +309,6 @@ viewSingleHistory adapter active item =
             let
                 experiments =
                     List.map (adapter.view.viewExperiment instance.spec >> Html.map never) instance.data
-
-                ids =
-                    Debug.log "ids: "
-                        (List.range 1 (List.length experiments)
-                            |> List.reverse
-                            |> List.map String.fromInt
-                        )
-
-                experimentsWithId =
-                    List.map2 Tuple.pair ids experiments
             in
             div [ Attr.class "instance" ]
                 [ case instance.guess of
@@ -336,7 +340,7 @@ viewSingleHistory adapter active item =
                             [ Html.map never (adapter.view.viewGuess instance.spec guess)
                             , guessResultDescription
                             ]
-                , Html.Keyed.node "div" [] experimentsWithId
+                , Html.Keyed.node "div" [] (withReverseIds experiments)
                 ]
 
         _ ->
