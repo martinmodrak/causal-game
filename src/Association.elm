@@ -243,13 +243,13 @@ viewProposedGuess spec guess =
 
         singleOption =
             \val ->
-                option [ Attr.selected (guess == val), Events.onClick (SetGuess val) ] [ text (Causality.causalityDirectionToString val) ]
+                option [ Attr.selected (guess == val), Attr.value (Causality.causalityDirectionToShortString val) ] [ text (Causality.causalityDirectionToString val) ]
     in
     div []
         [ text "I believe "
         , em [] [ text name0 ]
         , text " "
-        , select []
+        , select [ View.onChange (Causality.causalityDirectionFromShortString >> SetGuess) ]
             [ singleOption Causality.NoCause
             , singleOption Causality.RightPos
             , singleOption Causality.RightNeg

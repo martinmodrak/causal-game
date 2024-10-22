@@ -4,6 +4,7 @@ import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
 import Html.Keyed as Keyed
+import Json.Decode
 import VegaLite
 
 
@@ -51,3 +52,8 @@ vegaPlot spec =
 experimentTitle : Int -> Html msg
 experimentTitle id =
     h4 [] [ text ("Experiment " ++ String.fromInt (id + 1)) ]
+
+
+onChange : (String -> msg) -> Attribute msg
+onChange messageCreator =
+    Events.on "change" (Json.Decode.map messageCreator Events.targetValue)

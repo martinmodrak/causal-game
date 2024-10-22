@@ -540,17 +540,17 @@ viewProposedExperiment sorted experiment =
     let
         randomizedOption =
             \val label ->
-                option [ Attr.selected (experiment.randomized == val), Events.onClick (SetRandomized val) ] [ text label ]
+                option [ Attr.selected (experiment.randomized == val), Attr.value (Utils.boolToString val) ] [ text label ]
 
         interventionOption =
             \id var ->
-                option [ Attr.selected (experiment.intervention == id), Events.onClick (SetIntervention id) ] [ text var.name ]
+                option [ Attr.selected (experiment.intervention == id), Attr.value (String.fromInt id) ] [ text var.name ]
 
         intervention =
             if experiment.randomized then
                 span []
                     [ text ", randomizing "
-                    , select []
+                    , select [ View.onChange (String.toInt >> Maybe.withDefault noIntervention >> SetIntervention) ]
                         (List.indexedMap interventionOption sorted.variables)
                     ]
 
@@ -559,7 +559,7 @@ viewProposedExperiment sorted experiment =
     in
     div []
         [ text "Run an "
-        , select []
+        , select [ View.onChange (Utils.boolFromString >> SetRandomized) ]
             [ randomizedOption False "observational"
             , randomizedOption True "randomized"
             ]
@@ -576,9 +576,9 @@ causalityChooser causeMsg currentVal =
     let
         singleOption =
             \val ->
-                option [ Attr.selected (currentVal == val), Events.onClick (causeMsg val) ] [ text (causalityDirectionToString val) ]
+                option [ Attr.selected (currentVal == val), Attr.value (causalityDirectionToShortString val) ] [ text (causalityDirectionToString val) ]
     in
-    select []
+    select [ View.onChange (causalityDirectionFromShortString >> causeMsg) ]
         [ singleOption NoCause
         , singleOption RightPos
         , singleOption RightNeg
@@ -615,6 +615,47 @@ causalityDirectionToString dir =
 
         LeftNeg ->
             "is inhibited by"
+
+
+causalityDirectionToShortString : Category -> String
+causalityDirectionToShortString cat =
+    case cat of
+        NoCause ->
+            "NoCause"
+
+        RightPos ->
+            "RightPos"
+
+        RightNeg ->
+            "RightNeg"
+
+        LeftPos ->
+            "LeftPos"
+
+        LeftNeg ->
+            "LeftNeg"
+
+
+causalityDirectionFromShortString : String -> Category
+causalityDirectionFromShortString cat =
+    case cat of
+        "NoCause" ->
+            NoCause
+
+        "RightPos" ->
+            RightPos
+
+        "RightNeg" ->
+            RightNeg
+
+        "LeftPos" ->
+            LeftPos
+
+        "LeftNeg" ->
+            LeftNeg
+
+        _ ->
+            NoCause
 
 
 categoryMult : Category -> Float

@@ -14953,6 +14953,38 @@ var $author$project$Association$viewProposedExperiment = F2(
 				]));
 	});
 var $author$project$Association$SetGuess = $elm$core$Basics$identity;
+var $author$project$Causality$LeftNeg = 4;
+var $author$project$Causality$LeftPos = 3;
+var $author$project$Causality$causalityDirectionFromShortString = function (cat) {
+	switch (cat) {
+		case 'NoCause':
+			return 0;
+		case 'RightPos':
+			return 1;
+		case 'RightNeg':
+			return 2;
+		case 'LeftPos':
+			return 3;
+		case 'LeftNeg':
+			return 4;
+		default:
+			return 0;
+	}
+};
+var $author$project$Causality$causalityDirectionToShortString = function (cat) {
+	switch (cat) {
+		case 0:
+			return 'NoCause';
+		case 1:
+			return 'RightPos';
+		case 2:
+			return 'RightNeg';
+		case 3:
+			return 'LeftPos';
+		default:
+			return 'LeftNeg';
+	}
+};
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 0, a: a};
 };
@@ -14963,11 +14995,11 @@ var $elm$html$Html$Events$on = F2(
 			event,
 			$elm$virtual_dom$VirtualDom$Normal(decoder));
 	});
-var $elm$html$Html$Events$onClick = function (msg) {
+var $author$project$View$onChange = function (messageCreator) {
 	return A2(
 		$elm$html$Html$Events$on,
-		'click',
-		$elm$json$Json$Decode$succeed(msg));
+		'change',
+		A2($elm$json$Json$Decode$map, messageCreator, $elm$html$Html$Events$targetValue));
 };
 var $elm$html$Html$option = _VirtualDom_node('option');
 var $elm$html$Html$select = _VirtualDom_node('select');
@@ -14988,7 +15020,8 @@ var $author$project$Association$viewProposedGuess = F2(
 					[
 						$elm$html$Html$Attributes$selected(
 						_Utils_eq(guess, val)),
-						$elm$html$Html$Events$onClick(val)
+						$elm$html$Html$Attributes$value(
+						$author$project$Causality$causalityDirectionToShortString(val))
 					]),
 				_List_fromArray(
 					[
@@ -15015,7 +15048,11 @@ var $author$project$Association$viewProposedGuess = F2(
 					$elm$html$Html$text(' '),
 					A2(
 					$elm$html$Html$select,
-					_List_Nil,
+					_List_fromArray(
+						[
+							$author$project$View$onChange(
+							A2($elm$core$Basics$composeR, $author$project$Causality$causalityDirectionFromShortString, $elm$core$Basics$identity))
+						]),
 					_List_fromArray(
 						[
 							singleOption(0),
@@ -15089,8 +15126,6 @@ var $author$project$SingleRelationship$guessEval = F2(
 			false,
 			A3($author$project$Causality$causalityDescription, name0, name1, spec.ac));
 	});
-var $author$project$Causality$LeftNeg = 4;
-var $author$project$Causality$LeftPos = 3;
 var $author$project$Causality$categoryGenerator = A2(
 	$elm$random$Random$uniform,
 	0,
@@ -15336,6 +15371,12 @@ var $author$project$Causality$SetN = function (a) {
 var $author$project$Causality$SetRandomized = function (a) {
 	return {$: 1, a: a};
 };
+var $author$project$Utils$boolFromString = function (s) {
+	return s === 'True';
+};
+var $author$project$Utils$boolToString = function (b) {
+	return b ? 'True' : 'False';
+};
 var $elm$html$Html$span = _VirtualDom_node('span');
 var $author$project$Causality$viewProposedExperiment = F2(
 	function (sorted, experiment) {
@@ -15347,8 +15388,8 @@ var $author$project$Causality$viewProposedExperiment = F2(
 						[
 							$elm$html$Html$Attributes$selected(
 							_Utils_eq(experiment.F, val)),
-							$elm$html$Html$Events$onClick(
-							$author$project$Causality$SetRandomized(val))
+							$elm$html$Html$Attributes$value(
+							$author$project$Utils$boolToString(val))
 						]),
 					_List_fromArray(
 						[
@@ -15363,8 +15404,8 @@ var $author$project$Causality$viewProposedExperiment = F2(
 						[
 							$elm$html$Html$Attributes$selected(
 							_Utils_eq(experiment.B, id)),
-							$elm$html$Html$Events$onClick(
-							$author$project$Causality$SetIntervention(id))
+							$elm$html$Html$Attributes$value(
+							$elm$core$String$fromInt(id))
 						]),
 					_List_fromArray(
 						[
@@ -15379,7 +15420,17 @@ var $author$project$Causality$viewProposedExperiment = F2(
 					$elm$html$Html$text(', randomizing '),
 					A2(
 					$elm$html$Html$select,
-					_List_Nil,
+					_List_fromArray(
+						[
+							$author$project$View$onChange(
+							A2(
+								$elm$core$Basics$composeR,
+								$elm$core$String$toInt,
+								A2(
+									$elm$core$Basics$composeR,
+									$elm$core$Maybe$withDefault($author$project$Causality$noIntervention),
+									$author$project$Causality$SetIntervention)))
+						]),
 					A2($elm$core$List$indexedMap, interventionOption, sorted.aR))
 				])) : $elm$html$Html$text('');
 		return A2(
@@ -15390,7 +15441,11 @@ var $author$project$Causality$viewProposedExperiment = F2(
 					$elm$html$Html$text('Run an '),
 					A2(
 					$elm$html$Html$select,
-					_List_Nil,
+					_List_fromArray(
+						[
+							$author$project$View$onChange(
+							A2($elm$core$Basics$composeR, $author$project$Utils$boolFromString, $author$project$Causality$SetRandomized))
+						]),
 					_List_fromArray(
 						[
 							A2(randomizedOption, false, 'observational'),
@@ -15415,8 +15470,8 @@ var $author$project$Causality$causalityChooser = F2(
 					[
 						$elm$html$Html$Attributes$selected(
 						_Utils_eq(currentVal, val)),
-						$elm$html$Html$Events$onClick(
-						causeMsg(val))
+						$elm$html$Html$Attributes$value(
+						$author$project$Causality$causalityDirectionToShortString(val))
 					]),
 				_List_fromArray(
 					[
@@ -15426,7 +15481,11 @@ var $author$project$Causality$causalityChooser = F2(
 		};
 		return A2(
 			$elm$html$Html$select,
-			_List_Nil,
+			_List_fromArray(
+				[
+					$author$project$View$onChange(
+					A2($elm$core$Basics$composeR, $author$project$Causality$causalityDirectionFromShortString, causeMsg))
+				]),
 			_List_fromArray(
 				[
 					singleOption(0),
@@ -15695,7 +15754,7 @@ var $author$project$TwoRelationships$viewProposedGuess = F2(
 	});
 var $author$project$TwoRelationships$adapter = {
 	ba: {
-		a$: {B: 0, K: 500, F: false},
+		a$: {B: 0, K: 100, F: false},
 		a0: {p: 0, q: 0},
 		bb: 3
 	},
@@ -15998,6 +16057,12 @@ var $author$project$Game$computeCost = F2(
 				A2($elm$core$List$map, $elm$core$Tuple$first, instance.H)));
 	});
 var $elm$html$Html$h3 = _VirtualDom_node('h3');
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
 var $author$project$Game$NewInstance = {$: 6};
 var $author$project$Game$viewScenarioControl = F2(
 	function (adapter, scenario) {

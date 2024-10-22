@@ -50,7 +50,7 @@ adapter : Game.Adapter ExpMsg GuessMsg Spec Experiment Outcome Guess
 adapter =
     { init =
         { defaultGuess = { cause01 = Causality.NoCause, cause12 = Causality.NoCause }
-        , defaultExperiment = { randomized = False, n = 500, intervention = 0 }
+        , defaultExperiment = { randomized = False, n = 100, intervention = 0 }
         , instancesToAverage = 3
         }
     , logic =
