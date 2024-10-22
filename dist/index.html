@@ -1,0 +1,77 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Model testing game</title>
+   <!-- These scripts link to the Vega-Lite runtime -->
+   <script src="https://cdn.jsdelivr.net/npm/vega"></script>
+   <script src="https://cdn.jsdelivr.net/npm/vega-lite"></script>
+   <script src="https://cdn.jsdelivr.net/npm/vega-embed"></script> 
+  <script type="text/javascript" src="elm.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="myapp"></div>
+</body>
+
+<script type="text/javascript">
+
+// Custom Vega element
+var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+
+customElements.define('vega-plot',
+    class extends HTMLElement {
+        // things required by Custom Elements
+        constructor() { super(); this._spec = null; }
+
+        get spec() {
+            return(this._spec);
+        }
+
+        set spec(value) {
+            this._spec = value;
+            this.renderPlot();
+        }
+
+        // Our function to transform the spec into the plot
+        renderPlot()
+        {          
+            console.log("Render");  
+            const spec = this._spec;
+            console.log(spec);
+            const thisref = this;
+            if(!spec) {
+                requestAnimationFrame(function() {
+                        while (thisref.firstChild) {
+                            thisref.removeChild(thisref.firstChild);
+                        }
+                    }); 
+            } else {
+                vegaEmbed(spec).then((newplot) => {
+                   requestAnimationFrame(function() {
+                        while (thisref.firstChild) {
+                            thisref.removeChild(thisref.firstChild);
+                        }
+                        thisref.appendChild(newplot);
+                    }) 
+                });
+            }
+        }
+    }
+);
+
+
+
+// Start the Elm application.
+var app = Elm.Main.init({
+    node: document.getElementById('myapp')
+});
+
+
+
+
+
+</script>
+</html>
