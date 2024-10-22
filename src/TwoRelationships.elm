@@ -1,15 +1,11 @@
-module TwoWayCausality exposing (..)
+module TwoRelationships exposing (..)
 
 import Causality
-import Game exposing (GuessEval, Msg(..))
+import Game
 import Graph
 import Html exposing (..)
 import Html.Attributes as Attr
-import Html.Events as Events
-import Html.Lazy
 import Random
-import Random.Extra
-import View
 
 
 type alias Spec =
@@ -33,10 +29,8 @@ type alias Outcome =
     Causality.Outcome
 
 
-type ExpMsg
-    = SetN String
-    | SetRandomized Bool
-    | SetIntervention Int
+type alias ExpMsg =
+    Causality.ExpMsg
 
 
 type GuessMsg
@@ -62,16 +56,16 @@ adapter =
     , logic =
         { specGenerator = specGenerator
         , generator = generator
-        , updateExperiment = updateExperiment
+        , updateExperiment = Causality.updateExperiment
         , updateGuess = updateGuess
         , guessEval = guessEval
-        , costExperiment = costExperiment
+        , costExperiment = Causality.costExperiment
         }
     , view =
         { viewHeader = viewHeader
         , viewExperiment = viewExperiment
         , viewProposedExperiment = viewProposedExperiment
-        , viewCostCommentary = viewCostCommentary
+        , viewCostCommentary = Causality.viewCostCommentary
         , viewGuess = viewGuess
         , viewProposedGuess = viewProposedGuess
         }
@@ -140,33 +134,12 @@ specGenerator =
     Random.map2 specFromData causesContribs variables
 
 
-maxAbsSlopeNoAssoc : Float
-maxAbsSlopeNoAssoc =
-    0.5
-
-
-slopeGenerator : Random.Generator Float
-slopeGenerator =
-    let
-        genNoAssoc =
-            Random.float -maxAbsSlopeNoAssoc maxAbsSlopeNoAssoc
-
-        genAssoc =
-            Random.map2 (*) (Random.Extra.choice -1 1) (Random.float 2 6)
-    in
-    Random.Extra.choices genAssoc [ genNoAssoc ]
-
-
 generator : Spec -> Experiment -> Random.Generator Outcome
 generator spec experiment =
-    if experiment.randomized then
-        Causality.generatorRandomized spec.sorted experiment.intervention experiment.n
-
-    else
-        Causality.generatorObservational spec.sorted experiment.n
+    Causality.outcomeGenerator spec.sorted experiment
 
 
-guessEval : Spec -> Guess -> GuessEval
+guessEval : Spec -> Guess -> Game.GuessEval
 guessEval spec guess =
     let
         ( name0, name1, name2 ) =
@@ -184,32 +157,6 @@ guessEval spec guess =
         )
 
 
-updateExperiment : ExpMsg -> Experiment -> Experiment
-updateExperiment msg experiment =
-    case msg of
-        SetN newN ->
-            case String.toInt newN of
-                Just n ->
-                    { experiment | n = min n Causality.maxN }
-
-                Nothing ->
-                    experiment
-
-        SetRandomized newRand ->
-            let
-                newIntervention =
-                    if experiment.intervention == Causality.noIntervention then
-                        1
-
-                    else
-                        experiment.intervention
-            in
-            { experiment | randomized = newRand, intervention = newIntervention }
-
-        SetIntervention newIntervention ->
-            { experiment | intervention = newIntervention }
-
-
 updateGuess : GuessMsg -> Guess -> Guess
 updateGuess msg old =
     case msg of
@@ -221,100 +168,13 @@ updateGuess msg old =
 
 
 viewExperiment : Spec -> Int -> ( Experiment, Outcome ) -> Html Never
-viewExperiment spec id ( experiment, data ) =
-    let
-        typeText =
-            if experiment.randomized then
-                "Randomizing "
-                    -- TODO mess
-                    ++ (case List.indexedMap Tuple.pair spec.sorted.variables |> List.filter (\( varId, _ ) -> varId == experiment.intervention) of
-                            [] ->
-                                "Error"
-
-                            ( _, var ) :: _ ->
-                                var.name
-                       )
-
-            else
-                "Observational study"
-    in
-    div [ Attr.class "experiment" ]
-        [ View.experimentTitle id
-        , p []
-            [ strong [] [ text typeText ]
-            , br [] []
-            , text ("N = " ++ String.fromInt experiment.n ++ ", CZK " ++ String.fromInt (costExperiment experiment))
-            ]
-        , Html.Lazy.lazy2 Causality.viewOutcome spec.sorted data
-        ]
+viewExperiment spec =
+    Causality.viewExperiment spec.sorted
 
 
 viewProposedExperiment : Spec -> Experiment -> Html ExpMsg
-viewProposedExperiment spec experiment =
-    let
-        randomizedOption =
-            \val label ->
-                option [ Attr.selected (experiment.randomized == val), Events.onClick (SetRandomized val) ] [ text label ]
-
-        interventionOption =
-            \id var ->
-                option [ Attr.selected (experiment.intervention == id), Events.onClick (SetIntervention id) ] [ text var.name ]
-
-        intervention =
-            if experiment.randomized then
-                span []
-                    [ text ", randomizing "
-                    , select []
-                        (List.indexedMap interventionOption spec.sorted.variables)
-                    ]
-
-            else
-                text ""
-    in
-    div []
-        [ text "Run an "
-        , select []
-            [ randomizedOption False "observational"
-            , randomizedOption True "randomized"
-            ]
-        , text " study "
-        , intervention
-        , text " with "
-        , View.nChooser SetN experiment.n
-        , text " participants."
-        ]
-
-
-costPerParticipant : Bool -> Int
-costPerParticipant randomized =
-    if randomized then
-        2000
-
-    else
-        100
-
-
-costPerExperiment : Bool -> Int
-costPerExperiment randomized =
-    if randomized then
-        50000
-
-    else
-        2000
-
-
-costExperiment : Experiment -> Int
-costExperiment exp =
-    exp.n * costPerParticipant exp.randomized + costPerExperiment exp.randomized
-
-
-viewCostCommentary : Html a
-viewCostCommentary =
-    p []
-        [ text ("Observational study costs CZK " ++ String.fromInt (costPerExperiment False) ++ " + CZK " ++ String.fromInt (costPerParticipant False) ++ " per participant")
-        , br [] []
-        , text ("Randomized study costs CZK " ++ String.fromInt (costPerExperiment True) ++ " + CZK " ++ String.fromInt (costPerParticipant True) ++ " per participant")
-        ]
+viewProposedExperiment spec =
+    Causality.viewProposedExperiment spec.sorted
 
 
 specToNames : Spec -> ( String, String, String )
@@ -350,7 +210,6 @@ viewProposedGuess spec guess =
         , Causality.causalityProposedGuess name0 name1 SetCause01 guess.cause01
         , text " AND "
         , Causality.causalityProposedGuess name1 name2 SetCause12 guess.cause12
-        , text "."
         ]
 
 

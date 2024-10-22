@@ -4,6 +4,7 @@ import Graph
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
+import Html.Lazy
 import IntDict
 import Json.Encode
 import List
@@ -32,6 +33,12 @@ type alias Experiment =
     , intervention : Int
     , n : Int
     }
+
+
+type ExpMsg
+    = SetN String
+    | SetRandomized Bool
+    | SetIntervention Int
 
 
 type alias Variable =
@@ -399,7 +406,6 @@ singlePairWaffleDataSpec xValues yValues xName yName =
                             , ( "baseline", Json.Encode.string baseline )
                             , ( "dy", Json.Encode.float dy )
                             , ( "angle", Json.Encode.float angle )
-                            , ( "y", Json.Encode.string "height" )
                             ]
                       )
                     ]
@@ -529,6 +535,42 @@ viewOutcome sorted outcome =
     table [] allRows
 
 
+viewProposedExperiment : SortedDAG -> Experiment -> Html ExpMsg
+viewProposedExperiment sorted experiment =
+    let
+        randomizedOption =
+            \val label ->
+                option [ Attr.selected (experiment.randomized == val), Events.onClick (SetRandomized val) ] [ text label ]
+
+        interventionOption =
+            \id var ->
+                option [ Attr.selected (experiment.intervention == id), Events.onClick (SetIntervention id) ] [ text var.name ]
+
+        intervention =
+            if experiment.randomized then
+                span []
+                    [ text ", randomizing "
+                    , select []
+                        (List.indexedMap interventionOption sorted.variables)
+                    ]
+
+            else
+                text ""
+    in
+    div []
+        [ text "Run an "
+        , select []
+            [ randomizedOption False "observational"
+            , randomizedOption True "randomized"
+            ]
+        , text " study "
+        , intervention
+        , text " with "
+        , View.nChooser SetN experiment.n
+        , text " participants."
+        ]
+
+
 causalityChooser : (Category -> msg) -> Category -> Html msg
 causalityChooser causeMsg currentVal =
     let
@@ -622,6 +664,15 @@ contribGenerator cat =
     Random.map fromVal (Random.float 1 2.5)
 
 
+outcomeGenerator : SortedDAG -> Experiment -> Random.Generator Outcome
+outcomeGenerator sorted experiment =
+    if experiment.randomized then
+        generatorRandomized sorted experiment.intervention experiment.n
+
+    else
+        generatorObservational sorted experiment.n
+
+
 variableNames : SortedDAG -> List String
 variableNames sorted =
     sorted.variables |> List.map .name
@@ -630,3 +681,110 @@ variableNames sorted =
 maxN : Int
 maxN =
     1000
+
+
+updateExperiment : ExpMsg -> Experiment -> Experiment
+updateExperiment msg experiment =
+    case msg of
+        SetN newN ->
+            case String.toInt newN of
+                Just n ->
+                    { experiment | n = min n maxN }
+
+                Nothing ->
+                    experiment
+
+        SetRandomized newRand ->
+            let
+                newIntervention =
+                    if experiment.intervention == noIntervention then
+                        1
+
+                    else
+                        experiment.intervention
+            in
+            { experiment | randomized = newRand, intervention = newIntervention }
+
+        SetIntervention newIntervention ->
+            { experiment | intervention = newIntervention }
+
+
+costPerParticipant : Bool -> Int
+costPerParticipant randomized =
+    if randomized then
+        2000
+
+    else
+        100
+
+
+costPerExperiment : Bool -> Int
+costPerExperiment randomized =
+    if randomized then
+        50000
+
+    else
+        2000
+
+
+costExperiment : Experiment -> Int
+costExperiment exp =
+    exp.n * costPerParticipant exp.randomized + costPerExperiment exp.randomized
+
+
+viewCostCommentary : Html a
+viewCostCommentary =
+    p []
+        [ text ("Observational study costs CZK " ++ String.fromInt (costPerExperiment False) ++ " + CZK " ++ String.fromInt (costPerParticipant False) ++ " per participant")
+        , br [] []
+        , text ("Randomized study costs CZK " ++ String.fromInt (costPerExperiment True) ++ " + CZK " ++ String.fromInt (costPerParticipant True) ++ " per participant")
+        ]
+
+
+viewExperiment : SortedDAG -> Int -> ( Experiment, Outcome ) -> Html Never
+viewExperiment sorted id ( experiment, data ) =
+    let
+        typeText =
+            if experiment.randomized then
+                "Randomizing "
+                    -- TODO mess
+                    ++ (case List.indexedMap Tuple.pair sorted.variables |> List.filter (\( varId, _ ) -> varId == experiment.intervention) of
+                            [] ->
+                                "Error"
+
+                            ( _, var ) :: _ ->
+                                var.name
+                       )
+
+            else
+                "Observational study"
+    in
+    div [ Attr.class "experiment" ]
+        [ View.experimentTitle id
+        , p []
+            [ strong [] [ text typeText ]
+            , br [] []
+            , text ("N = " ++ String.fromInt experiment.n ++ ", CZK " ++ String.fromInt (costExperiment experiment))
+            ]
+        , Html.Lazy.lazy2 viewOutcome sorted data
+        ]
+
+
+edgeListFromCause : Int -> Int -> Category -> Float -> List (Graph.Edge Float)
+edgeListFromCause =
+    \id1 id2 cause contrib ->
+        case cause of
+            NoCause ->
+                []
+
+            RightPos ->
+                [ { from = id1, to = id2, label = contrib } ]
+
+            RightNeg ->
+                [ { from = id1, to = id2, label = contrib } ]
+
+            LeftPos ->
+                [ { from = id2, to = id1, label = contrib } ]
+
+            LeftNeg ->
+                [ { from = id2, to = id1, label = contrib } ]

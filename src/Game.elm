@@ -244,7 +244,7 @@ viewStats adapter scenario =
                     , text (Round.round 1 (propCorrect * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCost))
                     , br [] []
                     , strong [] [ text "Last ", text (String.fromInt adapter.init.instancesToAverage), text " instances: " ]
-                    , if nRes >= adapter.init.instancesToAverage then
+                    , if nRes > adapter.init.instancesToAverage then
                         text (Round.round 1 (propCorrectShort * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCostShort))
 
                       else

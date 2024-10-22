@@ -1,6 +1,4 @@
 Absolutely needed:
-- Fix TrueFalse on plot
-- Average cost, average correct over last n/2 scenarios
 - Scenario 2 (single assoc)
 - Scenario 4 (unobserved confound)
 - Test in Chrome
@@ -28,6 +26,8 @@ Nice to have:
 - Hide guess when no data
 
 - Activate scenarios via GitHub
+
+- Empty selections on scenario start
 
 Extras:
   - Highlight subset in plots
