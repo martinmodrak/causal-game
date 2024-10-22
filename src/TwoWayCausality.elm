@@ -57,6 +57,7 @@ adapter =
     { init =
         { defaultGuess = { cause01 = Causality.NoCause, cause12 = Causality.NoCause }
         , defaultExperiment = { randomized = False, n = 500, intervention = 0 }
+        , instancesToAverage = 3
         }
     , logic =
         { specGenerator = specGenerator
@@ -189,7 +190,7 @@ updateExperiment msg experiment =
         SetN newN ->
             case String.toInt newN of
                 Just n ->
-                    { experiment | n = n }
+                    { experiment | n = min n Causality.maxN }
 
                 Nothing ->
                     experiment

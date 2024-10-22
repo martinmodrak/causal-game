@@ -10,6 +10,7 @@ import List
 import Random
 import Random.Float
 import Round
+import Utils
 import VegaLite as VL
 import View
 
@@ -429,15 +430,6 @@ singlePairWaffleDataSpec xValues yValues xName yName =
         ]
 
 
-boolToInt : Bool -> Int
-boolToInt b =
-    if b then
-        1
-
-    else
-        0
-
-
 viewSingleDiagonal : List Bool -> String -> Html a
 viewSingleDiagonal vals name =
     let
@@ -445,7 +437,7 @@ viewSingleDiagonal vals name =
             List.length vals
 
         true =
-            List.map boolToInt vals |> List.sum
+            List.map Utils.boolToInt vals |> List.sum
 
         mean =
             toFloat true / toFloat n
@@ -633,3 +625,8 @@ contribGenerator cat =
 variableNames : SortedDAG -> List String
 variableNames sorted =
     sorted.variables |> List.map .name
+
+
+maxN : Int
+maxN =
+    1000

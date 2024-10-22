@@ -1,28 +1,33 @@
+Absolutely needed:
 - Fix TrueFalse on plot
-- Comments for scenarios
-- Hide guess when no data
-- Nicer n chooser
-- Set max number of participants
-- Test on mobile
-- Stress test - many scenarios
-
-- Better init (probalby no instance Cmd at start)
-
 - Average cost, average correct over last n/2 scenarios
+- Scenario 2 (single assoc)
+- Scenario 4 (unobserved confound)
+- Test in Chrome
+- Test smaller screen
+- Test on mobile
+- Deploy
+
+Important:
+- Comments for scenarios
+- Stress test - many scenarios
+- Store state in browser
+- Clear state
+
+Needed for homework:
+- Overall instruction
+- Homework scenario
+- Download state for Homework
+- Scoring
+
+Nice to have:
+- Nazvy promennych a scenaru
+
+- Nicer n chooser
+
+- Hide guess when no data
 
 - Activate scenarios via GitHub
 
-- Scenario 2 (single assoc)
-
-- Scenario 4 (unobserved confound)
-
-- Store state in browser
-
-- Homework scenario
-
-- Download state for Homework
-
-- Nazvy promennych a scenaru
-
-- Extras:
+Extras:
   - Highlight subset in plots

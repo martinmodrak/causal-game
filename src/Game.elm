@@ -5,6 +5,8 @@ import Html.Attributes as Attr
 import Html.Events as Events
 import Html.Keyed
 import Random
+import Round
+import Utils
 
 
 type alias Scenario spec experiment outcome guess =
@@ -45,6 +47,7 @@ type alias ChallengeState =
 type alias InitAdapter guess experiment =
     { defaultGuess : guess
     , defaultExperiment : experiment
+    , instancesToAverage : Int
     }
 
 
@@ -170,10 +173,85 @@ view :
     -> Html (Msg expMsg guessMsg spec experiment outcome guess)
 view adapter scenario =
     div [ Attr.class "scenario" ]
-        [ viewGameControls adapter scenario
+        [ viewStats adapter scenario
+        , viewGameControls adapter scenario
         , viewHistory adapter scenario.history
         , div [ Attr.class "scenarioFooter" ] []
         ]
+
+
+getResults :
+    LogicAdapter expMsg guessMsg spec experiment outcome guess
+    -> List (HistoryItem spec experiment outcome guess)
+    -> List ( Bool, Int )
+getResults adapter history =
+    case history of
+        head :: rest ->
+            case head.guess of
+                Just guess ->
+                    let
+                        correct =
+                            Tuple.first (adapter.guessEval head.spec guess)
+                    in
+                    ( correct, computeCost adapter head )
+                        :: getResults adapter rest
+
+                Nothing ->
+                    getResults adapter rest
+
+        [] ->
+            []
+
+
+viewStats :
+    Adapter expMsg guessMsg spec experiment outcome guess
+    -> Scenario spec experiment outcome guess
+    -> Html (Msg expMsg guessMsg spec experiment outcome guess)
+viewStats adapter scenario =
+    let
+        ( correct, cost ) =
+            getResults adapter.logic scenario.history
+                |> List.unzip
+
+        correctShort =
+            List.take adapter.init.instancesToAverage correct
+
+        costShort =
+            List.take adapter.init.instancesToAverage cost
+
+        nRes =
+            List.length correct
+
+        propCorrect =
+            correct |> List.map Utils.boolToInt |> Utils.safeAverage
+
+        propCorrectShort =
+            correctShort |> List.map Utils.boolToInt |> Utils.safeAverage
+
+        avgCost =
+            Utils.safeAverage cost
+
+        avgCostShort =
+            Utils.safeAverage costShort
+    in
+    div [ Attr.class "stats" ]
+        (h3 [] [ text "Results summary" ]
+            :: (if nRes == 0 then
+                    [ text "No instances completed yet." ]
+
+                else
+                    [ strong [] [ text "All ", text (String.fromInt nRes), text " instances: " ]
+                    , text (Round.round 1 (propCorrect * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCost))
+                    , br [] []
+                    , strong [] [ text "Last ", text (String.fromInt adapter.init.instancesToAverage), text " instances: " ]
+                    , if nRes >= adapter.init.instancesToAverage then
+                        text (Round.round 1 (propCorrectShort * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCostShort))
+
+                      else
+                        text "--"
+                    ]
+               )
+        )
 
 
 viewGameControls :
@@ -214,14 +292,14 @@ viewGameControls adapter scenario =
                                 text "Reached the maximum number of experiments"
                             , div []
                                 [ strong [] [ text "Total cost so far: " ]
-                                , text ("CZK " ++ String.fromInt (computeCost adapter instance))
+                                , text ("CZK " ++ String.fromInt (computeCost adapter.logic instance))
                                 ]
                             ]
 
                     else
                         div []
                             [ strong [] [ text "Total cost: " ]
-                            , text ("CZK " ++ String.fromInt (computeCost adapter instance))
+                            , text ("CZK " ++ String.fromInt (computeCost adapter.logic instance))
                             ]
             in
             div [ Attr.class "controls" ]
@@ -261,10 +339,10 @@ viewScenarioControl adapter scenario =
         text ""
 
 
-computeCost : Adapter expMsg guessMsg spec experiment outcome guess -> Instance spec experiment outcome guess -> Int
+computeCost : LogicAdapter expMsg guessMsg spec experiment outcome guess -> Instance spec experiment outcome guess -> Int
 computeCost adapter instance =
     List.map Tuple.first instance.data
-        |> List.map adapter.logic.costExperiment
+        |> List.map adapter.costExperiment
         |> List.sum
 
 

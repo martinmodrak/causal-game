@@ -51,6 +51,7 @@ initAdapter : Game.InitAdapter Guess Experiment
 initAdapter =
     { defaultGuess = Causality.NoCause
     , defaultExperiment = 100
+    , instancesToAverage = 4
     }
 
 
@@ -172,7 +173,7 @@ updateExperiment msg experiment =
         SetN newN ->
             case String.toInt newN of
                 Just n ->
-                    n
+                    min n Causality.maxN
 
                 Nothing ->
                     experiment
