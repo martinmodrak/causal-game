@@ -5,11 +5,13 @@ import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
 import IntDict
+import Json.Encode
 import List
 import Random
 import Random.Float
+import Round
 import VegaLite as VL
-import View exposing (vegaPlot)
+import View
 
 
 type alias Contribution =
@@ -349,6 +351,58 @@ singlePairWaffleDataSpec xValues yValues xName yName =
             VL.configure
                 << VL.configuration (VL.coAxis [ VL.axcoDomain False, VL.axcoTicks False, VL.axcoLabels False, VL.axcoGrid False ])
 
+        myAxLabel =
+            \val isX ->
+                let
+                    ( text, align ) =
+                        if val then
+                            ( "True", "right" )
+
+                        else
+                            ( "False", "left" )
+
+                    ( angle, dy, baseline ) =
+                        if isX then
+                            ( 0, 5, "top" )
+
+                        else
+                            ( 270, -5, "bottom" )
+
+                    ( x, y ) =
+                        if isX then
+                            ( if val then
+                                Json.Encode.string "width"
+
+                              else
+                                Json.Encode.float 0
+                            , Json.Encode.string "height"
+                            )
+
+                        else
+                            ( Json.Encode.float 0
+                            , if val then
+                                Json.Encode.float 0
+
+                              else
+                                Json.Encode.string "height"
+                            )
+                in
+                Json.Encode.object
+                    [ ( "mark"
+                      , Json.Encode.object
+                            [ ( "type", Json.Encode.string "text" )
+                            , ( "text", Json.Encode.string text )
+                            , ( "x", x )
+                            , ( "y", y )
+                            , ( "align", Json.Encode.string align )
+                            , ( "baseline", Json.Encode.string baseline )
+                            , ( "dy", Json.Encode.float dy )
+                            , ( "angle", Json.Encode.float angle )
+                            , ( "y", Json.Encode.string "height" )
+                            ]
+                      )
+                    ]
+
         spec =
             VL.layer
                 [ VL.asSpec
@@ -362,6 +416,10 @@ singlePairWaffleDataSpec xValues yValues xName yName =
                 , rule VL.X 1
                 , rule VL.Y 0
                 , rule VL.Y 1
+                , myAxLabel False False
+                , myAxLabel False True
+                , myAxLabel True False
+                , myAxLabel True True
                 ]
     in
     VL.toVegaLite
@@ -371,6 +429,86 @@ singlePairWaffleDataSpec xValues yValues xName yName =
         ]
 
 
+boolToInt : Bool -> Int
+boolToInt b =
+    if b then
+        1
+
+    else
+        0
+
+
+viewSingleDiagonal : List Bool -> String -> Html a
+viewSingleDiagonal vals name =
+    let
+        n =
+            List.length vals
+
+        true =
+            List.map boolToInt vals |> List.sum
+
+        mean =
+            toFloat true / toFloat n
+    in
+    div []
+        [ h4 [ Attr.class "diagonalTitle" ] [ text name ]
+        , text (String.fromInt n)
+        , text " ("
+        , text (Round.round 1 (mean * 100))
+        , text "%) true"
+        ]
+
+
+viewSingleContingency : List Bool -> List Bool -> String -> String -> Html a
+viewSingleContingency xValues yValues xName yName =
+    let
+        ( _, counts ) =
+            positionInGroupInner { ff = 0, ft = 0, tf = 0, tt = 0 } xValues yValues
+    in
+    table []
+        [ tr []
+            [ th [ Attr.rowspan 2 ] [ text yName ]
+            , th [] [ text "True" ]
+            , td [] [ text (String.fromInt counts.tf) ]
+            , td [] [ text (String.fromInt counts.tt) ]
+            ]
+        , tr []
+            [ th [] [ text "False" ]
+            , td [] [ text (String.fromInt counts.ff) ]
+            , td [] [ text (String.fromInt counts.ft) ]
+            ]
+        , tr []
+            [ td [] []
+            , td [] []
+            , th [] [ text "False" ]
+            , th [] [ text "True" ]
+            ]
+        , tr []
+            [ td [] []
+            , td [] []
+            , th
+                [ Attr.colspan 2 ]
+                [ text xName ]
+            ]
+        ]
+
+
+viewOutcomeSubplot : Int -> Int -> List Bool -> List Bool -> String -> String -> Html Never
+viewOutcomeSubplot xOrd yOrd xValues yValues xName yName =
+    if xOrd < yOrd then
+        td [ Attr.class "waffle" ] [ View.vegaPlot (singlePairWaffleDataSpec xValues yValues xName yName) ]
+
+    else
+        td [] []
+
+
+
+-- else if xOrd == yOrd then
+--     td [ Attr.class "diagonal" ] [ viewSingleDiagonal xValues xName ]
+-- else
+--     td [ Attr.class "contigency" ] [ viewSingleContingency xValues yValues xName yName ]
+
+
 viewOutcome : SortedDAG -> Outcome -> Html Never
 viewOutcome sorted outcome =
     let
@@ -378,12 +516,9 @@ viewOutcome sorted outcome =
             variableNames sorted
 
         plotRow =
-            \yName yVals ->
+            \yOrd ( yName, yVals ) ->
                 tr []
-                    (List.map2 (\name vals -> singlePairWaffleDataSpec vals yVals name yName) varNames outcome
-                        |> List.map View.vegaPlot
-                        |> List.map (\x -> td [] [ x ])
-                    )
+                    (List.indexedMap (\ord ( name, vals ) -> viewOutcomeSubplot ord yOrd vals yVals name yName) (List.map2 Tuple.pair varNames outcome))
 
         allRows =
             case varNames of
@@ -397,7 +532,7 @@ viewOutcome sorted outcome =
                 --     [ singlePairWaffleDataSpec a b ]
                 _ ->
                     -- _ :: _ :: _ :: _ ->
-                    List.map2 plotRow varNames outcome
+                    List.indexedMap plotRow (List.map2 Tuple.pair varNames outcome)
     in
     table [] allRows
 
@@ -433,7 +568,7 @@ causalityDirectionToString : Category -> String
 causalityDirectionToString dir =
     case dir of
         NoCause ->
-            "is not causally related"
+            "is not causally related to"
 
         RightPos ->
             "promotes"

@@ -1,0 +1,71 @@
+td {
+    text-align:center;
+}
+
+td.diagonal h4 {
+    font-size: 200%;
+}
+
+.pageSelection {
+    float: left; 
+    border-style: solid; 
+    border-width: 1px; 
+    border-bottom-style: none;
+    margin: 0.5em; 
+    margin-bottom: 0;
+    padding-bottom:0;
+    padding: 0.5em; 
+    display: block; 
+    cursor: pointer;
+}
+
+.pageSelection.active {
+    border-color: black; 
+    border-width: 2px;
+}
+
+.pageSelection.inactive {
+    border-color: gray; 
+    color:gray;
+}
+
+
+.topContainer {
+    color:black;
+    margin:1em;
+}
+
+.scenarioPage {
+    clear:both;
+    border: 2px black solid;
+    padding:1em;
+    min-height: 100%;
+}
+
+.topContainer {
+    min-height: 100%;
+}
+
+body, html {
+    min-height: 100%;
+}
+
+.guessArea h4 {
+    margin-bottom: 0;
+}
+
+.guess, .guessResultDesc{
+    margin-left:1em;
+}
+
+.experiment {
+    float:left;
+}
+
+h2.historyStart, .instance, .scenarioFooter {
+    clear:both;
+}
+
+.instance.history {
+    border-top: 1px solid gray;
+}

@@ -9,9 +9,6 @@ import Html.Events as Events
 import Html.Lazy
 import Random
 import Random.Extra
-import Random.Float
-import Round
-import VegaLite as VL
 import View
 
 
@@ -59,8 +56,7 @@ adapter : Game.Adapter ExpMsg GuessMsg Spec Experiment Outcome Guess
 adapter =
     { init =
         { defaultGuess = { cause01 = Causality.NoCause, cause12 = Causality.NoCause }
-        , defaultExperiment = { randomized = True, n = 500, intervention = 1 }
-        , scenarioName = "Two way causality"
+        , defaultExperiment = { randomized = False, n = 500, intervention = 0 }
         }
     , logic =
         { specGenerator = specGenerator
@@ -71,7 +67,8 @@ adapter =
         , costExperiment = costExperiment
         }
     , view =
-        { viewExperiment = viewExperiment
+        { viewHeader = viewHeader
+        , viewExperiment = viewExperiment
         , viewProposedExperiment = viewProposedExperiment
         , viewCostCommentary = viewCostCommentary
         , viewGuess = viewGuess
@@ -181,7 +178,6 @@ guessEval spec guess =
         ( False
         , div []
             [ Causality.causalityDescription name0 name1 spec.cause01
-            , br [] []
             , Causality.causalityDescription name1 name2 spec.cause12
             ]
         )
@@ -223,14 +219,14 @@ updateGuess msg old =
             { old | cause12 = g }
 
 
-viewExperiment : Spec -> ( Experiment, Outcome ) -> Html Never
-viewExperiment spec ( experiment, data ) =
+viewExperiment : Spec -> Int -> ( Experiment, Outcome ) -> Html Never
+viewExperiment spec id ( experiment, data ) =
     let
         typeText =
             if experiment.randomized then
                 "Randomizing "
                     -- TODO mess
-                    ++ (case List.indexedMap Tuple.pair spec.sorted.variables |> List.filter (\( id, _ ) -> id == experiment.intervention) of
+                    ++ (case List.indexedMap Tuple.pair spec.sorted.variables |> List.filter (\( varId, _ ) -> varId == experiment.intervention) of
                             [] ->
                                 "Error"
 
@@ -241,8 +237,9 @@ viewExperiment spec ( experiment, data ) =
             else
                 "Observational study"
     in
-    div []
-        [ div []
+    div [ Attr.class "experiment" ]
+        [ View.experimentTitle id
+        , p []
             [ strong [] [ text typeText ]
             , br [] []
             , text ("N = " ++ String.fromInt experiment.n ++ ", CZK " ++ String.fromInt (costExperiment experiment))
@@ -336,10 +333,7 @@ viewGuess spec guess =
             specToNames spec
     in
     div []
-        [ h3 []
-            [ text "Your guess: " ]
-        , Causality.causalityDescription name0 name1 guess.cause01
-        , br [] []
+        [ Causality.causalityDescription name0 name1 guess.cause01
         , Causality.causalityDescription name1 name2 guess.cause12
         ]
 
@@ -356,4 +350,11 @@ viewProposedGuess spec guess =
         , text " AND "
         , Causality.causalityProposedGuess name1 name2 SetCause12 guess.cause12
         , text "."
+        ]
+
+
+viewHeader : Html Never
+viewHeader =
+    div [ Attr.class "scenarioHeader" ]
+        [ h2 [] [ text "Two way causality" ]
         ]

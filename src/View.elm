@@ -46,3 +46,8 @@ nChooser setNMsg currentN =
 vegaPlot : VegaLite.Spec -> Html msg
 vegaPlot spec =
     node "vega-plot" [ Attr.property "spec" spec ] []
+
+
+experimentTitle : Int -> Html msg
+experimentTitle id =
+    h4 [] [ text ("Experiment " ++ String.fromInt (id + 1)) ]

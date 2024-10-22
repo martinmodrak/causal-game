@@ -15,12 +15,17 @@ type alias Scenario spec experiment outcome guess =
     }
 
 
-type HistoryItem spec experiment outcome guess
-    = AnInstance (Instance spec experiment outcome guess)
-    | ChallengeStarted
-    | ChallengeFailed ChallengeState
-    | ChallengeCancelled ChallengeState
-    | ChallengeSuccess ChallengeState
+
+-- type HistoryItem spec experiment outcome guess
+--     = AnInstance (Instance spec experiment outcome guess)
+--     | ChallengeStarted
+--     | ChallengeFailed ChallengeState
+--     | ChallengeCancelled ChallengeState
+--     | ChallengeSuccess ChallengeState
+
+
+type alias HistoryItem spec experiment outcome guess =
+    Instance spec experiment outcome guess
 
 
 type alias Instance spec experiment outcome guess =
@@ -40,7 +45,6 @@ type alias ChallengeState =
 type alias InitAdapter guess experiment =
     { defaultGuess : guess
     , defaultExperiment : experiment
-    , scenarioName : String
     }
 
 
@@ -55,7 +59,8 @@ type alias LogicAdapter expMsg guessMsg spec experiment outcome guess =
 
 
 type alias ViewAdapter expMsg guessMsg spec experiment outcome guess =
-    { viewExperiment : spec -> ( experiment, outcome ) -> Html Never
+    { viewHeader : Html Never
+    , viewExperiment : spec -> Int -> ( experiment, outcome ) -> Html Never
     , viewProposedExperiment : spec -> experiment -> Html expMsg
     , viewCostCommentary : Html Never
     , viewGuess : spec -> guess -> Html Never
@@ -108,11 +113,11 @@ update :
 update adapter msg scenario =
     case msg of
         SpecGenerated sp ->
-            ( { scenario | history = AnInstance { spec = Debug.log "Spec: " sp, data = [], guess = Nothing } :: scenario.history }, Cmd.none )
+            ( { scenario | history = { spec = Debug.log "Spec: " sp, data = [], guess = Nothing } :: scenario.history }, Cmd.none )
 
         RunExperiment ->
             case scenario.history of
-                (AnInstance head) :: _ ->
+                head :: _ ->
                     ( scenario, Random.generate (DataGenerated scenario.proposedExperiment) (adapter.logic.generator head.spec scenario.proposedExperiment) )
 
                 _ ->
@@ -120,9 +125,9 @@ update adapter msg scenario =
 
         DataGenerated exp data ->
             case scenario.history of
-                (AnInstance active) :: rest ->
+                active :: rest ->
                     if allowMoreExperiments active then
-                        ( { scenario | history = AnInstance { active | data = ( exp, data ) :: active.data } :: rest }, Cmd.none )
+                        ( { scenario | history = { active | data = ( exp, data ) :: active.data } :: rest }, Cmd.none )
 
                     else
                         ( scenario, Cmd.none )
@@ -138,9 +143,9 @@ update adapter msg scenario =
 
         MakeGuess ->
             case scenario.history of
-                (AnInstance active) :: rest ->
+                active :: rest ->
                     ( { scenario
-                        | history = AnInstance { active | guess = Just scenario.proposedGuess } :: rest
+                        | history = { active | guess = Just scenario.proposedGuess } :: rest
                         , proposedGuess = adapter.init.defaultGuess
                       }
                     , Cmd.none
@@ -167,6 +172,7 @@ view adapter scenario =
     div [ Attr.class "scenario" ]
         [ viewGameControls adapter scenario
         , viewHistory adapter scenario.history
+        , div [ Attr.class "scenarioFooter" ] []
         ]
 
 
@@ -176,7 +182,7 @@ viewGameControls :
     -> Html (Msg expMsg guessMsg spec experiment outcome guess)
 viewGameControls adapter scenario =
     case scenario.history of
-        (AnInstance instance) :: _ ->
+        instance :: _ ->
             let
                 ( wasGuessed, guessElement ) =
                     case instance.guess of
@@ -195,7 +201,8 @@ viewGameControls adapter scenario =
                 activeElement =
                     if not wasGuessed then
                         div []
-                            [ Html.map ExperimentChanged (adapter.view.viewProposedExperiment instance.spec scenario.proposedExperiment)
+                            [ h3 [] [ text "Run an experiment" ]
+                            , Html.map ExperimentChanged (adapter.view.viewProposedExperiment instance.spec scenario.proposedExperiment)
                             , if allowMoreExperiments instance then
                                 div []
                                     [ Html.map never adapter.view.viewCostCommentary
@@ -218,8 +225,8 @@ viewGameControls adapter scenario =
                             ]
             in
             div [ Attr.class "controls" ]
-                [ h2 [] [ text adapter.init.scenarioName ]
-                , viewScenarioControl adapter scenario
+                [ Html.map never adapter.view.viewHeader
+                , div [ Attr.class "scenarioControl" ] [ viewScenarioControl adapter scenario ]
                 , activeElement
                 , guessElement
                 ]
@@ -236,7 +243,7 @@ viewScenarioControl adapter scenario =
     let
         allowNewInstance =
             case scenario.history of
-                (AnInstance instance) :: _ ->
+                instance :: _ ->
                     case instance.guess of
                         Just _ ->
                             True
@@ -244,7 +251,7 @@ viewScenarioControl adapter scenario =
                         Nothing ->
                             False
 
-                _ ->
+                [] ->
                     True
     in
     if allowNewInstance then
@@ -269,11 +276,21 @@ withReverseIds : List a -> List ( String, a )
 withReverseIds items =
     let
         ids =
-            List.range 1 (List.length items)
+            List.range 0 (List.length items - 1)
                 |> List.reverse
                 |> List.map String.fromInt
     in
     List.map2 Tuple.pair ids items
+
+
+reverseIndexedMap : (Int -> a -> b) -> List a -> List b
+reverseIndexedMap f l =
+    let
+        ids =
+            List.range 0 (List.length l - 1)
+                |> List.reverse
+    in
+    List.map2 f ids l
 
 
 viewHistory :
@@ -284,15 +301,30 @@ viewHistory adapter historyList =
     case historyList of
         head :: rest ->
             let
-                scenarios =
-                    [ div [ Attr.class "active" ]
-                        [ viewSingleHistory adapter True head
-                        ]
-                    , div [ Attr.class "history" ]
-                        (List.map (viewSingleHistory adapter False) rest)
-                    ]
+                activeId =
+                    List.length historyList - 1
+
+                activeScenario =
+                    viewSingleHistory adapter True activeId head
+
+                breakElement =
+                    case rest of
+                        _ :: _ ->
+                            h2 [ Attr.class "historyStart" ] [ text "Previous instances " ]
+
+                        [] ->
+                            text ""
+
+                history =
+                    reverseIndexedMap (viewSingleHistory adapter False) rest
             in
-            Html.Keyed.node "div" [] (withReverseIds scenarios)
+            Html.Keyed.node
+                "div"
+                []
+                (( String.fromInt activeId, activeScenario )
+                    :: ( "break", breakElement )
+                    :: withReverseIds history
+                )
 
         [] ->
             div [] [ text "No instances yet" ]
@@ -301,47 +333,58 @@ viewHistory adapter historyList =
 viewSingleHistory :
     Adapter expMsg guessMsg spec experiment outcome guess
     -> Bool
+    -> Int
     -> HistoryItem spec experiment outcome guess
     -> Html (Msg expMsg guessMsg spec experiment outcome guess)
-viewSingleHistory adapter active item =
-    case item of
-        AnInstance instance ->
-            let
-                experiments =
-                    List.map (adapter.view.viewExperiment instance.spec >> Html.map never) instance.data
-            in
-            div [ Attr.class "instance" ]
-                [ case instance.guess of
-                    Nothing ->
-                        text ""
+viewSingleHistory adapter active id instance =
+    let
+        experiments =
+            reverseIndexedMap (adapter.view.viewExperiment instance.spec) instance.data
+                |> List.map (Html.map never)
 
-                    Just guess ->
-                        let
-                            ( correct, desc ) =
-                                adapter.logic.guessEval instance.spec guess
+        dataDesc =
+            case experiments of
+                _ :: _ ->
+                    h3 [] [ text "Your data:" ]
 
-                            guessResultDescription =
-                                div []
-                                    [ text "The guess was "
-                                    , strong []
-                                        [ text
-                                            (if correct then
-                                                "CORRECT"
+                [] ->
+                    h3 [] [ text "No data to show." ]
+    in
+    div [ Attr.classList [ ( "instance", True ), ( "history", not active ) ] ]
+        [ if active then
+            text ""
 
-                                             else
-                                                "INCORRECT"
-                                            )
-                                        ]
-                                    , br [] []
-                                    , Html.map never desc
-                                    ]
-                        in
-                        div [ Attr.class "guess" ]
-                            [ Html.map never (adapter.view.viewGuess instance.spec guess)
-                            , guessResultDescription
+          else
+            h3 [] [ text ("Instance " ++ String.fromInt (id + 1)) ]
+        , case instance.guess of
+            Nothing ->
+                text ""
+
+            Just guess ->
+                let
+                    ( correct, desc ) =
+                        adapter.logic.guessEval instance.spec guess
+
+                    guessResultDescription =
+                        div []
+                            [ text "The guess was "
+                            , strong []
+                                [ text
+                                    (if correct then
+                                        "CORRECT"
+
+                                     else
+                                        "INCORRECT"
+                                    )
+                                ]
+                            , div [ Attr.class "guessResultDesc" ] [ Html.map never desc ]
                             ]
-                , Html.Keyed.node "div" [] (withReverseIds experiments)
-                ]
-
-        _ ->
-            text "Not implemented yet"
+                in
+                div [ Attr.class "guessArea" ]
+                    [ h4 [] [ text "Your guess: " ]
+                    , div [ Attr.class "guess" ] [ Html.map never (adapter.view.viewGuess instance.spec guess) ]
+                    , guessResultDescription
+                    ]
+        , dataDesc
+        , Html.Keyed.node "div" [ Attr.class "experiments" ] (withReverseIds experiments)
+        ]

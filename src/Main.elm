@@ -63,13 +63,12 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div [ Attr.style "margin" "1em" ]
+    div [ Attr.class "topContainer" ]
         [ viewPageSelection model
-        , hr [ Attr.style "clear" "both" ] []
-        , div [ Attr.style "display" (ifActive ( model.page, AssocPage ) ( "block", "none" )) ]
+        , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, AssocPage ) ( "block", "none" )) ]
             [ Html.map AssocMsg (Game.view Association.adapter model.association)
             ]
-        , div [ Attr.style "display" (ifActive ( model.page, TwoWayPage ) ( "block", "none" )) ]
+        , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, TwoWayPage ) ( "block", "none" )) ]
             [ Html.map TwoWayMsg (Game.view TwoWayCausality.adapter model.twoWay)
             ]
         ]
@@ -82,22 +81,9 @@ viewPageSelection model =
 
 viewPageSelectionButton : Page -> Page -> Html Msg
 viewPageSelectionButton activePage page =
-    let
-        baseStyle =
-            [ Attr.style "float" "left"
-            , Attr.style "font-decoration" "underline"
-            , Attr.style "border-top" "1px solid"
-            , Attr.style "border-left" "1px solid"
-            , Attr.style "border-right" "1px solid"
-            , Attr.style "margin" "0.5em"
-            , Attr.style "padding" "0.5em"
-            , Attr.style "display" "block"
-            , Attr.style "cursor" "pointer"
-            ]
-    in
     ifActive ( activePage, page )
-        ( h2 (Attr.style "border-color" "black" :: baseStyle) [ text (pageTitle page) ]
-        , h2 (Attr.style "border-color" "gray" :: Attr.style "color" "gray" :: baseStyle) [ a [ Events.onClick (ActivatePage page) ] [ text (pageTitle page) ] ]
+        ( h2 [ Attr.class "pageSelection", Attr.class "active" ] [ text (pageTitle page) ]
+        , h2 [ Attr.class "pageSelection", Attr.class "inactive" ] [ a [ Events.onClick (ActivatePage page) ] [ text (pageTitle page) ] ]
         )
 
 
@@ -105,10 +91,10 @@ pageTitle : Page -> String
 pageTitle page =
     case page of
         AssocPage ->
-            "Association"
+            "1: Association"
 
         TwoWayPage ->
-            "Two way causality"
+            "3: Two relationships"
 
 
 ifActive : ( Page, Page ) -> ( a, a ) -> a

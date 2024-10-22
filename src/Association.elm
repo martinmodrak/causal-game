@@ -51,7 +51,6 @@ initAdapter : Game.InitAdapter Guess Experiment
 initAdapter =
     { defaultGuess = Causality.NoCause
     , defaultExperiment = 100
-    , scenarioName = "Is there an association?"
     }
 
 
@@ -68,7 +67,8 @@ logicAdapter =
 
 viewAdapter : Game.ViewAdapter ExpMsg GuessMsg Spec Experiment Outcome Guess
 viewAdapter =
-    { viewExperiment = viewExperiment
+    { viewHeader = viewHeader
+    , viewExperiment = viewExperiment
     , viewProposedExperiment = viewProposedExperiment
     , viewCostCommentary = viewCostCommentary
     , viewGuess = viewGuess
@@ -185,10 +185,11 @@ updateGuess msg _ =
             g
 
 
-viewExperiment : Spec -> ( Experiment, Outcome ) -> Html Never
-viewExperiment spec ( experiment, data ) =
-    div []
-        [ div [] [ text ("N = " ++ String.fromInt experiment ++ ", CZK " ++ String.fromInt (costExperiment experiment)) ]
+viewExperiment : Spec -> Int -> ( Experiment, Outcome ) -> Html Never
+viewExperiment spec id ( experiment, data ) =
+    div [ Attr.class "experiment" ]
+        [ View.experimentTitle id
+        , p [] [ text ("N = " ++ String.fromInt experiment ++ ", CZK " ++ String.fromInt (costExperiment experiment)) ]
         , Html.Lazy.lazy2 Causality.viewOutcome spec.sorted data
         ]
 
@@ -229,8 +230,7 @@ viewGuess spec guess =
             specToNames spec
     in
     div []
-        [ h3 [] [ text "Your guess: " ]
-        , Causality.causalityDescription name0 name1 guess
+        [ Causality.causalityDescription name0 name1 guess
         ]
 
 
@@ -253,7 +253,15 @@ viewProposedGuess spec guess =
             , singleOption Causality.RightPos
             , singleOption Causality.RightNeg
             ]
-        , text " with "
+        , text " "
         , em [] [ text name1 ]
         , text "."
+        ]
+
+
+viewHeader : Html Never
+viewHeader =
+    div [ Attr.class "scenarioHeader" ]
+        [ h2 [] [ text "Is there an association?" ]
+        , p [] [ text "" ]
         ]
