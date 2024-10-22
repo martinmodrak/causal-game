@@ -1,6 +1,4 @@
 Absolutely needed:
-- Scenario 2 (single assoc)
-- Scenario 4 (unobserved confound)
 - Test in Chrome
 - Test smaller screen
 - Test on mobile

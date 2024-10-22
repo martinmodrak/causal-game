@@ -15,7 +15,6 @@ type Page
     = AssocPage
     | SingleRelPage
     | TwoRelPage
-    | UnobsPage
 
 
 type alias Model =
@@ -23,7 +22,6 @@ type alias Model =
     , association : Association.Model
     , singleRel : SingleRelationship.Model
     , twoRel : TwoRelationships.Model
-    , unobs : UnobservedConfounding.Model
     }
 
 
@@ -31,7 +29,6 @@ type Msg
     = AssocMsg Association.Msg
     | SingleRel SingleRelationship.Msg
     | TwoRel TwoRelationships.Msg
-    | Unobs UnobservedConfounding.Msg
     | ActivatePage Page
 
 
@@ -41,13 +38,11 @@ init _ =
       , association = Game.init Association.adapter
       , singleRel = Game.init SingleRelationship.adapter
       , twoRel = Game.init TwoRelationships.adapter
-      , unobs = Game.init UnobservedConfounding.adapter
       }
     , Cmd.batch
         [ Cmd.map AssocMsg (Game.initCmd Association.adapter)
         , Cmd.map SingleRel (Game.initCmd SingleRelationship.adapter)
         , Cmd.map TwoRel (Game.initCmd TwoRelationships.adapter)
-        , Cmd.map Unobs (Game.initCmd UnobservedConfounding.adapter)
         ]
     )
 
@@ -76,13 +71,6 @@ update msg model =
             in
             ( { model | twoRel = newTwoWayModel }, Cmd.map TwoRel twoWayCmd )
 
-        Unobs unobsMsg ->
-            let
-                ( newModel, newCmd ) =
-                    Game.update UnobservedConfounding.adapter unobsMsg model.unobs
-            in
-            ( { model | unobs = newModel }, Cmd.map Unobs newCmd )
-
         ActivatePage page ->
             ( { model | page = page }, Cmd.none )
 
@@ -100,15 +88,12 @@ view model =
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, TwoRelPage ) ( "block", "none" )) ]
             [ Html.map TwoRel (Game.view TwoRelationships.adapter model.twoRel)
             ]
-        , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, UnobsPage ) ( "block", "none" )) ]
-            [ Html.map Unobs (Game.view UnobservedConfounding.adapter model.unobs)
-            ]
         ]
 
 
 viewPageSelection : Model -> Html Msg
 viewPageSelection model =
-    div [] (List.map (viewPageSelectionButton model.page) [ AssocPage, SingleRelPage, TwoRelPage, UnobsPage ])
+    div [] (List.map (viewPageSelectionButton model.page) [ AssocPage, SingleRelPage, TwoRelPage ])
 
 
 viewPageSelectionButton : Page -> Page -> Html Msg
@@ -130,9 +115,6 @@ pageTitle page =
 
         TwoRelPage ->
             "2: Two relationships"
-
-        UnobsPage ->
-            "3: Unobserved confounding"
 
 
 ifActive : ( Page, Page ) -> ( a, a ) -> a
