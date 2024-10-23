@@ -1,14 +1,9 @@
-Absolutely needed:
-- Test in Chrome
-- Test smaller screen
-- Test on mobile
-- Deploy
-
 Important:
 - Comments for scenarios
 - Stress test - many scenarios
 - Store state in browser
 - Clear state
+- Fix problem, e.g. 16, 4, 62, 18 is misleading
 
 Needed for homework:
 - Overall instruction

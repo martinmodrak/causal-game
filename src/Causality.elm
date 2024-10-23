@@ -687,7 +687,7 @@ causalityDescription name1 name2 val =
 
 categoryGenerator : Random.Generator Category
 categoryGenerator =
-    Random.uniform NoCause [ RightNeg, RightPos, LeftNeg, LeftPos ]
+    Random.weighted ( 2, NoCause ) [ ( 1, RightNeg ), ( 1, RightPos ), ( 1, LeftNeg ), ( 1, LeftPos ) ]
 
 
 interceptGenerator : Random.Generator Float
