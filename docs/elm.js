@@ -784,11 +784,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.al.V === region.at.V)
+	if (region.am.V === region.au.V)
 	{
-		return 'on line ' + region.al.V;
+		return 'on line ' + region.am.V;
 	}
-	return 'on lines ' + region.al.V + ' through ' + region.at.V;
+	return 'on lines ' + region.am.V + ' through ' + region.au.V;
 }
 
 
@@ -1857,9 +1857,9 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, args)
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.ba,
-		impl.br,
-		impl.bn,
+		impl.bb,
+		impl.bs,
+		impl.bo,
 		function() { return function() {} }
 	);
 });
@@ -2720,8 +2720,8 @@ var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
 		C: func(record.C),
-		am: record.am,
-		ai: record.ai
+		an: record.an,
+		aj: record.aj
 	}
 });
 
@@ -2990,10 +2990,10 @@ function _VirtualDom_makeCallback(eventNode, initialHandler)
 
 		var value = result.a;
 		var message = !tag ? value : tag < 3 ? value.a : value.C;
-		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.am;
+		var stopPropagation = tag == 1 ? value.b : tag == 3 && value.an;
 		var currentEventNode = (
 			stopPropagation && event.stopPropagation(),
-			(tag == 2 ? value.b : tag == 3 && value.ai) && event.preventDefault(),
+			(tag == 2 ? value.b : tag == 3 && value.aj) && event.preventDefault(),
 			eventNode
 		);
 		var tagger;
@@ -3943,11 +3943,11 @@ var _Browser_element = _Debugger_element || F4(function(impl, flagDecoder, debug
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.ba,
-		impl.br,
-		impl.bn,
+		impl.bb,
+		impl.bs,
+		impl.bo,
 		function(sendToApp, initialModel) {
-			var view = impl.bu;
+			var view = impl.bv;
 			/**/
 			var domNode = args['node'];
 			//*/
@@ -3979,12 +3979,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 	return _Platform_initialize(
 		flagDecoder,
 		args,
-		impl.ba,
-		impl.br,
-		impl.bn,
+		impl.bb,
+		impl.bs,
+		impl.bo,
 		function(sendToApp, initialModel) {
-			var divertHrefToApp = impl.aj && impl.aj(sendToApp)
-			var view = impl.bu;
+			var divertHrefToApp = impl.ak && impl.ak(sendToApp)
+			var view = impl.bv;
 			var title = _VirtualDom_doc.title;
 			var bodyNode = _VirtualDom_doc.body;
 			var currNode = _VirtualDom_virtualize(bodyNode);
@@ -3992,12 +3992,12 @@ var _Browser_document = _Debugger_document || F4(function(impl, flagDecoder, deb
 			{
 				_VirtualDom_divertHrefToApp = divertHrefToApp;
 				var doc = view(model);
-				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.aY);
+				var nextNode = _VirtualDom_node('body')(_List_Nil)(doc.aZ);
 				var patches = _VirtualDom_diff(currNode, nextNode);
 				bodyNode = _VirtualDom_applyPatches(bodyNode, currNode, patches, sendToApp);
 				currNode = nextNode;
 				_VirtualDom_divertHrefToApp = 0;
-				(title !== doc.bo) && (_VirtualDom_doc.title = title = doc.bo);
+				(title !== doc.bp) && (_VirtualDom_doc.title = title = doc.bp);
 			});
 		}
 	);
@@ -4053,12 +4053,12 @@ function _Browser_makeAnimator(model, draw)
 
 function _Browser_application(impl)
 {
-	var onUrlChange = impl.bh;
-	var onUrlRequest = impl.bi;
+	var onUrlChange = impl.bi;
+	var onUrlRequest = impl.bj;
 	var key = function() { key.a(onUrlChange(_Browser_getUrl())); };
 
 	return _Browser_document({
-		aj: function(sendToApp)
+		ak: function(sendToApp)
 		{
 			key.a = sendToApp;
 			_Browser_window.addEventListener('popstate', key);
@@ -4074,9 +4074,9 @@ function _Browser_application(impl)
 					var next = $elm$url$Url$fromString(href).a;
 					sendToApp(onUrlRequest(
 						(next
-							&& curr.aJ === next.aJ
-							&& curr.ay === next.ay
-							&& curr.aG.a === next.aG.a
+							&& curr.aK === next.aK
+							&& curr.az === next.az
+							&& curr.aH.a === next.aH.a
 						)
 							? $elm$browser$Browser$Internal(next)
 							: $elm$browser$Browser$External(href)
@@ -4084,13 +4084,13 @@ function _Browser_application(impl)
 				}
 			});
 		},
-		ba: function(flags)
+		bb: function(flags)
 		{
-			return A3(impl.ba, flags, _Browser_getUrl(), key);
+			return A3(impl.bb, flags, _Browser_getUrl(), key);
 		},
-		bu: impl.bu,
-		br: impl.br,
-		bn: impl.bn
+		bv: impl.bv,
+		bs: impl.bs,
+		bo: impl.bo
 	});
 }
 
@@ -4156,17 +4156,17 @@ var _Browser_decodeEvent = F2(function(decoder, event)
 function _Browser_visibilityInfo()
 {
 	return (typeof _VirtualDom_doc.hidden !== 'undefined')
-		? { a7: 'hidden', aZ: 'visibilitychange' }
+		? { a8: 'hidden', a_: 'visibilitychange' }
 		:
 	(typeof _VirtualDom_doc.mozHidden !== 'undefined')
-		? { a7: 'mozHidden', aZ: 'mozvisibilitychange' }
+		? { a8: 'mozHidden', a_: 'mozvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.msHidden !== 'undefined')
-		? { a7: 'msHidden', aZ: 'msvisibilitychange' }
+		? { a8: 'msHidden', a_: 'msvisibilitychange' }
 		:
 	(typeof _VirtualDom_doc.webkitHidden !== 'undefined')
-		? { a7: 'webkitHidden', aZ: 'webkitvisibilitychange' }
-		: { a7: 'hidden', aZ: 'visibilitychange' };
+		? { a8: 'webkitHidden', a_: 'webkitvisibilitychange' }
+		: { a8: 'hidden', a_: 'visibilitychange' };
 }
 
 
@@ -4247,12 +4247,12 @@ var _Browser_call = F2(function(functionName, id)
 function _Browser_getViewport()
 {
 	return {
-		aO: _Browser_getScene(),
-		aS: {
-			aU: _Browser_window.pageXOffset,
-			aV: _Browser_window.pageYOffset,
-			aT: _Browser_doc.documentElement.clientWidth,
-			ax: _Browser_doc.documentElement.clientHeight
+		aP: _Browser_getScene(),
+		aT: {
+			aV: _Browser_window.pageXOffset,
+			aW: _Browser_window.pageYOffset,
+			aU: _Browser_doc.documentElement.clientWidth,
+			ay: _Browser_doc.documentElement.clientHeight
 		}
 	};
 }
@@ -4262,8 +4262,8 @@ function _Browser_getScene()
 	var body = _Browser_doc.body;
 	var elem = _Browser_doc.documentElement;
 	return {
-		aT: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
-		ax: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
+		aU: Math.max(body.scrollWidth, body.offsetWidth, elem.scrollWidth, elem.offsetWidth, elem.clientWidth),
+		ay: Math.max(body.scrollHeight, body.offsetHeight, elem.scrollHeight, elem.offsetHeight, elem.clientHeight)
 	};
 }
 
@@ -4286,15 +4286,15 @@ function _Browser_getViewportOf(id)
 	return _Browser_withNode(id, function(node)
 	{
 		return {
-			aO: {
-				aT: node.scrollWidth,
-				ax: node.scrollHeight
+			aP: {
+				aU: node.scrollWidth,
+				ay: node.scrollHeight
 			},
-			aS: {
-				aU: node.scrollLeft,
-				aV: node.scrollTop,
-				aT: node.clientWidth,
-				ax: node.clientHeight
+			aT: {
+				aV: node.scrollLeft,
+				aW: node.scrollTop,
+				aU: node.clientWidth,
+				ay: node.clientHeight
 			}
 		};
 	});
@@ -4324,18 +4324,18 @@ function _Browser_getElement(id)
 		var x = _Browser_window.pageXOffset;
 		var y = _Browser_window.pageYOffset;
 		return {
-			aO: _Browser_getScene(),
-			aS: {
-				aU: x,
-				aV: y,
-				aT: _Browser_doc.documentElement.clientWidth,
-				ax: _Browser_doc.documentElement.clientHeight
+			aP: _Browser_getScene(),
+			aT: {
+				aV: x,
+				aW: y,
+				aU: _Browser_doc.documentElement.clientWidth,
+				ay: _Browser_doc.documentElement.clientHeight
 			},
-			a2: {
-				aU: x + rect.left,
-				aV: y + rect.top,
-				aT: rect.width,
-				ax: rect.height
+			a3: {
+				aV: x + rect.left,
+				aW: y + rect.top,
+				aU: rect.width,
+				ay: rect.height
 			}
 		};
 	});
@@ -4961,7 +4961,7 @@ var $elm$url$Url$Http = 0;
 var $elm$url$Url$Https = 1;
 var $elm$url$Url$Url = F6(
 	function (protocol, host, port_, path, query, fragment) {
-		return {av: fragment, ay: host, aE: path, aG: port_, aJ: protocol, aK: query};
+		return {aw: fragment, az: host, aF: path, aH: port_, aK: protocol, aL: query};
 	});
 var $elm$core$String$contains = _String_contains;
 var $elm$core$String$length = _String_length;
@@ -5251,7 +5251,7 @@ var $author$project$Main$TwoRel = function (a) {
 	return {$: 2, a: a};
 };
 var $author$project$Causality$NoCause = 0;
-var $author$project$Association$initAdapter = {a$: 100, a0: 0, bb: 4};
+var $author$project$Association$initAdapter = {a0: 100, a1: 0, bc: 4};
 var $author$project$Association$costPerExperiment = 2000;
 var $author$project$Association$costPerParticipant = 100;
 var $author$project$Association$costExperiment = function (exp) {
@@ -5266,7 +5266,7 @@ var $elm_community$intdict$IntDict$foldr = F3(
 					return acc;
 				case 1:
 					var l = dict.a;
-					return A3(f, l.aA, l.z, acc);
+					return A3(f, l.aB, l.z, acc);
 				default:
 					var i = dict.a;
 					var $temp$f = f,
@@ -5293,13 +5293,13 @@ var $elm_community$intdict$IntDict$toList = function (dict) {
 		dict);
 };
 var $author$project$Causality$singleNodeContrib = function (context) {
-	var fromId = context.bg.a8;
+	var fromId = context.bh.a9;
 	var singleEdgeToContrib = function (_v0) {
 		var toId = _v0.a;
 		var contrib = _v0.b;
-		return {af: contrib, a4: fromId, bp: toId};
+		return {ag: contrib, a5: fromId, bq: toId};
 	};
-	var edgeList = $elm_community$intdict$IntDict$toList(context.bk);
+	var edgeList = $elm_community$intdict$IntDict$toList(context.bl);
 	return A2($elm$core$List$map, singleEdgeToContrib, edgeList);
 };
 var $author$project$Causality$allContrib = function (vars) {
@@ -5322,7 +5322,7 @@ var $elm_community$intdict$IntDict$size = function (dict) {
 			return 1;
 		default:
 			var i = dict.a;
-			return i.ak;
+			return i.al;
 	}
 };
 var $elm_community$intdict$IntDict$inner = F3(
@@ -5341,7 +5341,7 @@ var $elm_community$intdict$IntDict$inner = F3(
 						a: l,
 						c: p,
 						b: r,
-						ak: $elm_community$intdict$IntDict$size(l) + $elm_community$intdict$IntDict$size(r)
+						al: $elm_community$intdict$IntDict$size(l) + $elm_community$intdict$IntDict$size(r)
 					});
 			}
 		}
@@ -5388,7 +5388,7 @@ var $elm_community$intdict$IntDict$Leaf = function (a) {
 var $elm_community$intdict$IntDict$leaf = F2(
 	function (k, v) {
 		return $elm_community$intdict$IntDict$Leaf(
-			{aA: k, z: v});
+			{aB: k, z: v});
 	});
 var $elm_community$intdict$IntDict$prefixMatches = F2(
 	function (p, n) {
@@ -5419,13 +5419,13 @@ var $elm_community$intdict$IntDict$update = F3(
 				return alteredNode($elm$core$Maybe$Nothing);
 			case 1:
 				var l = dict.a;
-				return (!(l.aA - key)) ? alteredNode(
+				return (!(l.aB - key)) ? alteredNode(
 					$elm$core$Maybe$Just(l.z)) : A2(
 					join,
 					_Utils_Tuple2(
 						key,
 						alteredNode($elm$core$Maybe$Nothing)),
-					_Utils_Tuple2(l.aA, dict));
+					_Utils_Tuple2(l.aB, dict));
 			default:
 				var i = dict.a;
 				return A2($elm_community$intdict$IntDict$prefixMatches, i.c, key) ? (A2($elm_community$intdict$IntDict$isBranchingBitSet, i.c, key) ? A3(
@@ -5478,7 +5478,7 @@ var $elm_community$intdict$IntDict$get = F2(
 					return $elm$core$Maybe$Nothing;
 				case 1:
 					var l = dict.a;
-					return (!(l.aA - key)) ? $elm$core$Maybe$Just(l.z) : $elm$core$Maybe$Nothing;
+					return (!(l.aB - key)) ? $elm$core$Maybe$Just(l.z) : $elm$core$Maybe$Nothing;
 				default:
 					var i = dict.a;
 					if (!A2($elm_community$intdict$IntDict$prefixMatches, i.c, key)) {
@@ -5504,7 +5504,7 @@ var $elm_community$intdict$IntDict$get = F2(
 var $author$project$Causality$processSingleVar = F3(
 	function (intervention, contrib, oldDict) {
 		var oldTo = function () {
-			var _v1 = A2($elm_community$intdict$IntDict$get, contrib.bp, oldDict);
+			var _v1 = A2($elm_community$intdict$IntDict$get, contrib.bq, oldDict);
 			if (_v1.$ === 1) {
 				return _List_fromArray(
 					[0 / 0]);
@@ -5514,7 +5514,7 @@ var $author$project$Causality$processSingleVar = F3(
 			}
 		}();
 		var from = function () {
-			var _v0 = A2($elm_community$intdict$IntDict$get, contrib.a4, oldDict);
+			var _v0 = A2($elm_community$intdict$IntDict$get, contrib.a5, oldDict);
 			if (_v0.$ === 1) {
 				return _List_fromArray(
 					[0 / 0]);
@@ -5523,7 +5523,7 @@ var $author$project$Causality$processSingleVar = F3(
 				return x;
 			}
 		}();
-		var contribMultiplier = _Utils_eq(intervention, contrib.bp) ? 0.0 : contrib.af;
+		var contribMultiplier = _Utils_eq(intervention, contrib.bq) ? 0.0 : contrib.ag;
 		var contribValue = A2(
 			$elm$core$List$map,
 			function (x) {
@@ -5531,7 +5531,7 @@ var $author$project$Causality$processSingleVar = F3(
 			},
 			from);
 		var newTo = A3($elm$core$List$map2, $elm$core$Basics$add, oldTo, contribValue);
-		return A3($elm_community$intdict$IntDict$insert, contrib.bp, newTo, oldDict);
+		return A3($elm_community$intdict$IntDict$insert, contrib.bq, newTo, oldDict);
 	});
 var $elm_community$intdict$IntDict$values = function (dict) {
 	return A3(
@@ -5555,7 +5555,7 @@ var $author$project$Causality$dataFromNoise = F3(
 					A2(
 						$elm$core$List$map,
 						function (x) {
-							return (interceptMult * _var.az) + x;
+							return (interceptMult * _var.aA) + x;
 						},
 						singleNoise));
 			});
@@ -5563,7 +5563,7 @@ var $author$project$Causality$dataFromNoise = F3(
 			A2(
 				$elm$core$List$indexedMap,
 				singleInit,
-				A3($elm$core$List$map2, $elm$core$Tuple$pair, dag.aR, probitNoise)));
+				A3($elm$core$List$map2, $elm$core$Tuple$pair, dag.aS, probitNoise)));
 		var resultsListFloat = $elm_community$intdict$IntDict$values(
 			A3(
 				$elm$core$List$foldl,
@@ -5700,7 +5700,7 @@ var $author$project$Causality$generatorObservational = F2(
 			A2($author$project$Causality$dataFromNoise, dag, $author$project$Causality$noIntervention),
 			A2(
 				$author$project$Causality$probitNoiseGenerator,
-				$elm$core$List$length(dag.aR),
+				$elm$core$List$length(dag.aS),
 				nSubj));
 	});
 var $author$project$Association$generator = F2(
@@ -5760,12 +5760,12 @@ var $author$project$Causality$causalityDescription = F3(
 				]));
 	});
 var $author$project$Association$specToNames = function (spec) {
-	var _v0 = spec.S.aR;
+	var _v0 = spec.S.aS;
 	if (_v0.b && _v0.b.b) {
 		var a = _v0.a;
 		var _v1 = _v0.b;
 		var b = _v1.a;
-		return _Utils_Tuple2(a.aC, b.aC);
+		return _Utils_Tuple2(a.aD, b.aD);
 	} else {
 		return _Utils_Tuple2('Error', 'Error');
 	}
@@ -5783,13 +5783,13 @@ var $author$project$Association$guessEval = F2(
 	});
 var $elm_community$graph$Graph$Node = F2(
 	function (id, label) {
-		return {a8: id, bc: label};
+		return {a9: id, bd: label};
 	});
 var $author$project$Causality$RightNeg = 2;
 var $author$project$Causality$RightPos = 1;
 var $author$project$Causality$Variable = F2(
 	function (name, intercept) {
-		return {az: intercept, aC: name};
+		return {aA: intercept, aD: name};
 	});
 var $elm$random$Random$andThen = F2(
 	function (callback, _v0) {
@@ -5809,7 +5809,7 @@ var $elm_community$graph$Graph$AcyclicGraph = F2(
 	});
 var $elm_community$graph$Graph$Edge = F3(
 	function (from, to, label) {
-		return {a4: from, bc: label, bp: to};
+		return {a5: from, bd: label, bq: to};
 	});
 var $elm$core$Result$andThen = F2(
 	function (callback, result) {
@@ -5830,7 +5830,7 @@ var $elm_community$intdict$IntDict$findMin = function (dict) {
 			case 1:
 				var l = dict.a;
 				return $elm$core$Maybe$Just(
-					_Utils_Tuple2(l.aA, l.z));
+					_Utils_Tuple2(l.aB, l.z));
 			default:
 				var i = dict.a;
 				var $temp$dict = i.a;
@@ -5922,10 +5922,10 @@ var $elm_community$intdict$IntDict$intersect = F2(
 									break _v0$1;
 								case 1:
 									var lr = _v0.b.a;
-									var _v3 = A2($elm_community$intdict$IntDict$get, lr.aA, l);
+									var _v3 = A2($elm_community$intdict$IntDict$get, lr.aB, l);
 									if (!_v3.$) {
 										var v = _v3.a;
-										return A2($elm_community$intdict$IntDict$leaf, lr.aA, v);
+										return A2($elm_community$intdict$IntDict$leaf, lr.aB, v);
 									} else {
 										return $elm_community$intdict$IntDict$Empty;
 									}
@@ -5985,7 +5985,7 @@ var $elm_community$intdict$IntDict$intersect = F2(
 					}
 				}
 				var ll = _v0.a.a;
-				return A2($elm_community$intdict$IntDict$member, ll.aA, r) ? l : $elm_community$intdict$IntDict$Empty;
+				return A2($elm_community$intdict$IntDict$member, ll.aB, r) ? l : $elm_community$intdict$IntDict$Empty;
 			}
 			var _v2 = _v0.b;
 			return $elm_community$intdict$IntDict$Empty;
@@ -6046,7 +6046,7 @@ var $elm_community$graph$Graph$checkForBackEdges = F2(
 				var error = 'Graph.checkForBackEdges: `ordering` didn\'t contain `id`';
 				var ctx = A3($elm_community$graph$Graph$unsafeGet, error, id, graph);
 				var backSetWithId = A3($elm_community$intdict$IntDict$insert, id, 0, backSet);
-				var backEdges = A2($elm_community$intdict$IntDict$intersect, ctx.bk, backSetWithId);
+				var backEdges = A2($elm_community$intdict$IntDict$intersect, ctx.bl, backSetWithId);
 				var _v0 = $elm_community$intdict$IntDict$findMin(backEdges);
 				if (_v0.$ === 1) {
 					return $elm$core$Result$Ok(
@@ -6086,7 +6086,7 @@ var $elm_community$intdict$IntDict$keys = function (dict) {
 		dict);
 };
 var $elm_community$graph$Graph$alongOutgoingEdges = function (ctx) {
-	return $elm_community$intdict$IntDict$keys(ctx.bk);
+	return $elm_community$intdict$IntDict$keys(ctx.bl);
 };
 var $elm_community$graph$Graph$Graph = $elm$core$Basics$identity;
 var $elm_community$intdict$IntDict$foldl = F3(
@@ -6098,7 +6098,7 @@ var $elm_community$intdict$IntDict$foldl = F3(
 					return acc;
 				case 1:
 					var l = dict.a;
-					return A3(f, l.aA, l.z, acc);
+					return A3(f, l.aB, l.z, acc);
 				default:
 					var i = dict.a;
 					var $temp$f = f,
@@ -6128,7 +6128,7 @@ var $elm_community$graph$Graph$applyEdgeDiff = F3(
 				return _Utils_update(
 					node,
 					{
-						bk: A3($elm_community$intdict$IntDict$update, nodeId, upd, node.bk)
+						bl: A3($elm_community$intdict$IntDict$update, nodeId, upd, node.bl)
 					});
 			});
 		var updateIncomingEdge = F2(
@@ -6164,7 +6164,7 @@ var $elm_community$graph$Graph$applyEdgeDiff = F3(
 		return A3(
 			flippedFoldl,
 			updateAdjacency(updateOutgoingEdge),
-			diff.bk,
+			diff.bl,
 			A3(
 				flippedFoldl,
 				updateAdjacency(updateIncomingEdge),
@@ -6177,7 +6177,7 @@ var $elm_community$graph$Graph$Insert = function (a) {
 var $elm_community$graph$Graph$Remove = function (a) {
 	return {$: 1, a: a};
 };
-var $elm_community$graph$Graph$emptyDiff = {d: $elm_community$intdict$IntDict$empty, bk: $elm_community$intdict$IntDict$empty};
+var $elm_community$graph$Graph$emptyDiff = {d: $elm_community$intdict$IntDict$empty, bl: $elm_community$intdict$IntDict$empty};
 var $elm_community$graph$Graph$computeEdgeDiff = F2(
 	function (old, _new) {
 		var collectUpdates = F3(
@@ -6225,8 +6225,8 @@ var $elm_community$graph$Graph$computeEdgeDiff = F2(
 				var _v4 = _v0.a;
 				var ins = _v0.b.a;
 				return {
-					d: A3(collect, $elm_community$graph$Graph$Insert, ins.bk, $elm_community$intdict$IntDict$empty),
-					bk: A3(collect, $elm_community$graph$Graph$Insert, ins.d, $elm_community$intdict$IntDict$empty)
+					d: A3(collect, $elm_community$graph$Graph$Insert, ins.bl, $elm_community$intdict$IntDict$empty),
+					bl: A3(collect, $elm_community$graph$Graph$Insert, ins.d, $elm_community$intdict$IntDict$empty)
 				};
 			}
 		} else {
@@ -6234,8 +6234,8 @@ var $elm_community$graph$Graph$computeEdgeDiff = F2(
 				var rem = _v0.a.a;
 				var _v3 = _v0.b;
 				return {
-					d: A3(collect, $elm_community$graph$Graph$Remove, rem.bk, $elm_community$intdict$IntDict$empty),
-					bk: A3(collect, $elm_community$graph$Graph$Remove, rem.d, $elm_community$intdict$IntDict$empty)
+					d: A3(collect, $elm_community$graph$Graph$Remove, rem.bl, $elm_community$intdict$IntDict$empty),
+					bl: A3(collect, $elm_community$graph$Graph$Remove, rem.d, $elm_community$intdict$IntDict$empty)
 				};
 			} else {
 				var rem = _v0.a.a;
@@ -6244,9 +6244,9 @@ var $elm_community$graph$Graph$computeEdgeDiff = F2(
 					d: A3(
 						collect,
 						$elm_community$graph$Graph$Insert,
-						ins.bk,
-						A3(collect, $elm_community$graph$Graph$Remove, rem.bk, $elm_community$intdict$IntDict$empty)),
-					bk: A3(
+						ins.bl,
+						A3(collect, $elm_community$graph$Graph$Remove, rem.bl, $elm_community$intdict$IntDict$empty)),
+					bl: A3(
 						collect,
 						$elm_community$graph$Graph$Insert,
 						ins.d,
@@ -6271,7 +6271,7 @@ var $elm_community$graph$Graph$update = F2(
 				return $elm_community$intdict$IntDict$filter(
 					F2(
 						function (id, _v0) {
-							return _Utils_eq(id, ctx.bg.a8) || A2($elm_community$intdict$IntDict$member, id, rep);
+							return _Utils_eq(id, ctx.bh.a9) || A2($elm_community$intdict$IntDict$member, id, rep);
 						}));
 			};
 			var cleanUpEdges = function (ctx) {
@@ -6279,7 +6279,7 @@ var $elm_community$graph$Graph$update = F2(
 					ctx,
 					{
 						d: A2(filterInvalidEdges, ctx, ctx.d),
-						bk: A2(filterInvalidEdges, ctx, ctx.bk)
+						bl: A2(filterInvalidEdges, ctx, ctx.bl)
 					});
 			};
 			var _new = A2(
@@ -6376,12 +6376,12 @@ var $elm_community$graph$Graph$checkAcyclic = function (graph) {
 			A2(
 				$elm$core$Basics$composeR,
 				function ($) {
-					return $.bg;
+					return $.bh;
 				},
 				A2(
 					$elm$core$Basics$composeR,
 					function ($) {
-						return $.a8;
+						return $.a9;
 					},
 					$elm$core$List$cons))),
 		_List_Nil,
@@ -6411,7 +6411,7 @@ var $author$project$Causality$contribGenerator = function (cat) {
 };
 var $elm_community$graph$Graph$NodeContext = F3(
 	function (node, incoming, outgoing) {
-		return {d: incoming, bg: node, bk: outgoing};
+		return {d: incoming, bh: node, bl: outgoing};
 	});
 var $elm_community$graph$Graph$fromNodesAndEdges = F2(
 	function (nodes_, edges_) {
@@ -6420,7 +6420,7 @@ var $elm_community$graph$Graph$fromNodesAndEdges = F2(
 			function (n) {
 				return A2(
 					$elm_community$intdict$IntDict$insert,
-					n.a8,
+					n.a9,
 					A3($elm_community$graph$Graph$NodeContext, n, $elm_community$intdict$IntDict$empty, $elm_community$intdict$IntDict$empty));
 			},
 			$elm_community$intdict$IntDict$empty,
@@ -6431,33 +6431,285 @@ var $elm_community$graph$Graph$fromNodesAndEdges = F2(
 					return _Utils_update(
 						ctx,
 						{
-							bk: A3($elm_community$intdict$IntDict$insert, edge.bp, edge.bc, ctx.bk)
+							bl: A3($elm_community$intdict$IntDict$insert, edge.bq, edge.bd, ctx.bl)
 						});
 				};
 				var updateIncoming = function (ctx) {
 					return _Utils_update(
 						ctx,
 						{
-							d: A3($elm_community$intdict$IntDict$insert, edge.a4, edge.bc, ctx.d)
+							d: A3($elm_community$intdict$IntDict$insert, edge.a5, edge.bd, ctx.d)
 						});
 				};
 				return A3(
 					$elm_community$intdict$IntDict$update,
-					edge.bp,
+					edge.bq,
 					$elm$core$Maybe$map(updateIncoming),
 					A3(
 						$elm_community$intdict$IntDict$update,
-						edge.a4,
+						edge.a5,
 						$elm$core$Maybe$map(updateOutgoing),
 						rep));
 			});
 		var addEdgeIfValid = F2(
 			function (edge, rep) {
-				return (A2($elm_community$intdict$IntDict$member, edge.a4, rep) && A2($elm_community$intdict$IntDict$member, edge.bp, rep)) ? A2(addEdge, edge, rep) : rep;
+				return (A2($elm_community$intdict$IntDict$member, edge.a5, rep) && A2($elm_community$intdict$IntDict$member, edge.bq, rep)) ? A2(addEdge, edge, rep) : rep;
 			});
 		return A3($elm$core$List$foldl, addEdgeIfValid, nodeRep, edges_);
 	});
 var $author$project$Causality$interceptGenerator = A2($elm$random$Random$float, -1, 1);
+var $elm$random$Random$int = F2(
+	function (a, b) {
+		return function (seed0) {
+			var _v0 = (_Utils_cmp(a, b) < 0) ? _Utils_Tuple2(a, b) : _Utils_Tuple2(b, a);
+			var lo = _v0.a;
+			var hi = _v0.b;
+			var range = (hi - lo) + 1;
+			if (!((range - 1) & range)) {
+				return _Utils_Tuple2(
+					(((range - 1) & $elm$random$Random$peel(seed0)) >>> 0) + lo,
+					$elm$random$Random$next(seed0));
+			} else {
+				var threshhold = (((-range) >>> 0) % range) >>> 0;
+				var accountForBias = function (seed) {
+					accountForBias:
+					while (true) {
+						var x = $elm$random$Random$peel(seed);
+						var seedN = $elm$random$Random$next(seed);
+						if (_Utils_cmp(x, threshhold) < 0) {
+							var $temp$seed = seedN;
+							seed = $temp$seed;
+							continue accountForBias;
+						} else {
+							return _Utils_Tuple2((x % range) + lo, seedN);
+						}
+					}
+				};
+				return accountForBias(seed0);
+			}
+		};
+	});
+var $elm$random$Random$maxInt = 2147483647;
+var $elm$random$Random$minInt = -2147483648;
+var $elm_community$random_extra$Random$List$anyInt = A2($elm$random$Random$int, $elm$random$Random$minInt, $elm$random$Random$maxInt);
+var $elm$random$Random$map3 = F4(
+	function (func, _v0, _v1, _v2) {
+		var genA = _v0;
+		var genB = _v1;
+		var genC = _v2;
+		return function (seed0) {
+			var _v3 = genA(seed0);
+			var a = _v3.a;
+			var seed1 = _v3.b;
+			var _v4 = genB(seed1);
+			var b = _v4.a;
+			var seed2 = _v4.b;
+			var _v5 = genC(seed2);
+			var c = _v5.a;
+			var seed3 = _v5.b;
+			return _Utils_Tuple2(
+				A3(func, a, b, c),
+				seed3);
+		};
+	});
+var $elm$random$Random$step = F2(
+	function (_v0, seed) {
+		var generator = _v0;
+		return generator(seed);
+	});
+var $elm$random$Random$independentSeed = function (seed0) {
+	var makeIndependentSeed = F3(
+		function (state, b, c) {
+			return $elm$random$Random$next(
+				A2($elm$random$Random$Seed, state, (1 | (b ^ c)) >>> 0));
+		});
+	var gen = A2($elm$random$Random$int, 0, 4294967295);
+	return A2(
+		$elm$random$Random$step,
+		A4($elm$random$Random$map3, makeIndependentSeed, gen, gen, gen),
+		seed0);
+};
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
+var $elm$core$List$sortBy = _List_sortBy;
+var $elm_community$random_extra$Random$List$shuffle = function (list) {
+	return A2(
+		$elm$random$Random$map,
+		function (independentSeed) {
+			return A2(
+				$elm$core$List$map,
+				$elm$core$Tuple$first,
+				A2(
+					$elm$core$List$sortBy,
+					$elm$core$Tuple$second,
+					A3(
+						$elm$core$List$foldl,
+						F2(
+							function (item, _v0) {
+								var acc = _v0.a;
+								var seed = _v0.b;
+								var _v1 = A2($elm$random$Random$step, $elm_community$random_extra$Random$List$anyInt, seed);
+								var tag = _v1.a;
+								var nextSeed = _v1.b;
+								return _Utils_Tuple2(
+									A2(
+										$elm$core$List$cons,
+										_Utils_Tuple2(item, tag),
+										acc),
+									nextSeed);
+							}),
+						_Utils_Tuple2(_List_Nil, independentSeed),
+						list).a));
+		},
+		$elm$random$Random$independentSeed);
+};
+var $elm$core$List$takeReverse = F3(
+	function (n, list, kept) {
+		takeReverse:
+		while (true) {
+			if (n <= 0) {
+				return kept;
+			} else {
+				if (!list.b) {
+					return kept;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs,
+						$temp$kept = A2($elm$core$List$cons, x, kept);
+					n = $temp$n;
+					list = $temp$list;
+					kept = $temp$kept;
+					continue takeReverse;
+				}
+			}
+		}
+	});
+var $elm$core$List$takeTailRec = F2(
+	function (n, list) {
+		return $elm$core$List$reverse(
+			A3($elm$core$List$takeReverse, n, list, _List_Nil));
+	});
+var $elm$core$List$takeFast = F3(
+	function (ctr, n, list) {
+		if (n <= 0) {
+			return _List_Nil;
+		} else {
+			var _v0 = _Utils_Tuple2(n, list);
+			_v0$1:
+			while (true) {
+				_v0$5:
+				while (true) {
+					if (!_v0.b.b) {
+						return list;
+					} else {
+						if (_v0.b.b.b) {
+							switch (_v0.a) {
+								case 1:
+									break _v0$1;
+								case 2:
+									var _v2 = _v0.b;
+									var x = _v2.a;
+									var _v3 = _v2.b;
+									var y = _v3.a;
+									return _List_fromArray(
+										[x, y]);
+								case 3:
+									if (_v0.b.b.b.b) {
+										var _v4 = _v0.b;
+										var x = _v4.a;
+										var _v5 = _v4.b;
+										var y = _v5.a;
+										var _v6 = _v5.b;
+										var z = _v6.a;
+										return _List_fromArray(
+											[x, y, z]);
+									} else {
+										break _v0$5;
+									}
+								default:
+									if (_v0.b.b.b.b && _v0.b.b.b.b.b) {
+										var _v7 = _v0.b;
+										var x = _v7.a;
+										var _v8 = _v7.b;
+										var y = _v8.a;
+										var _v9 = _v8.b;
+										var z = _v9.a;
+										var _v10 = _v9.b;
+										var w = _v10.a;
+										var tl = _v10.b;
+										return (ctr > 1000) ? A2(
+											$elm$core$List$cons,
+											x,
+											A2(
+												$elm$core$List$cons,
+												y,
+												A2(
+													$elm$core$List$cons,
+													z,
+													A2(
+														$elm$core$List$cons,
+														w,
+														A2($elm$core$List$takeTailRec, n - 4, tl))))) : A2(
+											$elm$core$List$cons,
+											x,
+											A2(
+												$elm$core$List$cons,
+												y,
+												A2(
+													$elm$core$List$cons,
+													z,
+													A2(
+														$elm$core$List$cons,
+														w,
+														A3($elm$core$List$takeFast, ctr + 1, n - 4, tl)))));
+									} else {
+										break _v0$5;
+									}
+							}
+						} else {
+							if (_v0.a === 1) {
+								break _v0$1;
+							} else {
+								break _v0$5;
+							}
+						}
+					}
+				}
+				return list;
+			}
+			var _v1 = _v0.b;
+			var x = _v1.a;
+			return _List_fromArray(
+				[x]);
+		}
+	});
+var $elm$core$List$take = F2(
+	function (n, list) {
+		return A3($elm$core$List$takeFast, 0, n, list);
+	});
+var $author$project$Names$things = _List_fromArray(
+	['rock', 'volcanic ash', 'starlight', 'uranium', 'beryllium', 'water', 'propylene', 'scissors', 'glyphosphate', 'unobtanium', 'spice']);
+var $author$project$Names$verbs = _List_fromArray(
+	['eats ', 'excretes ', 'hit by ', 'loves ', 'scared of ', 'near to ']);
+var $author$project$Names$nameGenerator = function (n) {
+	var combinator = F2(
+		function (l1, l2) {
+			return A3($elm$core$List$map2, $elm$core$Basics$append, l1, l2);
+		});
+	var chosenVerbs = A2(
+		$elm$random$Random$map,
+		$elm$core$List$take(n),
+		$elm_community$random_extra$Random$List$shuffle($author$project$Names$verbs));
+	var chosenThings = A2(
+		$elm$random$Random$map,
+		$elm$core$List$take(n),
+		$elm_community$random_extra$Random$List$shuffle($author$project$Names$things));
+	return A3($elm$random$Random$map2, combinator, chosenVerbs, chosenThings);
+};
 var $elm_community$graph$Graph$topologicalSort = function (_v0) {
 	var graph = _v0.a;
 	var ordering = _v0.b;
@@ -6523,13 +6775,14 @@ var $elm$random$Random$uniform = F2(
 			A2($elm$core$List$map, $elm$random$Random$addOne, valueList));
 	});
 var $author$project$Association$specGenerator = function () {
-	var varNames = _List_fromArray(
-		['A', 'B']);
-	var variables = A2(
-		$elm$random$Random$map,
-		function (intercepts) {
-			return A3($elm$core$List$map2, $author$project$Causality$Variable, varNames, intercepts);
-		},
+	var varNamesGen = $author$project$Names$nameGenerator(2);
+	var variables = A3(
+		$elm$random$Random$map2,
+		F2(
+			function (varNames, intercepts) {
+				return A3($elm$core$List$map2, $author$project$Causality$Variable, varNames, intercepts);
+			}),
+		varNamesGen,
 		A2($elm$random$Random$list, 2, $author$project$Causality$interceptGenerator));
 	var edgeListFromAssoc = F2(
 		function (assocVal, contribVal) {
@@ -6538,7 +6791,7 @@ var $author$project$Association$specGenerator = function () {
 			} else {
 				return _List_fromArray(
 					[
-						{a4: 0, bc: contribVal, bp: 1}
+						{a5: 0, bd: contribVal, bq: 1}
 					]);
 			}
 		});
@@ -6568,7 +6821,7 @@ var $author$project$Association$specGenerator = function () {
 						return _List_Nil;
 					}
 				}(),
-				aR: vars
+				aS: vars
 			};
 		});
 	var specFromData = F2(
@@ -6577,7 +6830,7 @@ var $author$project$Association$specGenerator = function () {
 			var contribVal = _v0.b;
 			return {
 				ab: assocVal,
-				aq: contribVal,
+				ar: contribVal,
 				S: A3(sortedFromCausesAndVars, assocVal, contribVal, vars)
 			};
 		});
@@ -6617,7 +6870,7 @@ var $author$project$Association$updateGuess = F2(
 		var g = msg;
 		return g;
 	});
-var $author$project$Association$logicAdapter = {a_: $author$project$Association$costExperiment, a5: $author$project$Association$generator, a6: $author$project$Association$guessEval, bm: $author$project$Association$specGenerator, bs: $author$project$Association$updateExperiment, bt: $author$project$Association$updateGuess};
+var $author$project$Association$logicAdapter = {a$: $author$project$Association$costExperiment, a6: $author$project$Association$generator, a7: $author$project$Association$guessEval, bn: $author$project$Association$specGenerator, bt: $author$project$Association$updateExperiment, bu: $author$project$Association$updateGuess};
 var $author$project$Association$viewCostCommentary = $elm$html$Html$text(
 	'Observational study costs CZK ' + ($elm$core$String$fromInt($author$project$Association$costPerExperiment) + (' + CZK ' + ($elm$core$String$fromInt($author$project$Association$costPerParticipant) + ' per participant'))));
 var $elm$json$Json$Encode$string = _Json_wrap;
@@ -6649,9 +6902,9 @@ var $author$project$Causality$variableNames = function (sorted) {
 	return A2(
 		$elm$core$List$map,
 		function ($) {
-			return $.aC;
+			return $.aD;
 		},
-		sorted.aR);
+		sorted.aS);
 };
 var $gicentre$elm_vegalite$VegaLite$X = 0;
 var $gicentre$elm_vegalite$VegaLite$Y = 1;
@@ -10832,10 +11085,6 @@ var $elm$core$List$head = function (list) {
 	} else {
 		return $elm$core$Maybe$Nothing;
 	}
-};
-var $elm$core$Tuple$second = function (_v0) {
-	var y = _v0.b;
-	return y;
 };
 var $gicentre$elm_vegalite$VegaLite$sideSpec = function (side) {
 	switch (side.$) {
@@ -15070,12 +15319,12 @@ var $author$project$Association$viewProposedGuess = F2(
 					$elm$html$Html$text('.')
 				]));
 	});
-var $author$project$Association$viewAdapter = {bv: $author$project$Association$viewCostCommentary, bw: $author$project$Association$viewExperiment, bx: $author$project$Association$viewGuess, by: $author$project$Association$viewHeader, bz: $author$project$Association$viewProposedExperiment, bA: $author$project$Association$viewProposedGuess};
-var $author$project$Association$adapter = {ba: $author$project$Association$initAdapter, bd: $author$project$Association$logicAdapter, bu: $author$project$Association$viewAdapter};
+var $author$project$Association$viewAdapter = {bw: $author$project$Association$viewCostCommentary, bx: $author$project$Association$viewExperiment, by: $author$project$Association$viewGuess, bz: $author$project$Association$viewHeader, bA: $author$project$Association$viewProposedExperiment, bB: $author$project$Association$viewProposedGuess};
+var $author$project$Association$adapter = {bb: $author$project$Association$initAdapter, be: $author$project$Association$logicAdapter, bv: $author$project$Association$viewAdapter};
 var $author$project$SingleRelationship$initAdapter = {
-	a$: {B: 0, K: 100, F: false},
-	a0: 0,
-	bb: 4
+	a0: {B: 0, K: 100, F: false},
+	a1: 0,
+	bc: 4
 };
 var $author$project$Causality$costPerExperiment = function (randomized) {
 	return randomized ? 50000 : 2000;
@@ -15093,7 +15342,7 @@ var $author$project$Causality$generatorRandomized = F3(
 			A2($author$project$Causality$dataFromNoise, dag, intervention),
 			A2(
 				$author$project$Causality$probitNoiseGenerator,
-				$elm$core$List$length(dag.aR),
+				$elm$core$List$length(dag.aS),
 				nSubj));
 	});
 var $author$project$Causality$outcomeGenerator = F2(
@@ -15105,12 +15354,12 @@ var $author$project$SingleRelationship$generator = F2(
 		return A2($author$project$Causality$outcomeGenerator, spec.S, experiment);
 	});
 var $author$project$SingleRelationship$specToNames = function (spec) {
-	var _v0 = spec.S.aR;
+	var _v0 = spec.S.aS;
 	if (_v0.b && _v0.b.b) {
 		var a = _v0.a;
 		var _v1 = _v0.b;
 		var b = _v1.a;
-		return _Utils_Tuple2(a.aC, b.aC);
+		return _Utils_Tuple2(a.aD, b.aD);
 	} else {
 		return _Utils_Tuple2('Error', 'Error');
 	}
@@ -15127,18 +15376,24 @@ var $author$project$SingleRelationship$guessEval = F2(
 			A3($author$project$Causality$causalityDescription, name0, name1, spec.ac));
 	});
 var $author$project$Causality$categoryGenerator = A2(
-	$elm$random$Random$uniform,
-	0,
+	$elm$random$Random$weighted,
+	_Utils_Tuple2(2, 0),
 	_List_fromArray(
-		[2, 1, 4, 3]));
+		[
+			_Utils_Tuple2(1, 2),
+			_Utils_Tuple2(1, 1),
+			_Utils_Tuple2(1, 4),
+			_Utils_Tuple2(1, 3)
+		]));
 var $author$project$SingleRelationship$specGenerator = function () {
-	var varNames = _List_fromArray(
-		['A', 'B']);
-	var variables = A2(
-		$elm$random$Random$map,
-		function (intercepts) {
-			return A3($elm$core$List$map2, $author$project$Causality$Variable, varNames, intercepts);
-		},
+	var varNamesGen = $author$project$Names$nameGenerator(2);
+	var variables = A3(
+		$elm$random$Random$map2,
+		F2(
+			function (varNames, intercepts) {
+				return A3($elm$core$List$map2, $author$project$Causality$Variable, varNames, intercepts);
+			}),
+		varNamesGen,
 		A2($elm$random$Random$list, 2, $author$project$Causality$interceptGenerator));
 	var edgeListFromAssoc = F2(
 		function (assocVal, contribVal) {
@@ -15148,22 +15403,22 @@ var $author$project$SingleRelationship$specGenerator = function () {
 				case 1:
 					return _List_fromArray(
 						[
-							{a4: 0, bc: contribVal, bp: 1}
+							{a5: 0, bd: contribVal, bq: 1}
 						]);
 				case 2:
 					return _List_fromArray(
 						[
-							{a4: 0, bc: contribVal, bp: 1}
+							{a5: 0, bd: contribVal, bq: 1}
 						]);
 				case 3:
 					return _List_fromArray(
 						[
-							{a4: 1, bc: contribVal, bp: 0}
+							{a5: 1, bd: contribVal, bq: 0}
 						]);
 				default:
 					return _List_fromArray(
 						[
-							{a4: 1, bc: contribVal, bp: 0}
+							{a5: 1, bd: contribVal, bq: 0}
 						]);
 			}
 		});
@@ -15193,7 +15448,7 @@ var $author$project$SingleRelationship$specGenerator = function () {
 						return _List_Nil;
 					}
 				}(),
-				aR: vars
+				aS: vars
 			};
 		});
 	var specFromData = F2(
@@ -15202,7 +15457,7 @@ var $author$project$SingleRelationship$specGenerator = function () {
 			var contribVal = _v0.b;
 			return {
 				ac: assocVal,
-				aq: contribVal,
+				ar: contribVal,
 				S: A3(sortedFromCausesAndVars, assocVal, contribVal, vars)
 			};
 		});
@@ -15246,7 +15501,7 @@ var $author$project$Causality$updateExperiment = F2(
 					{B: newIntervention});
 		}
 	});
-var $author$project$SingleRelationship$logicAdapter = {a_: $author$project$Causality$costExperiment, a5: $author$project$SingleRelationship$generator, a6: $author$project$SingleRelationship$guessEval, bm: $author$project$SingleRelationship$specGenerator, bs: $author$project$Causality$updateExperiment, bt: $author$project$Association$updateGuess};
+var $author$project$SingleRelationship$logicAdapter = {a$: $author$project$Causality$costExperiment, a6: $author$project$SingleRelationship$generator, a7: $author$project$SingleRelationship$guessEval, bn: $author$project$SingleRelationship$specGenerator, bt: $author$project$Causality$updateExperiment, bu: $author$project$Association$updateGuess};
 var $elm$html$Html$br = _VirtualDom_node('br');
 var $author$project$Causality$viewCostCommentary = A2(
 	$elm$html$Html$p,
@@ -15285,13 +15540,13 @@ var $author$project$Causality$viewExperiment = F3(
 					var varId = _v2.a;
 					return _Utils_eq(varId, experiment.B);
 				},
-				A2($elm$core$List$indexedMap, $elm$core$Tuple$pair, sorted.aR));
+				A2($elm$core$List$indexedMap, $elm$core$Tuple$pair, sorted.aS));
 			if (!_v1.b) {
 				return 'Error';
 			} else {
 				var _v3 = _v1.a;
 				var _var = _v3.b;
-				return _var.aC;
+				return _var.aD;
 			}
 		}()) : 'Observational study';
 		return A2(
@@ -15409,7 +15664,7 @@ var $author$project$Causality$viewProposedExperiment = F2(
 						]),
 					_List_fromArray(
 						[
-							$elm$html$Html$text(_var.aC)
+							$elm$html$Html$text(_var.aD)
 						]));
 			});
 		var intervention = experiment.F ? A2(
@@ -15431,7 +15686,7 @@ var $author$project$Causality$viewProposedExperiment = F2(
 									$elm$core$Maybe$withDefault($author$project$Causality$noIntervention),
 									$author$project$Causality$SetIntervention)))
 						]),
-					A2($elm$core$List$indexedMap, interventionOption, sorted.aR))
+					A2($elm$core$List$indexedMap, interventionOption, sorted.aS))
 				])) : $elm$html$Html$text('');
 		return A2(
 			$elm$html$Html$div,
@@ -15535,21 +15790,21 @@ var $author$project$SingleRelationship$viewProposedGuess = F2(
 					A4($author$project$Causality$causalityProposedGuess, name0, name1, $elm$core$Basics$identity, guess)
 				]));
 	});
-var $author$project$SingleRelationship$viewAdapter = {bv: $author$project$Causality$viewCostCommentary, bw: $author$project$SingleRelationship$viewExperiment, bx: $author$project$SingleRelationship$viewGuess, by: $author$project$SingleRelationship$viewHeader, bz: $author$project$SingleRelationship$viewProposedExperiment, bA: $author$project$SingleRelationship$viewProposedGuess};
-var $author$project$SingleRelationship$adapter = {ba: $author$project$SingleRelationship$initAdapter, bd: $author$project$SingleRelationship$logicAdapter, bu: $author$project$SingleRelationship$viewAdapter};
+var $author$project$SingleRelationship$viewAdapter = {bw: $author$project$Causality$viewCostCommentary, bx: $author$project$SingleRelationship$viewExperiment, by: $author$project$SingleRelationship$viewGuess, bz: $author$project$SingleRelationship$viewHeader, bA: $author$project$SingleRelationship$viewProposedExperiment, bB: $author$project$SingleRelationship$viewProposedGuess};
+var $author$project$SingleRelationship$adapter = {bb: $author$project$SingleRelationship$initAdapter, be: $author$project$SingleRelationship$logicAdapter, bv: $author$project$SingleRelationship$viewAdapter};
 var $author$project$TwoRelationships$generator = F2(
 	function (spec, experiment) {
 		return A2($author$project$Causality$outcomeGenerator, spec.S, experiment);
 	});
 var $author$project$TwoRelationships$specToNames = function (spec) {
-	var _v0 = spec.S.aR;
+	var _v0 = spec.S.aS;
 	if ((_v0.b && _v0.b.b) && _v0.b.b.b) {
 		var a = _v0.a;
 		var _v1 = _v0.b;
 		var b = _v1.a;
 		var _v2 = _v1.b;
 		var c = _v2.a;
-		return _Utils_Tuple3(a.aC, b.aC, c.aC);
+		return _Utils_Tuple3(a.aD, b.aD, c.aD);
 	} else {
 		return _Utils_Tuple3('Error', 'Error', 'Error');
 	}
@@ -15574,13 +15829,14 @@ var $author$project$TwoRelationships$guessEval = F2(
 					])));
 	});
 var $author$project$TwoRelationships$specGenerator = function () {
-	var varNames = _List_fromArray(
-		['A', 'B', 'C']);
-	var variables = A2(
-		$elm$random$Random$map,
-		function (intercepts) {
-			return A3($elm$core$List$map2, $author$project$Causality$Variable, varNames, intercepts);
-		},
+	var varNamesGen = $author$project$Names$nameGenerator(3);
+	var variables = A3(
+		$elm$random$Random$map2,
+		F2(
+			function (varNames, intercepts) {
+				return A3($elm$core$List$map2, $author$project$Causality$Variable, varNames, intercepts);
+			}),
+		varNamesGen,
 		A2($elm$random$Random$list, 3, $author$project$Causality$interceptGenerator));
 	var edgeListFromCause = F4(
 		function (id1, id2, cause, contrib) {
@@ -15590,22 +15846,22 @@ var $author$project$TwoRelationships$specGenerator = function () {
 				case 1:
 					return _List_fromArray(
 						[
-							{a4: id1, bc: contrib, bp: id2}
+							{a5: id1, bd: contrib, bq: id2}
 						]);
 				case 2:
 					return _List_fromArray(
 						[
-							{a4: id1, bc: contrib, bp: id2}
+							{a5: id1, bd: contrib, bq: id2}
 						]);
 				case 3:
 					return _List_fromArray(
 						[
-							{a4: id2, bc: contrib, bp: id1}
+							{a5: id2, bd: contrib, bq: id1}
 						]);
 				default:
 					return _List_fromArray(
 						[
-							{a4: id2, bc: contrib, bp: id1}
+							{a5: id2, bd: contrib, bq: id1}
 						]);
 			}
 		});
@@ -15641,7 +15897,7 @@ var $author$project$TwoRelationships$specGenerator = function () {
 						return _List_Nil;
 					}
 				}(),
-				aR: vars
+				aS: vars
 			};
 		});
 	var specFromData = F2(
@@ -15753,17 +16009,17 @@ var $author$project$TwoRelationships$viewProposedGuess = F2(
 				]));
 	});
 var $author$project$TwoRelationships$adapter = {
-	ba: {
-		a$: {B: 0, K: 100, F: false},
-		a0: {p: 0, q: 0},
-		bb: 3
+	bb: {
+		a0: {B: 0, K: 100, F: false},
+		a1: {p: 0, q: 0},
+		bc: 3
 	},
-	bd: {a_: $author$project$Causality$costExperiment, a5: $author$project$TwoRelationships$generator, a6: $author$project$TwoRelationships$guessEval, bm: $author$project$TwoRelationships$specGenerator, bs: $author$project$Causality$updateExperiment, bt: $author$project$TwoRelationships$updateGuess},
-	bu: {bv: $author$project$Causality$viewCostCommentary, bw: $author$project$TwoRelationships$viewExperiment, bx: $author$project$TwoRelationships$viewGuess, by: $author$project$TwoRelationships$viewHeader, bz: $author$project$TwoRelationships$viewProposedExperiment, bA: $author$project$TwoRelationships$viewProposedGuess}
+	be: {a$: $author$project$Causality$costExperiment, a6: $author$project$TwoRelationships$generator, a7: $author$project$TwoRelationships$guessEval, bn: $author$project$TwoRelationships$specGenerator, bt: $author$project$Causality$updateExperiment, bu: $author$project$TwoRelationships$updateGuess},
+	bv: {bw: $author$project$Causality$viewCostCommentary, bx: $author$project$TwoRelationships$viewExperiment, by: $author$project$TwoRelationships$viewGuess, bz: $author$project$TwoRelationships$viewHeader, bA: $author$project$TwoRelationships$viewProposedExperiment, bB: $author$project$TwoRelationships$viewProposedGuess}
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $author$project$Game$init = function (adapter) {
-	return {an: $elm$core$Maybe$Nothing, k: _List_Nil, E: adapter.ba.a$, N: adapter.ba.a0};
+	return {ao: $elm$core$Maybe$Nothing, j: _List_Nil, E: adapter.bb.a0, N: adapter.bb.a1};
 };
 var $author$project$Game$SpecGenerated = function (a) {
 	return {$: 0, a: a};
@@ -15804,11 +16060,6 @@ var $elm$random$Random$init = A2(
 				$elm$time$Time$posixToMillis(time)));
 	},
 	$elm$time$Time$now);
-var $elm$random$Random$step = F2(
-	function (_v0, seed) {
-		var generator = _v0;
-		return generator(seed);
-	});
 var $elm$random$Random$onEffects = F3(
 	function (router, commands, seed) {
 		if (!commands.b) {
@@ -15843,8 +16094,35 @@ var $elm$random$Random$generate = F2(
 		return $elm$random$Random$command(
 			A2($elm$random$Random$map, tagger, generator));
 	});
+var $author$project$Names$attributes = _List_fromArray(
+	['Skinny', 'Monstrous', 'Tiny', 'Semi-frozen', 'Ambitious', 'Ephemeral', 'Slippery', 'Fluffy', 'Dangerous', 'Screaming']);
+var $author$project$Names$attributesHead = 'Dark';
+var $author$project$Names$creatures = _List_fromArray(
+	['amoebas', 'cephalopods', 'locusts', 'spiders', 'creepers', 'moss', 'tree-shaped-maniacs', 'orchids', 'cultists']);
+var $author$project$Names$creaturesHead = 'blobs';
+var $author$project$Names$places = _List_fromArray(
+	['Alpha Centauri', 'the Andromeda galaxy', 'Uranus', 'the asteroid belt', 'Neptune', 'BX 4851', 'the rings of Jupiter', 'the seas of Europa', 'Haumea', 'a strange dimension', 'Arcturus b', 'lifeless void']);
+var $author$project$Names$placesHead = 'Pluto';
+var $author$project$Names$creatureNameGenerator = function () {
+	var combiner = F3(
+		function (attr, crit, pl) {
+			return attr + (' ' + (crit + (' from ' + pl)));
+		});
+	return A4(
+		$elm$random$Random$map3,
+		combiner,
+		A2($elm$random$Random$uniform, $author$project$Names$attributesHead, $author$project$Names$attributes),
+		A2($elm$random$Random$uniform, $author$project$Names$creaturesHead, $author$project$Names$creatures),
+		A2($elm$random$Random$uniform, $author$project$Names$placesHead, $author$project$Names$places));
+}();
+var $author$project$Game$instanceGenerator = function (specGenerator) {
+	return A3($elm$random$Random$map2, $elm$core$Tuple$pair, $author$project$Names$creatureNameGenerator, specGenerator);
+};
 var $author$project$Game$initCmd = function (adapter) {
-	return A2($elm$random$Random$generate, $author$project$Game$SpecGenerated, adapter.bd.bm);
+	return A2(
+		$elm$random$Random$generate,
+		$author$project$Game$SpecGenerated,
+		$author$project$Game$instanceGenerator(adapter.be.bn));
 };
 var $elm$core$Platform$Cmd$map = _Platform_map;
 var $author$project$Main$init = function (_v0) {
@@ -15886,42 +16164,44 @@ var $author$project$Game$update = F3(
 	function (adapter, msg, scenario) {
 		switch (msg.$) {
 			case 0:
-				var sp = msg.a;
+				var _v1 = msg.a;
+				var name = _v1.a;
+				var sp = _v1.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						scenario,
 						{
-							k: A2(
+							j: A2(
 								$elm$core$List$cons,
-								{H: _List_Nil, J: $elm$core$Maybe$Nothing, w: sp},
-								scenario.k)
+								{ad: name, H: _List_Nil, J: $elm$core$Maybe$Nothing, w: sp},
+								scenario.j)
 						}),
 					$elm$core$Platform$Cmd$none);
 			case 1:
-				var _v1 = scenario.k;
-				if (_v1.b) {
-					var head = _v1.a;
+				var _v2 = scenario.j;
+				if (_v2.b) {
+					var head = _v2.a;
 					return _Utils_Tuple2(
 						scenario,
 						A2(
 							$elm$random$Random$generate,
 							$author$project$Game$DataGenerated(scenario.E),
-							A2(adapter.bd.a5, head.w, scenario.E)));
+							A2(adapter.be.a6, head.w, scenario.E)));
 				} else {
 					return _Utils_Tuple2(scenario, $elm$core$Platform$Cmd$none);
 				}
 			case 2:
 				var exp = msg.a;
 				var data = msg.b;
-				var _v2 = scenario.k;
-				if (_v2.b) {
-					var active = _v2.a;
-					var rest = _v2.b;
+				var _v3 = scenario.j;
+				if (_v3.b) {
+					var active = _v3.a;
+					var rest = _v3.b;
 					return $author$project$Game$allowMoreExperiments(active) ? _Utils_Tuple2(
 						_Utils_update(
 							scenario,
 							{
-								k: A2(
+								j: A2(
 									$elm$core$List$cons,
 									_Utils_update(
 										active,
@@ -15943,7 +16223,7 @@ var $author$project$Game$update = F3(
 					_Utils_update(
 						scenario,
 						{
-							E: A2(adapter.bd.bs, eMsg, scenario.E)
+							E: A2(adapter.be.bt, eMsg, scenario.E)
 						}),
 					$elm$core$Platform$Cmd$none);
 			case 4:
@@ -15952,19 +16232,19 @@ var $author$project$Game$update = F3(
 					_Utils_update(
 						scenario,
 						{
-							N: A2(adapter.bd.bt, gMsg, scenario.N)
+							N: A2(adapter.be.bu, gMsg, scenario.N)
 						}),
 					$elm$core$Platform$Cmd$none);
 			case 5:
-				var _v3 = scenario.k;
-				if (_v3.b) {
-					var active = _v3.a;
-					var rest = _v3.b;
+				var _v4 = scenario.j;
+				if (_v4.b) {
+					var active = _v4.a;
+					var rest = _v4.b;
 					return _Utils_Tuple2(
 						_Utils_update(
 							scenario,
 							{
-								k: A2(
+								j: A2(
 									$elm$core$List$cons,
 									_Utils_update(
 										active,
@@ -15972,7 +16252,7 @@ var $author$project$Game$update = F3(
 											J: $elm$core$Maybe$Just(scenario.N)
 										}),
 									rest),
-								N: adapter.ba.a0
+								N: adapter.bb.a1
 							}),
 						$elm$core$Platform$Cmd$none);
 				} else {
@@ -15981,7 +16261,10 @@ var $author$project$Game$update = F3(
 			default:
 				return _Utils_Tuple2(
 					scenario,
-					A2($elm$random$Random$generate, $author$project$Game$SpecGenerated, adapter.bd.bm));
+					A2(
+						$elm$random$Random$generate,
+						$author$project$Game$SpecGenerated,
+						$author$project$Game$instanceGenerator(adapter.be.bn)));
 		}
 	});
 var $author$project$Main$update = F2(
@@ -16053,7 +16336,7 @@ var $author$project$Game$computeCost = F2(
 		return $elm$core$List$sum(
 			A2(
 				$elm$core$List$map,
-				adapter.a_,
+				adapter.a$,
 				A2($elm$core$List$map, $elm$core$Tuple$first, instance.H)));
 	});
 var $elm$html$Html$h3 = _VirtualDom_node('h3');
@@ -16067,7 +16350,7 @@ var $author$project$Game$NewInstance = {$: 6};
 var $author$project$Game$viewScenarioControl = F2(
 	function (adapter, scenario) {
 		var allowNewInstance = function () {
-			var _v0 = scenario.k;
+			var _v0 = scenario.j;
 			if (_v0.b) {
 				var instance = _v0.a;
 				var _v1 = instance.J;
@@ -16098,7 +16381,7 @@ var $author$project$Game$viewScenarioControl = F2(
 	});
 var $author$project$Game$viewGameControls = F2(
 	function (adapter, scenario) {
-		var _v0 = scenario.k;
+		var _v0 = scenario.j;
 		if (_v0.b) {
 			var instance = _v0.a;
 			var _v1 = function () {
@@ -16128,7 +16411,7 @@ var $author$project$Game$viewGameControls = F2(
 									A2(
 									$elm$html$Html$map,
 									$author$project$Game$GuessChanged,
-									A2(adapter.bu.bA, instance.w, scenario.N)),
+									A2(adapter.bv.bB, instance.w, scenario.N)),
 									A2(
 									$elm$html$Html$input,
 									_List_fromArray(
@@ -16159,13 +16442,13 @@ var $author$project$Game$viewGameControls = F2(
 						A2(
 						$elm$html$Html$map,
 						$author$project$Game$ExperimentChanged,
-						A2(adapter.bu.bz, instance.w, scenario.E)),
+						A2(adapter.bv.bA, instance.w, scenario.E)),
 						$author$project$Game$allowMoreExperiments(instance) ? A2(
 						$elm$html$Html$div,
 						_List_Nil,
 						_List_fromArray(
 							[
-								A2($elm$html$Html$map, $elm$core$Basics$never, adapter.bu.bv),
+								A2($elm$html$Html$map, $elm$core$Basics$never, adapter.bv.bw),
 								A2($elm$html$Html$br, _List_Nil, _List_Nil),
 								A2(
 								$elm$html$Html$input,
@@ -16175,7 +16458,7 @@ var $author$project$Game$viewGameControls = F2(
 										$elm$html$Html$Events$onClick($author$project$Game$RunExperiment),
 										$elm$html$Html$Attributes$value(
 										'Gather more data for CZK ' + $elm$core$String$fromInt(
-											adapter.bd.a_(scenario.E)))
+											adapter.be.a$(scenario.E)))
 									]),
 								_List_Nil)
 							])) : $elm$html$Html$text('Reached the maximum number of experiments'),
@@ -16193,7 +16476,7 @@ var $author$project$Game$viewGameControls = F2(
 									])),
 								$elm$html$Html$text(
 								'CZK ' + $elm$core$String$fromInt(
-									A2($author$project$Game$computeCost, adapter.bd, instance)))
+									A2($author$project$Game$computeCost, adapter.be, instance)))
 							]))
 					])) : A2(
 				$elm$html$Html$div,
@@ -16209,7 +16492,7 @@ var $author$project$Game$viewGameControls = F2(
 							])),
 						$elm$html$Html$text(
 						'CZK ' + $elm$core$String$fromInt(
-							A2($author$project$Game$computeCost, adapter.bd, instance)))
+							A2($author$project$Game$computeCost, adapter.be, instance)))
 					]));
 			return A2(
 				$elm$html$Html$div,
@@ -16219,7 +16502,7 @@ var $author$project$Game$viewGameControls = F2(
 					]),
 				_List_fromArray(
 					[
-						A2($elm$html$Html$map, $elm$core$Basics$never, adapter.bu.by),
+						A2($elm$html$Html$map, $elm$core$Basics$never, adapter.bv.bz),
 						A2(
 						$elm$html$Html$div,
 						_List_fromArray(
@@ -16230,6 +16513,30 @@ var $author$project$Game$viewGameControls = F2(
 							[
 								A2($author$project$Game$viewScenarioControl, adapter, scenario)
 							])),
+						function () {
+						var _v3 = scenario.j;
+						if (_v3.b) {
+							var activeInstance = _v3.a;
+							return A2(
+								$elm$html$Html$h3,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text(
+										'Instance ' + ($elm$core$String$fromInt(
+											$elm$core$List$length(scenario.j)) + ': ')),
+										A2(
+										$elm$html$Html$em,
+										_List_Nil,
+										_List_fromArray(
+											[
+												$elm$html$Html$text(activeInstance.ad)
+											]))
+									]));
+						} else {
+							return $elm$html$Html$text('');
+						}
+					}(),
 						activeElement,
 						guessElement
 					]));
@@ -16279,7 +16586,7 @@ var $author$project$Game$viewSingleHistory = F4(
 			$elm$html$Html$map($elm$core$Basics$never),
 			A2(
 				$author$project$Game$reverseIndexedMap,
-				adapter.bu.bw(instance.w),
+				adapter.bv.bx(instance.w),
 				instance.H));
 		var dataDesc = function () {
 			if (experiments.b) {
@@ -16319,7 +16626,14 @@ var $author$project$Game$viewSingleHistory = F4(
 					_List_fromArray(
 						[
 							$elm$html$Html$text(
-							'Instance ' + $elm$core$String$fromInt(id + 1))
+							'Instance ' + ($elm$core$String$fromInt(id + 1) + ': ')),
+							A2(
+							$elm$html$Html$em,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text(instance.ad)
+								]))
 						])),
 					function () {
 					var _v0 = instance.J;
@@ -16327,7 +16641,7 @@ var $author$project$Game$viewSingleHistory = F4(
 						return $elm$html$Html$text('');
 					} else {
 						var guess = _v0.a;
-						var _v1 = A2(adapter.bd.a6, instance.w, guess);
+						var _v1 = A2(adapter.be.a7, instance.w, guess);
 						var correct = _v1.a;
 						var desc = _v1.b;
 						var guessResultDescription = A2(
@@ -16381,7 +16695,7 @@ var $author$project$Game$viewSingleHistory = F4(
 											A2(
 											$elm$html$Html$map,
 											$elm$core$Basics$never,
-											A2(adapter.bu.bx, instance.w, guess))
+											A2(adapter.bv.by, instance.w, guess))
 										])),
 									guessResultDescription
 								]));
@@ -16461,7 +16775,7 @@ var $author$project$Game$getResults = F2(
 				var _v1 = head.J;
 				if (!_v1.$) {
 					var guess = _v1.a;
-					var correct = A2(adapter.a6, head.w, guess).a;
+					var correct = A2(adapter.a7, head.w, guess).a;
 					return A2(
 						$elm$core$List$cons,
 						_Utils_Tuple2(
@@ -16723,146 +17037,20 @@ var $author$project$Utils$safeAverage = function (x) {
 		1.0,
 		$elm$core$List$length(x));
 };
-var $elm$core$List$takeReverse = F3(
-	function (n, list, kept) {
-		takeReverse:
-		while (true) {
-			if (n <= 0) {
-				return kept;
-			} else {
-				if (!list.b) {
-					return kept;
-				} else {
-					var x = list.a;
-					var xs = list.b;
-					var $temp$n = n - 1,
-						$temp$list = xs,
-						$temp$kept = A2($elm$core$List$cons, x, kept);
-					n = $temp$n;
-					list = $temp$list;
-					kept = $temp$kept;
-					continue takeReverse;
-				}
-			}
-		}
-	});
-var $elm$core$List$takeTailRec = F2(
-	function (n, list) {
-		return $elm$core$List$reverse(
-			A3($elm$core$List$takeReverse, n, list, _List_Nil));
-	});
-var $elm$core$List$takeFast = F3(
-	function (ctr, n, list) {
-		if (n <= 0) {
-			return _List_Nil;
-		} else {
-			var _v0 = _Utils_Tuple2(n, list);
-			_v0$1:
-			while (true) {
-				_v0$5:
-				while (true) {
-					if (!_v0.b.b) {
-						return list;
-					} else {
-						if (_v0.b.b.b) {
-							switch (_v0.a) {
-								case 1:
-									break _v0$1;
-								case 2:
-									var _v2 = _v0.b;
-									var x = _v2.a;
-									var _v3 = _v2.b;
-									var y = _v3.a;
-									return _List_fromArray(
-										[x, y]);
-								case 3:
-									if (_v0.b.b.b.b) {
-										var _v4 = _v0.b;
-										var x = _v4.a;
-										var _v5 = _v4.b;
-										var y = _v5.a;
-										var _v6 = _v5.b;
-										var z = _v6.a;
-										return _List_fromArray(
-											[x, y, z]);
-									} else {
-										break _v0$5;
-									}
-								default:
-									if (_v0.b.b.b.b && _v0.b.b.b.b.b) {
-										var _v7 = _v0.b;
-										var x = _v7.a;
-										var _v8 = _v7.b;
-										var y = _v8.a;
-										var _v9 = _v8.b;
-										var z = _v9.a;
-										var _v10 = _v9.b;
-										var w = _v10.a;
-										var tl = _v10.b;
-										return (ctr > 1000) ? A2(
-											$elm$core$List$cons,
-											x,
-											A2(
-												$elm$core$List$cons,
-												y,
-												A2(
-													$elm$core$List$cons,
-													z,
-													A2(
-														$elm$core$List$cons,
-														w,
-														A2($elm$core$List$takeTailRec, n - 4, tl))))) : A2(
-											$elm$core$List$cons,
-											x,
-											A2(
-												$elm$core$List$cons,
-												y,
-												A2(
-													$elm$core$List$cons,
-													z,
-													A2(
-														$elm$core$List$cons,
-														w,
-														A3($elm$core$List$takeFast, ctr + 1, n - 4, tl)))));
-									} else {
-										break _v0$5;
-									}
-							}
-						} else {
-							if (_v0.a === 1) {
-								break _v0$1;
-							} else {
-								break _v0$5;
-							}
-						}
-					}
-				}
-				return list;
-			}
-			var _v1 = _v0.b;
-			var x = _v1.a;
-			return _List_fromArray(
-				[x]);
-		}
-	});
-var $elm$core$List$take = F2(
-	function (n, list) {
-		return A3($elm$core$List$takeFast, 0, n, list);
-	});
 var $author$project$Game$viewStats = F2(
 	function (adapter, scenario) {
 		var _v0 = $elm$core$List$unzip(
-			A2($author$project$Game$getResults, adapter.bd, scenario.k));
+			A2($author$project$Game$getResults, adapter.be, scenario.j));
 		var correct = _v0.a;
 		var cost = _v0.b;
-		var correctShort = A2($elm$core$List$take, adapter.ba.bb, correct);
+		var correctShort = A2($elm$core$List$take, adapter.bb.bc, correct);
 		var propCorrectShort = $author$project$Utils$safeAverage(
 			A2($elm$core$List$map, $author$project$Utils$boolToInt, correctShort));
 		var nRes = $elm$core$List$length(correct);
 		var propCorrect = $author$project$Utils$safeAverage(
 			A2($elm$core$List$map, $author$project$Utils$boolToInt, correct));
 		var avgCost = $author$project$Utils$safeAverage(cost);
-		var costShort = A2($elm$core$List$take, adapter.ba.bb, cost);
+		var costShort = A2($elm$core$List$take, adapter.bb.bc, cost);
 		var avgCostShort = $author$project$Utils$safeAverage(costShort);
 		return A2(
 			$elm$html$Html$div,
@@ -16905,10 +17093,10 @@ var $author$project$Game$viewStats = F2(
 							[
 								$elm$html$Html$text('Last '),
 								$elm$html$Html$text(
-								$elm$core$String$fromInt(adapter.ba.bb)),
+								$elm$core$String$fromInt(adapter.bb.bc)),
 								$elm$html$Html$text(' instances: ')
 							])),
-						(_Utils_cmp(nRes, adapter.ba.bb) > 0) ? $elm$html$Html$text(
+						(_Utils_cmp(nRes, adapter.bb.bc) > 0) ? $elm$html$Html$text(
 						A2($myrho$elm_round$Round$round, 1, propCorrectShort * 100) + ('% correct, avg cost: CZK ' + $elm$core$String$fromInt(
 							$elm$core$Basics$round(avgCostShort)))) : $elm$html$Html$text('--')
 					])));
@@ -16925,7 +17113,7 @@ var $author$project$Game$view = F2(
 				[
 					A2($author$project$Game$viewStats, adapter, scenario),
 					A2($author$project$Game$viewGameControls, adapter, scenario),
-					A2($author$project$Game$viewHistory, adapter, scenario.k),
+					A2($author$project$Game$viewHistory, adapter, scenario.j),
 					A2(
 					$elm$html$Html$div,
 					_List_fromArray(
@@ -17074,10 +17262,10 @@ var $author$project$Main$view = function (model) {
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{
-		ba: $author$project$Main$init,
-		bn: $elm$core$Basics$always($elm$core$Platform$Sub$none),
-		br: $author$project$Main$update,
-		bu: $author$project$Main$view
+		bb: $author$project$Main$init,
+		bo: $elm$core$Basics$always($elm$core$Platform$Sub$none),
+		bs: $author$project$Main$update,
+		bv: $author$project$Main$view
 	});
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	$elm$json$Json$Decode$succeed(0))(0)}});}(this));
