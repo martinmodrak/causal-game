@@ -3,6 +3,7 @@ Important:
 - Stress test - many scenarios
 - Store state in browser
 - Clear state
+- Full scenario with 3 vars?
 - Fix problem, e.g. 16, 4, 62, 18 is misleading
 
 Needed for homework:

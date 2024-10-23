@@ -4,6 +4,7 @@ import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
 import Html.Keyed
+import Names
 import Random
 import Round
 import Utils
@@ -32,6 +33,7 @@ type alias HistoryItem spec experiment outcome guess =
 
 type alias Instance spec experiment outcome guess =
     { spec : spec
+    , creatureName : String
     , data : List ( experiment, outcome )
     , guess : Maybe guess
     }
@@ -79,7 +81,7 @@ type alias Adapter expMsg guessMsg spec experiment outcome guess =
 
 
 type Msg expMsg guessMsg spec experiment outcome guess
-    = SpecGenerated spec
+    = SpecGenerated ( String, spec )
     | RunExperiment
     | DataGenerated experiment outcome
     | ExperimentChanged expMsg
@@ -105,7 +107,7 @@ initCmd :
     Adapter expMsg guessMsg spec experiment outcome guess
     -> Cmd (Msg expMsg guessMsg spec experiment outcome guess)
 initCmd adapter =
-    Random.generate SpecGenerated adapter.logic.specGenerator
+    Random.generate SpecGenerated (instanceGenerator adapter.logic.specGenerator)
 
 
 update :
@@ -115,8 +117,8 @@ update :
     -> ( Scenario spec experiment outcome guess, Cmd (Msg expMsg guessMsg spec experiment outcome guess) )
 update adapter msg scenario =
     case msg of
-        SpecGenerated sp ->
-            ( { scenario | history = { spec = sp, data = [], guess = Nothing } :: scenario.history }, Cmd.none )
+        SpecGenerated ( name, sp ) ->
+            ( { scenario | history = { spec = sp, data = [], guess = Nothing, creatureName = name } :: scenario.history }, Cmd.none )
 
         RunExperiment ->
             case scenario.history of
@@ -159,7 +161,12 @@ update adapter msg scenario =
                     ( scenario, Cmd.none )
 
         NewInstance ->
-            ( scenario, Random.generate SpecGenerated adapter.logic.specGenerator )
+            ( scenario, Random.generate SpecGenerated (instanceGenerator adapter.logic.specGenerator) )
+
+
+instanceGenerator : Random.Generator spec -> Random.Generator ( String, spec )
+instanceGenerator specGenerator =
+    Random.map2 Tuple.pair Names.creatureNameGenerator specGenerator
 
 
 allowMoreExperiments : Instance spec experiment outcome guess -> Bool
@@ -305,6 +312,15 @@ viewGameControls adapter scenario =
             div [ Attr.class "controls" ]
                 [ Html.map never adapter.view.viewHeader
                 , div [ Attr.class "scenarioControl" ] [ viewScenarioControl adapter scenario ]
+                , case scenario.history of
+                    activeInstance :: _ ->
+                        h3 []
+                            [ text ("Instance " ++ String.fromInt (List.length scenario.history) ++ ": ")
+                            , em [] [ text activeInstance.creatureName ]
+                            ]
+
+                    _ ->
+                        text ""
                 , activeElement
                 , guessElement
                 ]
@@ -433,7 +449,10 @@ viewSingleHistory adapter active id instance =
             text ""
 
           else
-            h3 [] [ text ("Instance " ++ String.fromInt (id + 1)) ]
+            h3 []
+                [ text ("Instance " ++ String.fromInt (id + 1) ++ ": ")
+                , em [] [ text instance.creatureName ]
+                ]
         , case instance.guess of
             Nothing ->
                 text ""

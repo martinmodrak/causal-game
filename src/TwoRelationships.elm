@@ -5,6 +5,7 @@ import Game
 import Graph
 import Html exposing (..)
 import Html.Attributes as Attr
+import Names
 import Random
 
 
@@ -79,12 +80,14 @@ specGenerator =
             Random.map2 Tuple.pair Causality.categoryGenerator Causality.categoryGenerator
                 |> Random.andThen (\( c1, c2 ) -> Random.map (Tuple.pair ( c1, c2 )) (Random.map2 Tuple.pair (Causality.contribGenerator c1) (Causality.contribGenerator c2)))
 
-        varNames =
-            [ "A", "B", "C" ]
+        varNamesGen =
+            Names.nameGenerator 3
 
         variables =
-            Random.list 3 Causality.interceptGenerator
-                |> Random.map (\intercepts -> List.map2 Causality.Variable varNames intercepts)
+            Random.map2
+                (\varNames intercepts -> List.map2 Causality.Variable varNames intercepts)
+                varNamesGen
+                (Random.list 3 Causality.interceptGenerator)
 
         edgeListFromCause =
             \id1 id2 cause contrib ->
