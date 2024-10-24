@@ -14,7 +14,8 @@ type alias Scenario spec experiment outcome guess =
     { history : List (HistoryItem spec experiment outcome guess)
     , proposedExperiment : experiment
     , proposedGuess : guess
-    , activeChallenge : Maybe ChallengeState
+
+    --    , activeChallenge : Maybe ChallengeState
     }
 
 
@@ -39,11 +40,12 @@ type alias Instance spec experiment outcome guess =
     }
 
 
-type alias ChallengeState =
-    { nInstances : Int
-    , nCorrect : Int
-    , totalCost : Int
-    }
+
+-- type alias ChallengeState =
+--     { nInstances : Int
+--     , nCorrect : Int
+--     , totalCost : Int
+--     }
 
 
 type alias InitAdapter guess experiment =
@@ -99,7 +101,8 @@ init adapter =
     { history = []
     , proposedExperiment = adapter.init.defaultExperiment
     , proposedGuess = adapter.init.defaultGuess
-    , activeChallenge = Nothing
+
+    --    , activeChallenge = Nothing
     }
 
 
@@ -118,7 +121,7 @@ update :
 update adapter msg scenario =
     case msg of
         SpecGenerated ( name, sp ) ->
-            ( { scenario | history = { spec = sp, data = [], guess = Nothing, creatureName = name } :: scenario.history }, Cmd.none )
+            ( { scenario | history = { spec = Debug.log "spec:" sp, data = [], guess = Nothing, creatureName = name } :: scenario.history }, Cmd.none )
 
         RunExperiment ->
             case scenario.history of
@@ -276,11 +279,16 @@ viewGameControls adapter scenario =
 
                         Nothing ->
                             ( False
-                            , div [ Attr.class "proposedGuess" ]
-                                [ h3 [] [ text "Ready to make a guess?" ]
-                                , Html.map GuessChanged (adapter.view.viewProposedGuess instance.spec scenario.proposedGuess)
-                                , input [ Attr.type_ "button", Attr.class "guessButton", Events.onClick MakeGuess, Attr.value "Make a guess!" ] []
-                                ]
+                            , case instance.data of
+                                _ :: _ ->
+                                    div [ Attr.class "proposedGuess" ]
+                                        [ h3 [] [ text "Ready to make a guess?" ]
+                                        , Html.map GuessChanged (adapter.view.viewProposedGuess instance.spec scenario.proposedGuess)
+                                        , button [ Attr.type_ "button", Attr.class "guessButton", Events.onClick MakeGuess ] [ text "Make a guess!" ]
+                                        ]
+
+                                [] ->
+                                    text ""
                             )
 
                 activeElement =
@@ -292,7 +300,7 @@ viewGameControls adapter scenario =
                                 div []
                                     [ Html.map never adapter.view.viewCostCommentary
                                     , br [] []
-                                    , input [ Attr.type_ "button", Events.onClick RunExperiment, Attr.value ("Gather more data for CZK " ++ String.fromInt (adapter.logic.costExperiment scenario.proposedExperiment)) ] []
+                                    , button [ Attr.type_ "button", Events.onClick RunExperiment ] [ text ("Gather more data for CZK " ++ String.fromInt (adapter.logic.costExperiment scenario.proposedExperiment)) ]
                                     ]
 
                               else
@@ -349,7 +357,7 @@ viewScenarioControl adapter scenario =
                     True
     in
     if allowNewInstance then
-        div [] [ input [ Attr.type_ "button", Events.onClick NewInstance, Attr.value "Start new instance" ] [] ]
+        div [] [ button [ Attr.type_ "button", Events.onClick NewInstance ] [ text "Start new instance" ] ]
 
     else
         text ""

@@ -40,6 +40,7 @@ nameGenerator n =
     Random.map2 combinator chosenVerbs chosenThings
 
 
+placesHead : String
 placesHead =
     "Pluto"
 
@@ -61,6 +62,7 @@ places =
     ]
 
 
+creaturesHead : String
 creaturesHead =
     "blobs"
 
@@ -79,6 +81,7 @@ creatures =
     ]
 
 
+attributesHead : String
 attributesHead =
     "Dark"
 

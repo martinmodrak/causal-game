@@ -3,7 +3,6 @@ module Causality exposing (..)
 import Graph
 import Html exposing (..)
 import Html.Attributes as Attr
-import Html.Events as Events
 import Html.Lazy
 import IntDict
 import Json.Encode
@@ -576,9 +575,9 @@ causalityChooser causeMsg currentVal =
     let
         singleOption =
             \val ->
-                option [ Attr.selected (currentVal == val), Attr.value (causalityDirectionToShortString val) ] [ text (causalityDirectionToString val) ]
+                option [ Attr.selected (currentVal == val), Attr.value (categoryToShortString val) ] [ text (categoryToString val) ]
     in
-    select [ View.onChange (causalityDirectionFromShortString >> causeMsg) ]
+    select [ View.onChange (categoryFromShortString >> causeMsg) ]
         [ singleOption NoCause
         , singleOption RightPos
         , singleOption RightNeg
@@ -598,8 +597,8 @@ causalityProposedGuess name1 name2 causeMsg currentVal =
         ]
 
 
-causalityDirectionToString : Category -> String
-causalityDirectionToString dir =
+categoryToString : Category -> String
+categoryToString dir =
     case dir of
         NoCause ->
             "is not causally related to"
@@ -617,8 +616,8 @@ causalityDirectionToString dir =
             "is inhibited by"
 
 
-causalityDirectionToShortString : Category -> String
-causalityDirectionToShortString cat =
+categoryToShortString : Category -> String
+categoryToShortString cat =
     case cat of
         NoCause ->
             "NoCause"
@@ -636,8 +635,8 @@ causalityDirectionToShortString cat =
             "LeftNeg"
 
 
-causalityDirectionFromShortString : String -> Category
-causalityDirectionFromShortString cat =
+categoryFromShortString : String -> Category
+categoryFromShortString cat =
     case cat of
         "NoCause" ->
             NoCause
@@ -679,7 +678,7 @@ causalityDescription name1 name2 val =
     div []
         [ em [] [ text name1 ]
         , text " "
-        , strong [] [ text (causalityDirectionToString val) ]
+        , strong [] [ text (categoryToString val) ]
         , text " "
         , em [] [ text name2 ]
         ]

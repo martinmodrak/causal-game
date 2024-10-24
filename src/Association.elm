@@ -16,7 +16,6 @@ import View
 type alias Spec =
     { sorted : Causality.SortedDAG
     , association : Causality.Category
-    , contrib : Float
     }
 
 
@@ -134,7 +133,6 @@ specGenerator =
             \( assocVal, contribVal ) vars ->
                 { sorted = sortedFromCausesAndVars assocVal contribVal vars
                 , association = assocVal
-                , contrib = contribVal
                 }
     in
     Random.map2 specFromData assocContrib variables
@@ -246,13 +244,13 @@ viewProposedGuess spec guess =
 
         singleOption =
             \val ->
-                option [ Attr.selected (guess == val), Attr.value (Causality.causalityDirectionToShortString val) ] [ text (Causality.causalityDirectionToString val) ]
+                option [ Attr.selected (guess == val), Attr.value (Causality.categoryToShortString val) ] [ text (Causality.categoryToString val) ]
     in
     div []
         [ text "I believe "
         , em [] [ text name0 ]
         , text " "
-        , select [ View.onChange (Causality.causalityDirectionFromShortString >> SetGuess) ]
+        , select [ View.onChange (Causality.categoryFromShortString >> SetGuess) ]
             [ singleOption Causality.NoCause
             , singleOption Causality.RightPos
             , singleOption Causality.RightNeg

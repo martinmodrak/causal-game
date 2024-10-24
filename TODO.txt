@@ -4,13 +4,15 @@ Important:
 - Store state in browser
 - Clear state
 - Full scenario with 3 vars?
-- Fix problem, e.g. 16, 4, 62, 18 is misleading
+- Fractional success
+- Fix problem, e.g. (16, 4, 62, 18), (73, 13, 6, 8) is misleading
 
 Needed for homework:
 - Overall instruction
 - Homework scenario
 - Download state for Homework
 - Scoring
+- Encrypt stored and sent state
 
 Nice to have:
 - Nazvy promennych a scenaru

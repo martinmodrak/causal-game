@@ -13,7 +13,6 @@ import Random
 type alias Spec =
     { sorted : Causality.SortedDAG
     , category : Causality.Category
-    , contrib : Float
     }
 
 
@@ -140,7 +139,6 @@ specGenerator =
             \( assocVal, contribVal ) vars ->
                 { sorted = sortedFromCausesAndVars assocVal contribVal vars
                 , category = assocVal
-                , contrib = contribVal
                 }
     in
     Random.map2 specFromData causeContrib variables

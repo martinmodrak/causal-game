@@ -63,13 +63,20 @@ customElements.define('vega-plot',
 );
 
 
+var storedData = localStorage.getItem('causal-game-state');
+var flags = storedData ? JSON.parse(storedData) : null;
 
 // Start the Elm application.
 var app = Elm.Main.init({
-    node: document.getElementById('myapp')
+    node: document.getElementById('myapp'),
+    flags: flags
 });
 
-
+// Listen for commands from the `setStorage` port.
+// Turn the data to a string and put it in localStorage.
+app.ports.setStorage.subscribe(function(state) {
+    localStorage.setItem('causal-game-state', JSON.stringify(state));
+});
 
 
 

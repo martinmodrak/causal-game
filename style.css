@@ -76,3 +76,39 @@ h2.historyStart, .instance, .scenarioFooter {
 .stats {
     float:right;
 }
+
+.popupBackground {
+    position:fixed;
+    top: 0;
+    left:0;
+    right:0;
+    bottom:0;
+    background-color: #00000080;
+}
+
+.popup {
+  position: absolute;
+  left: 50%;
+  top: 10%;
+  width: 30em;
+  margin-left: -15em;
+  background-color: white;
+  padding: 1em;
+}
+
+.popup .left {
+    float:left;
+}
+
+.popup .right {
+    float:right;
+}
+
+button {
+    font-size:120%;
+    padding:0.3em;
+}
+
+input, select {
+    font-size: 120%;
+}
