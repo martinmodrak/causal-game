@@ -107,8 +107,14 @@ h2.historyStart, .instance, .scenarioFooter {
 button {
     font-size:120%;
     padding:0.3em;
+    margin-top: 0.3em;
+    margin-bottom: 0.3em;   
 }
 
 input, select {
     font-size: 120%;
+}
+
+.homework {
+    float:right;
 }

@@ -1,9 +1,10 @@
 port module Main exposing (..)
 
 import Association
+import Base64
 import Browser
 import Game
-import GameJson
+import GameState
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
@@ -20,17 +21,13 @@ type Page
     | TwoRelPage
 
 
-type alias GameState =
-    { association : Association.Model
-    , singleRel : SingleRelationship.Model
-    , twoRel : TwoRelationships.Model
-    }
-
-
 type alias Model =
     { page : Page
-    , game : GameState
-    , storedGame : Maybe GameState
+    , game : GameState.GameState
+    , storedGame : Maybe GameState.GameState
+    , homeworkSubmission : Bool
+    , homeworkName : String
+    , homeworkGroup : String
     }
 
 
@@ -41,6 +38,10 @@ type Msg
     | ActivatePage Page
     | LoadStored
     | DismissStored
+    | HomeworkSubmissionStart
+    | HomeworkSubmissionEnd
+    | HomeworkSetName String
+    | HomeworkSetGroup String
 
 
 port setStorage : Json.Encode.Value -> Cmd msg
@@ -55,9 +56,9 @@ init storedGame =
             , twoRel = Game.init TwoRelationships.adapter
             }
       , storedGame =
-            case Json.Decode.decodeValue gameDecoder storedGame of
+            case Json.Decode.decodeValue GameState.gameDecoder storedGame of
                 Ok stored ->
-                    if gameHasData stored then
+                    if GameState.gameHasData stored then
                         Just stored
 
                     else
@@ -65,6 +66,9 @@ init storedGame =
 
                 Err a ->
                     Tuple.first ( Nothing, Debug.log "Err JSON: " a )
+      , homeworkSubmission = False
+      , homeworkName = ""
+      , homeworkGroup = ""
       }
     , Cmd.batch
         [ Cmd.map AssocMsg (Game.initCmd Association.adapter)
@@ -116,6 +120,18 @@ update msg model =
         DismissStored ->
             ( { model | storedGame = Nothing }, Cmd.none )
 
+        HomeworkSubmissionStart ->
+            ( { model | homeworkSubmission = True }, Cmd.none )
+
+        HomeworkSubmissionEnd ->
+            ( { model | homeworkSubmission = False }, Cmd.none )
+
+        HomeworkSetName name ->
+            ( { model | homeworkName = name }, Cmd.none )
+
+        HomeworkSetGroup group ->
+            ( { model | homeworkGroup = group }, Cmd.none )
+
 
 updateWithStorage : Msg -> Model -> ( Model, Cmd Msg )
 updateWithStorage msg oldModel =
@@ -129,8 +145,8 @@ updateWithStorage msg oldModel =
             cmds
 
         Nothing ->
-            if gameHasData newModel.game then
-                Cmd.batch [ setStorage (gameEncoder newModel.game), cmds ]
+            if GameState.gameHasData newModel.game then
+                Cmd.batch [ setStorage (GameState.gameEncoder newModel.game), cmds ]
 
             else
                 cmds
@@ -140,7 +156,8 @@ updateWithStorage msg oldModel =
 view : Model -> Html Msg
 view model =
     div [ Attr.class "topContainer" ]
-        [ viewPageSelection model
+        [ viewHomeworkControls
+        , viewPageSelection model
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, AssocPage ) ( "block", "none" )) ]
             [ Html.map AssocMsg (Game.view Association.adapter model.game.association)
             ]
@@ -155,7 +172,11 @@ view model =
                 viewStoredPopup
 
             Nothing ->
-                text ""
+                if model.homeworkSubmission then
+                    viewHomeworkPopup model
+
+                else
+                    text ""
         ]
 
 
@@ -170,6 +191,54 @@ viewStoredPopup =
                 ]
             , button [ Attr.class "left", Attr.type_ "button", Events.onClick LoadStored ] [ strong [] [ text "Continue game" ] ]
             , button [ Attr.class "right", Attr.type_ "button", Events.onClick DismissStored ] [ text "Start fresh" ]
+            ]
+        ]
+
+
+viewHomeworkPopup : Model -> Html Msg
+viewHomeworkPopup model =
+    let
+        encodedHomework =
+            if not (String.isEmpty model.homeworkName) && not (String.isEmpty model.homeworkGroup) then
+                Just
+                    (Json.Encode.object
+                        [ ( "name", Json.Encode.string model.homeworkName )
+                        , ( "group", Json.Encode.string model.homeworkGroup )
+                        , ( "state", GameState.gameEncoder model.game )
+                        ]
+                        |> Json.Encode.encode 0
+                        |> String.toList
+                        |> List.map Char.toCode
+                        |> Base64.encode
+                        |> Result.withDefault "RXJyb3IgNTYyNw=="
+                    )
+                --todo data url here
+
+            else
+                Nothing
+    in
+    div [ Attr.class "popupBackground" ]
+        [ div [ Attr.class "popup" ]
+            [ p []
+                [ text "To submit your homework, fill in your name and group. Then use the link below to download a file and send it to martin.modrak@lfmotol.cuni.cz" ]
+            , p []
+                [ strong [] [ text "Your homework is currently worth TODO points." ]
+                ]
+            , text "Your full name: "
+            , input [ Attr.type_ "text", Events.onInput HomeworkSetName, Attr.value model.homeworkName ] []
+            , br [] []
+            , text "Your group: "
+            , input [ Attr.type_ "text", Events.onInput HomeworkSetGroup, Attr.value model.homeworkGroup ] []
+            , br [] []
+            , p [ Attr.class "downloadHW", Attr.class "left" ]
+                [ case encodedHomework of
+                    Just enc ->
+                        a [ Attr.href ("data:application/json;base64," ++ enc), Attr.download "homework.json" ] [ strong [] [ text "Download homework file" ] ]
+
+                    Nothing ->
+                        strong [] [ text "Enter name and group to enable download" ]
+                ]
+            , button [ Attr.type_ "button", Attr.class "right", Events.onClick HomeworkSubmissionEnd ] [ text "Back to game" ]
             ]
         ]
 
@@ -209,42 +278,11 @@ ifActive ( activePage, page ) ( activeOutput, inactiveOutput ) =
         inactiveOutput
 
 
-gameEncoder : GameState -> Json.Encode.Value
-gameEncoder game =
-    Json.Encode.object
-        [ ( "association", GameJson.associationScenarioEncoder game.association )
-        , ( "singleRel", GameJson.singleRelScenarioEncoder game.singleRel )
-        , ( "twoRel", GameJson.twoRelScenarioEncoder game.twoRel )
+viewHomeworkControls : Html Msg
+viewHomeworkControls =
+    div [ Attr.class "homework" ]
+        [ button [ Attr.type_ "button", Events.onClick HomeworkSubmissionStart ] [ strong [] [ text "Homework submission" ] ]
         ]
-
-
-gameDecoder : Json.Decode.Decoder GameState
-gameDecoder =
-    Json.Decode.map3
-        GameState
-        (Json.Decode.field "association" GameJson.associationScenarioDecoder)
-        (Json.Decode.field "singleRel" GameJson.singleRelScenarioDecoder)
-        (Json.Decode.field "twoRel" GameJson.twoRelScenarioDecoder)
-
-
-gameHasData : GameState -> Bool
-gameHasData game =
-    let
-        hasDataFunc =
-            \sc ->
-                case sc.history of
-                    _ :: _ :: _ ->
-                        True
-
-                    singleInst :: [] ->
-                        not (List.isEmpty singleInst.data)
-
-                    [] ->
-                        False
-    in
-    hasDataFunc game.association
-        || hasDataFunc game.singleRel
-        || hasDataFunc game.twoRel
 
 
 main : Program Json.Encode.Value Model Msg
