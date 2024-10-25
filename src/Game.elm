@@ -183,7 +183,7 @@ instanceGenerator specGenerator =
 
 allowMoreExperiments : Instance spec experiment outcome guess -> Bool
 allowMoreExperiments instance =
-    List.length instance.data < 100
+    List.length instance.data < 10
 
 
 view :
