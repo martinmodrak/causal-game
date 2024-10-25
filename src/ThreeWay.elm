@@ -248,7 +248,8 @@ viewHeader =
         [ h2 []
             [ text "All possibilities among 3 variables" ]
         , em [] [ text "We strongly recommend trying out the previous scenarios before going here." ]
-        , strong [] [ text "This scenario does not contribute to homework scoring, it is a bonus." ]
+        , p [] [ text "Here, we have three variables and no restrictions on their possible relationships." ]
+        , p [] [ strong [] [ text "This scenario does not contribute to homework scoring, it is a bonus." ] ]
         ]
 
 

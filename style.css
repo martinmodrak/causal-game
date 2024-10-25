@@ -65,7 +65,7 @@ body, html {
     float:left;
 }
 
-h2.historyStart, .instance, .scenarioFooter {
+h2.historyStart, .instance, .scenarioFooter, .afterHeader {
     clear:both;
 }
 
@@ -124,4 +124,9 @@ input, select {
 
 .nChooser .range {
     vertical-align: top;
+}
+
+.instructions p, .scenarioHeader p {
+    max-width: 50em;
+    text-align:justify;
 }

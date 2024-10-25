@@ -10,6 +10,8 @@ import Homework
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
+import Html.Lazy
+import Instructions
 import Json.Decode
 import Json.Encode
 import Round
@@ -52,7 +54,7 @@ port setStorage : Json.Encode.Value -> Cmd msg
 
 init : Json.Encode.Value -> ( Model, Cmd Msg )
 init storedGame =
-    ( { page = AssocPage
+    ( { page = InstructionsPage
       , game =
             { association = Game.init Association.adapter
             , singleRel = Game.init SingleRelationship.adapter
@@ -164,7 +166,10 @@ view : Model -> Html Msg
 view model =
     div [ Attr.class "topContainer" ]
         [ Html.map Homework (Homework.viewControls model.game)
-        , viewPageSelection model
+        , Html.Lazy.lazy viewPageSelection model
+        , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, InstructionsPage ) ( "block", "none" )) ]
+            [ Html.map never Instructions.view
+            ]
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, AssocPage ) ( "block", "none" )) ]
             [ Html.map AssocMsg (Game.view Association.adapter model.game.association)
             ]
@@ -207,7 +212,7 @@ viewStoredPopup =
 
 viewPageSelection : Model -> Html Msg
 viewPageSelection model =
-    div [] (List.map (viewPageSelectionButton model.page) [ AssocPage, SingleRelPage, TwoRelPage, ThreeWayPage ])
+    div [] (List.map (viewPageSelectionButton model.page) [ InstructionsPage, AssocPage, SingleRelPage, TwoRelPage, ThreeWayPage ])
 
 
 viewPageSelectionButton : Page -> Page -> Html Msg

@@ -212,7 +212,17 @@ viewHeader : Html Never
 viewHeader =
     div [ Attr.class "scenarioHeader" ]
         [ h2 [] [ text "Single causal relationship" ]
-        , strong [] [ text "This scenario does not contribute to homework scoring, it is there to help you learn how the game works." ]
+        , p [] [ strong [] [ text "This scenario does not contribute to homework scoring, it is there to help you learn how the game works." ] ]
+        , p []
+            [ text "Here, the change from the previous scenario is that now the direction of causality is not given and you have to find it yourself."
+            , text " You can now also access randomized experiments that help you do exactly that. You mess up with the aliens, such that after randomization the randomized variable will be"
+            , text " randomly split 50:50 between true and false. If there is an association between a randomized variable and another one, it has to be causal."
+            , text " Since we only have two variables, the situation is simple and any causation has to be direct, but if we investigate many variables, indirect causal relationships will also result in an associaton."
+            , text " The problem with randomized experiments is that they are really expensive. So it might make sense to try an observational study before investing in a randomized one."
+            ]
+        , p []
+            [ text " You should be able to obtain almost 100% accuracy while spending on average at most CZK 200 000 "
+            ]
         ]
 
 

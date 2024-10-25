@@ -491,10 +491,15 @@ viewSingleContingency xValues yValues xName yName =
         ]
 
 
+viewSingleWaffle : List Bool -> List Bool -> String -> String -> Html Never
+viewSingleWaffle xValues yValues xName yName =
+    View.vegaPlot (singlePairWaffleDataSpec xValues yValues xName yName)
+
+
 viewOutcomeSubplot : Int -> Int -> List Bool -> List Bool -> String -> String -> Html Never
 viewOutcomeSubplot xOrd yOrd xValues yValues xName yName =
     if xOrd < yOrd then
-        td [ Attr.class "waffle" ] [ View.vegaPlot (singlePairWaffleDataSpec xValues yValues xName yName) ]
+        td [ Attr.class "waffle" ] [ viewSingleWaffle xValues yValues xName yName ]
 
     else
         td [] []

@@ -58,7 +58,7 @@ viewControls game =
             computeScore (Game.getResults TwoRelationships.adapter.logic game.twoRel.history)
     in
     div [ Attr.class "" ]
-        [ h3 [] [ text " scoring" ]
+        [ h3 [] [ text "Homework scoring" ]
         , p []
             [ text "Currently, you would get "
             , strong [] [ text (String.fromInt eval.score) ]
@@ -70,8 +70,8 @@ viewControls game =
                 text ""
 
               else
-                div [] [ text "You need to complete at least 3 instances of the  problem to gain points." ]
-            , text "Your average correctness and average cost are computed over 3 consecutive instances of the  problem."
+                div [] [ text "You need to complete at least 3 instances of the homework problem to gain points." ]
+            , text "Your average correctness and average cost are computed over 3 consecutive instances of the homework problem."
             , div []
                 [ text
                     (case eval.score of

@@ -232,6 +232,10 @@ viewHeader =
     div [ Attr.class "scenarioHeader" ]
         [ h2 [] [ text "Two way causality" ]
         , em [] [ text "We strongly recommend trying out the previous scenarios before going here." ]
+        , p []
+            [ text "Here we add another variable, but to make things manageable, you know that only two relationships are possible (as noted below). "
+            , text " This is the actual homework stuff. Good luck."
+            ]
         ]
 
 

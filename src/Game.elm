@@ -122,7 +122,7 @@ update :
 update adapter msg scenario =
     case msg of
         SpecGenerated ( name, sp ) ->
-            ( { scenario | history = { spec = sp, data = [], guess = Nothing, creatureName = name } :: scenario.history }, Cmd.none )
+            ( { scenario | history = { spec = sp, data = [], guess = Nothing, creatureName = name } :: scenario.history, proposedExperiment = adapter.init.defaultExperiment }, Cmd.none )
 
         RunExperiment ->
             case scenario.history of
@@ -184,8 +184,7 @@ view :
     -> Html (Msg expMsg guessMsg spec experiment outcome guess)
 view adapter scenario =
     div [ Attr.class "scenario" ]
-        [ viewStats adapter scenario
-        , viewGameControls adapter scenario
+        [ viewGameControls adapter scenario
         , viewHistory adapter scenario.history
         , div [ Attr.class "scenarioFooter" ] []
         ]
@@ -255,7 +254,7 @@ viewStats adapter scenario =
                     , text (Round.round 0 (propCorrect * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCost))
                     , br [] []
                     , strong [] [ text "Last ", text (String.fromInt adapter.init.instancesToAverage), text " instances: " ]
-                    , if nRes > adapter.init.instancesToAverage then
+                    , if nRes >= adapter.init.instancesToAverage then
                         text (Round.round 0 (propCorrectShort * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCostShort))
 
                       else
@@ -320,6 +319,9 @@ viewGameControls adapter scenario =
             in
             div [ Attr.class "controls" ]
                 [ Html.map never adapter.view.viewHeader
+                , viewStats adapter scenario
+
+                --, div [ Attr.class "afterHeader" ] []
                 , div [ Attr.class "scenarioControl" ] [ viewScenarioControl adapter scenario ]
                 , case scenario.history of
                     activeInstance :: _ ->
