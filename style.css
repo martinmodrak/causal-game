@@ -116,5 +116,12 @@ input, select {
 }
 
 .homework {
-    float:right;
+}
+
+.nChooser .num{
+    width: 4em
+}
+
+.nChooser .range {
+    vertical-align: top;
 }

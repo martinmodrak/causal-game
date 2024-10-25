@@ -10,6 +10,7 @@ import Html.Events as Events
 import Http
 import Json.Decode
 import SingleRelationship
+import ThreeWay
 import TwoRelationships
 
 
@@ -81,6 +82,9 @@ view model =
                     ]
                 , div [ Attr.class "scenarioPage" ]
                     [ Html.map (always Noop) (Game.view TwoRelationships.adapter rec.state.twoRel)
+                    ]
+                , div [ Attr.class "scenarioPage" ]
+                    [ Html.map (always Noop) (Game.view ThreeWay.adapter rec.state.threeWay)
                     ]
                 ]
 

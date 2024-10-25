@@ -7,6 +7,7 @@ import Json.Decode as D
 import Json.Encode as E
 import Random
 import SingleRelationship
+import ThreeWay
 import TwoRelationships
 
 
@@ -14,6 +15,7 @@ type alias GameState =
     { association : Association.Model
     , singleRel : SingleRelationship.Model
     , twoRel : TwoRelationships.Model
+    , threeWay : ThreeWay.Model
     }
 
 
@@ -36,6 +38,7 @@ gameEncoder game =
                     [ ( "association", GameJson.associationScenarioEncoder game.association )
                     , ( "singleRel", GameJson.singleRelScenarioEncoder game.singleRel )
                     , ( "twoRel", GameJson.twoRelScenarioEncoder game.twoRel )
+                    , ( "threeWay", GameJson.threeWayScenarioEncoder game.threeWay )
                     ]
                 )
 
@@ -44,7 +47,7 @@ gameEncoder game =
     in
     case encryption of
         Ok ( enc, _ ) ->
-            E.string (Debug.log "XX" enc)
+            E.string enc
 
         Err _ ->
             E.null
@@ -54,11 +57,12 @@ gameDecoder : D.Decoder GameState
 gameDecoder =
     let
         rawDecoder =
-            D.map3
+            D.map4
                 GameState
                 (D.field "association" GameJson.associationScenarioDecoder)
                 (D.field "singleRel" GameJson.singleRelScenarioDecoder)
                 (D.field "twoRel" GameJson.twoRelScenarioDecoder)
+                (D.field "threeWay" GameJson.threeWayScenarioDecoder)
 
         decryption =
             \enc -> Crypto.Strings.decrypt ps enc
@@ -98,3 +102,4 @@ gameHasData game =
     hasDataFunc game.association
         || hasDataFunc game.singleRel
         || hasDataFunc game.twoRel
+        || hasDataFunc game.threeWay

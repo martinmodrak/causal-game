@@ -1,5 +1,6 @@
 module View exposing (..)
 
+import Constants
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
@@ -41,7 +42,34 @@ scenario infoElements dataElements =
 
 nChooser : (String -> msg) -> Int -> Html msg
 nChooser setNMsg currentN =
-    input [ Attr.type_ "text", Attr.value (String.fromInt currentN), Events.onInput setNMsg ] []
+    let
+        base =
+            10
+
+        mult =
+            100
+
+        logMsg =
+            \x ->
+                case String.toFloat x of
+                    Just val ->
+                        setNMsg (String.fromInt (round (base ^ (val / mult))))
+
+                    Nothing ->
+                        setNMsg (String.fromInt currentN)
+    in
+    span [ Attr.class "nChooser" ]
+        [ input [ Attr.class "num", Attr.type_ "text", Attr.value (String.fromInt currentN), Events.onInput setNMsg ] []
+        , input
+            [ Attr.class "range"
+            , Attr.type_ "range"
+            , Attr.min "0"
+            , Attr.max (String.fromInt (round (mult * logBase base (toFloat Constants.maxN))))
+            , Attr.value (String.fromInt (round (mult * logBase base (toFloat currentN))))
+            , Events.onInput logMsg
+            ]
+            []
+        ]
 
 
 vegaPlot : VegaLite.Spec -> Html msg

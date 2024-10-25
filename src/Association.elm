@@ -1,6 +1,7 @@
 module Association exposing (..)
 
 import Causality
+import Constants
 import Game exposing (GuessEval, Msg(..))
 import Graph
 import Html exposing (..)
@@ -69,6 +70,7 @@ logicAdapter =
 viewAdapter : Game.ViewAdapter ExpMsg GuessMsg Spec Experiment Outcome Guess
 viewAdapter =
     { viewHeader = viewHeader
+    , viewInstanceGoal = viewInstanceGoal
     , viewExperiment = viewExperiment
     , viewProposedExperiment = viewProposedExperiment
     , viewCostCommentary = viewCostCommentary
@@ -160,10 +162,10 @@ guessEval spec guess =
             specToNames spec
     in
     if guess == spec.association then
-        ( True, text "" )
+        ( 1.0, text "" )
 
     else
-        ( False
+        ( 0.0
         , Causality.causalityDescription name0 name1 spec.association
         )
 
@@ -174,7 +176,7 @@ updateExperiment msg experiment =
         SetN newN ->
             case String.toInt newN of
                 Just n ->
-                    min n Causality.maxN
+                    min n Constants.maxN
 
                 Nothing ->
                     experiment
@@ -265,5 +267,14 @@ viewHeader : Html Never
 viewHeader =
     div [ Attr.class "scenarioHeader" ]
         [ h2 [] [ text "Is there an association?" ]
-        , p [] [ text "" ]
+        , strong [] [ text "This scenario does not contribute to homework scoring, it is there to help you learn how the game works." ]
         ]
+
+
+viewInstanceGoal : Spec -> Html Never
+viewInstanceGoal spec =
+    let
+        ( name1, name2 ) =
+            specToNames spec
+    in
+    span [] [ text "Investigate a possible association between traits ", em [] [ text name1 ], text " and ", em [] [ text name2 ] ]

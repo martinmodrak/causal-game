@@ -67,6 +67,7 @@ type alias LogicAdapter expMsg guessMsg spec experiment outcome guess =
 
 type alias ViewAdapter expMsg guessMsg spec experiment outcome guess =
     { viewHeader : Html Never
+    , viewInstanceGoal : spec -> Html Never
     , viewExperiment : spec -> Int -> ( experiment, outcome ) -> Html Never
     , viewProposedExperiment : spec -> experiment -> Html expMsg
     , viewCostCommentary : Html Never
@@ -93,7 +94,7 @@ type Msg expMsg guessMsg spec experiment outcome guess
 
 
 type alias GuessEval =
-    ( Bool, Html Never )
+    ( Float, Html Never )
 
 
 init : Adapter expMsg guessMsg spec experiment outcome guess -> Scenario spec experiment outcome guess
@@ -193,17 +194,17 @@ view adapter scenario =
 getResults :
     LogicAdapter expMsg guessMsg spec experiment outcome guess
     -> List (HistoryItem spec experiment outcome guess)
-    -> List ( Bool, Int )
+    -> List ( Float, Int )
 getResults adapter history =
     case history of
         head :: rest ->
             case head.guess of
                 Just guess ->
                     let
-                        correct =
+                        eval =
                             Tuple.first (adapter.guessEval head.spec guess)
                     in
-                    ( correct, computeCost adapter head )
+                    ( eval, computeCost adapter head )
                         :: getResults adapter rest
 
                 Nothing ->
@@ -233,10 +234,10 @@ viewStats adapter scenario =
             List.length correct
 
         propCorrect =
-            correct |> List.map Utils.boolToInt |> Utils.safeAverage
+            correct |> Utils.safeAverageF
 
         propCorrectShort =
-            correctShort |> List.map Utils.boolToInt |> Utils.safeAverage
+            correctShort |> Utils.safeAverageF
 
         avgCost =
             Utils.safeAverage cost
@@ -251,11 +252,11 @@ viewStats adapter scenario =
 
                 else
                     [ strong [] [ text "All ", text (String.fromInt nRes), text " instances: " ]
-                    , text (Round.round 1 (propCorrect * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCost))
+                    , text (Round.round 0 (propCorrect * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCost))
                     , br [] []
                     , strong [] [ text "Last ", text (String.fromInt adapter.init.instancesToAverage), text " instances: " ]
                     , if nRes > adapter.init.instancesToAverage then
-                        text (Round.round 1 (propCorrectShort * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCostShort))
+                        text (Round.round 0 (propCorrectShort * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCostShort))
 
                       else
                         text "--"
@@ -322,9 +323,13 @@ viewGameControls adapter scenario =
                 , div [ Attr.class "scenarioControl" ] [ viewScenarioControl adapter scenario ]
                 , case scenario.history of
                     activeInstance :: _ ->
-                        h3 []
-                            [ text ("Instance " ++ String.fromInt (List.length scenario.history) ++ ": ")
-                            , em [] [ text activeInstance.creatureName ]
+                        div []
+                            [ h3 []
+                                [ text ("Instance " ++ String.fromInt (List.length scenario.history) ++ ": ")
+                                , em [] [ text activeInstance.creatureName ]
+                                ]
+                            , strong [] [ text "Goal: " ]
+                            , Html.map never (adapter.view.viewInstanceGoal activeInstance.spec)
                             ]
 
                     _ ->
@@ -461,6 +466,14 @@ viewSingleHistory adapter active id instance =
                 [ text ("Instance " ++ String.fromInt (id + 1) ++ ": ")
                 , em [] [ text instance.creatureName ]
                 ]
+        , if active then
+            text ""
+
+          else
+            div []
+                [ strong [] [ text "Total cost: " ]
+                , text ("CZK " ++ String.fromInt (computeCost adapter.logic instance))
+                ]
         , case instance.guess of
             Nothing ->
                 text ""
@@ -475,11 +488,14 @@ viewSingleHistory adapter active id instance =
                             [ text "The guess was "
                             , strong []
                                 [ text
-                                    (if correct then
+                                    (if correct >= 1.0 then
                                         "CORRECT"
 
-                                     else
+                                     else if correct <= 0.0 then
                                         "INCORRECT"
+
+                                     else
+                                        String.fromInt (round (correct * 100)) ++ "% CORRECT"
                                     )
                                 ]
                             , div [ Attr.class "guessResultDesc" ] [ Html.map never desc ]

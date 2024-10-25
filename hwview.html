@@ -38,9 +38,7 @@ customElements.define('vega-plot',
         // Our function to transform the spec into the plot
         renderPlot()
         {          
-            console.log("Render");  
             const spec = this._spec;
-            console.log(spec);
             const thisref = this;
             if(!spec) {
                 requestAnimationFrame(function() {

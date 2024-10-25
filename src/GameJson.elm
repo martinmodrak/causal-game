@@ -8,6 +8,7 @@ import IntDict
 import Json.Decode as D
 import Json.Encode as E
 import SingleRelationship
+import ThreeWay
 import TwoRelationships
 
 
@@ -45,6 +46,18 @@ twoRelScenarioEncoder =
 twoRelScenarioDecoder : D.Decoder (Game.Scenario TwoRelationships.Spec TwoRelationships.Experiment TwoRelationships.Outcome TwoRelationships.Guess)
 twoRelScenarioDecoder =
     scenarioDecoder twoRelSpecDecoder experimentDecoder twoRelGuessDecoder
+
+
+threeWayScenarioEncoder :
+    Game.Scenario ThreeWay.Spec ThreeWay.Experiment ThreeWay.Outcome ThreeWay.Guess
+    -> E.Value
+threeWayScenarioEncoder =
+    scenarioEncoder threeWaySpecEncoder experimentEncoder threeWayGuessEncoder
+
+
+threeWayScenarioDecoder : D.Decoder (Game.Scenario ThreeWay.Spec ThreeWay.Experiment ThreeWay.Outcome ThreeWay.Guess)
+threeWayScenarioDecoder =
+    scenarioDecoder threeWaySpecDecoder experimentDecoder threeWayGuessDecoder
 
 
 scenarioEncoder :
@@ -185,6 +198,42 @@ twoRelGuessDecoder : D.Decoder TwoRelationships.Guess
 twoRelGuessDecoder =
     D.map2 TwoRelationships.Guess
         (D.field "cause01" categoryDecoder)
+        (D.field "cause12" categoryDecoder)
+
+
+threeWaySpecEncoder : ThreeWay.Spec -> E.Value
+threeWaySpecEncoder spec =
+    E.object
+        [ ( "sorted", sortedDAGEncoder spec.sorted )
+        , ( "cause01", categoryEncoder spec.cause01 )
+        , ( "cause02", categoryEncoder spec.cause02 )
+        , ( "cause12", categoryEncoder spec.cause12 )
+        ]
+
+
+threeWaySpecDecoder : D.Decoder ThreeWay.Spec
+threeWaySpecDecoder =
+    D.map4 (\s c01 c02 c12 -> { sorted = s, cause01 = c01, cause02 = c02, cause12 = c12 })
+        (D.field "sorted" sortedDagDecoder)
+        (D.field "cause01" categoryDecoder)
+        (D.field "cause02" categoryDecoder)
+        (D.field "cause12" categoryDecoder)
+
+
+threeWayGuessEncoder : ThreeWay.Guess -> E.Value
+threeWayGuessEncoder guess =
+    E.object
+        [ ( "cause01", categoryEncoder guess.cause01 )
+        , ( "cause02", categoryEncoder guess.cause02 )
+        , ( "cause12", categoryEncoder guess.cause12 )
+        ]
+
+
+threeWayGuessDecoder : D.Decoder ThreeWay.Guess
+threeWayGuessDecoder =
+    D.map3 (\c01 c02 c12 -> { cause01 = c01, cause02 = c02, cause12 = c12 })
+        (D.field "cause01" categoryDecoder)
+        (D.field "cause02" categoryDecoder)
         (D.field "cause12" categoryDecoder)
 
 

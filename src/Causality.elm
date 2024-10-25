@@ -1,5 +1,6 @@
 module Causality exposing (..)
 
+import Constants
 import Graph
 import Html exposing (..)
 import Html.Attributes as Attr
@@ -718,18 +719,13 @@ variableNames sorted =
     sorted.variables |> List.map .name
 
 
-maxN : Int
-maxN =
-    1000
-
-
 updateExperiment : ExpMsg -> Experiment -> Experiment
 updateExperiment msg experiment =
     case msg of
         SetN newN ->
             case String.toInt newN of
                 Just n ->
-                    { experiment | n = min n maxN }
+                    { experiment | n = min n Constants.maxN }
 
                 Nothing ->
                     experiment

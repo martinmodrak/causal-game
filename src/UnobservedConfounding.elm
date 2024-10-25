@@ -62,6 +62,7 @@ adapter =
         }
     , view =
         { viewHeader = viewHeader
+        , viewInstanceGoal = always (text "")
         , viewExperiment = viewExperiment
         , viewProposedExperiment = viewProposedExperiment
         , viewCostCommentary = Causality.viewCostCommentary
@@ -132,10 +133,10 @@ guessEval spec guess =
             specToNames spec
     in
     if guess == spec.cause01 then
-        ( True, text "" )
+        ( 1.0, text "" )
 
     else
-        ( False
+        ( 0.0
         , div []
             [ Causality.causalityDescription name0 name1 spec.cause01
             , Causality.causalityDescription nameUnobs name0 spec.causeUnobs0

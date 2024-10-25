@@ -66,6 +66,7 @@ logicAdapter =
 viewAdapter : Game.ViewAdapter ExpMsg GuessMsg Spec Experiment Outcome Guess
 viewAdapter =
     { viewHeader = viewHeader
+    , viewInstanceGoal = viewInstanceGoal
     , viewExperiment = viewExperiment
     , viewProposedExperiment = viewProposedExperiment
     , viewCostCommentary = Causality.viewCostCommentary
@@ -166,10 +167,10 @@ guessEval spec guess =
             specToNames spec
     in
     if guess == spec.category then
-        ( True, text "" )
+        ( 1.0, text "" )
 
     else
-        ( False
+        ( 0.0
         , Causality.causalityDescription name0 name1 spec.category
         )
 
@@ -211,5 +212,14 @@ viewHeader : Html Never
 viewHeader =
     div [ Attr.class "scenarioHeader" ]
         [ h2 [] [ text "Single causal relationship" ]
-        , p [] [ text "" ]
+        , strong [] [ text "This scenario does not contribute to homework scoring, it is there to help you learn how the game works." ]
         ]
+
+
+viewInstanceGoal : Spec -> Html Never
+viewInstanceGoal spec =
+    let
+        ( name1, name2 ) =
+            specToNames spec
+    in
+    span [] [ text "Investigate a possible causal relationship between traits ", em [] [ text name1 ], text " and ", em [] [ text name2 ] ]
