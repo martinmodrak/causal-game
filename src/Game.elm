@@ -122,7 +122,7 @@ update :
 update adapter msg scenario =
     case msg of
         SpecGenerated ( name, sp ) ->
-            ( { scenario | history = { spec = Debug.log "spec:" sp, data = [], guess = Nothing, creatureName = name } :: scenario.history }, Cmd.none )
+            ( { scenario | history = { spec = sp, data = [], guess = Nothing, creatureName = name } :: scenario.history }, Cmd.none )
 
         RunExperiment ->
             case scenario.history of
