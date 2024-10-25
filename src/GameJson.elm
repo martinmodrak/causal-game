@@ -131,12 +131,58 @@ instanceDecoder specDec experimentDec guessDec =
 
 outcomeEncoder : Causality.Outcome -> E.Value
 outcomeEncoder outcome =
-    E.list (E.list E.bool) outcome
+    --E.list (E.list E.bool) outcome
+    E.list (E.list E.int) (outcome |> List.map rleEncode)
 
 
 outcomeDecoder : D.Decoder Causality.Outcome
 outcomeDecoder =
-    D.list (D.list D.bool)
+    D.oneOf
+        [ D.list (D.list D.int |> D.map rleDecode)
+        , D.list (D.list D.bool)
+        ]
+
+
+rleEncode : List Bool -> List Int
+rleEncode =
+    rleEncodeInternal True 0
+
+
+rleEncodeInternal : Bool -> Int -> List Bool -> List Int
+rleEncodeInternal state count bools =
+    case bools of
+        head :: rest ->
+            if head == state then
+                rleEncodeInternal state (count + 1) rest
+
+            else
+                count :: rleEncodeInternal (not state) 1 rest
+
+        [] ->
+            if count == 0 then
+                []
+
+            else
+                [ count ]
+
+
+rleDecode : List Int -> List Bool
+rleDecode =
+    rleDecodeInternal True
+
+
+rleDecodeInternal : Bool -> List Int -> List Bool
+rleDecodeInternal state ints =
+    case ints of
+        head :: rest ->
+            let
+                new =
+                    List.repeat head state
+            in
+            new ++ rleDecodeInternal (not state) rest
+
+        [] ->
+            []
 
 
 associationSpecEncoder : Association.Spec -> E.Value
