@@ -85,7 +85,14 @@ init storedGame =
     )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+type alias UpdateResult =
+    { model : Model
+    , cmd : Cmd Msg
+    , updateStorage : Bool
+    }
+
+
+update : Msg -> Model -> UpdateResult
 update msg model =
     let
         game =
@@ -94,71 +101,73 @@ update msg model =
     case msg of
         AssocMsg assocMsg ->
             let
-                ( newAssocModel, assocCmd ) =
+                res =
                     Game.update Association.adapter assocMsg model.game.association
             in
-            ( { model | game = { game | association = newAssocModel } }, Cmd.map AssocMsg assocCmd )
+            UpdateResult { model | game = { game | association = res.scenario } } (Cmd.map AssocMsg res.cmd) res.updateStorage
 
         SingleRel singleMsg ->
             let
-                ( newSingleRelModel, singleCmd ) =
+                res =
                     Game.update SingleRelationship.adapter singleMsg model.game.singleRel
             in
-            ( { model | game = { game | singleRel = newSingleRelModel } }, Cmd.map SingleRel singleCmd )
+            UpdateResult { model | game = { game | singleRel = res.scenario } }
+                (Cmd.map SingleRel res.cmd)
+                res.updateStorage
 
         TwoRel twoWayMsg ->
             let
-                ( newTwoWayModel, twoWayCmd ) =
+                res =
                     Game.update TwoRelationships.adapter twoWayMsg model.game.twoRel
             in
-            ( { model | game = { game | twoRel = newTwoWayModel } }, Cmd.map TwoRel twoWayCmd )
+            UpdateResult { model | game = { game | twoRel = res.scenario } } (Cmd.map TwoRel res.cmd) res.updateStorage
 
         ThreeWay subMsg ->
             let
-                ( newTwoWayModel, newCmd ) =
+                res =
                     Game.update ThreeWay.adapter subMsg model.game.threeWay
             in
-            ( { model | game = { game | threeWay = newTwoWayModel } }, Cmd.map ThreeWay newCmd )
+            UpdateResult { model | game = { game | threeWay = res.scenario } } (Cmd.map ThreeWay res.cmd) res.updateStorage
 
         ActivatePage page ->
-            ( { model | page = page }, Cmd.none )
+            UpdateResult { model | page = page } Cmd.none False
 
         LoadStored ->
             case model.storedGame of
                 Just stored ->
-                    ( { model | game = stored, storedGame = Nothing }, Cmd.none )
+                    UpdateResult { model | game = stored, storedGame = Nothing } Cmd.none False
 
                 Nothing ->
-                    ( model, Cmd.none )
+                    UpdateResult model Cmd.none False
 
         DismissStored ->
-            ( { model | storedGame = Nothing }, Cmd.none )
+            UpdateResult { model | storedGame = Nothing } Cmd.none False
 
         Homework subMsg ->
             let
                 ( newModel, newCmd ) =
-                    Homework.update subMsg model.homework
+                    Homework.update subMsg model.game model.homework
             in
-            ( { model | homework = newModel }, Cmd.map Homework newCmd )
+            UpdateResult { model | homework = newModel } (Cmd.map Homework newCmd) False
 
 
 updateWithStorage : Msg -> Model -> ( Model, Cmd Msg )
 updateWithStorage msg oldModel =
     let
-        ( newModel, cmds ) =
+        res =
             update msg oldModel
     in
-    ( newModel
+    ( res.model
     , case oldModel.storedGame of
         Just _ ->
-            cmds
+            res.cmd
 
         Nothing ->
-            if GameState.gameHasData newModel.game then
-                Cmd.batch [ setStorage (GameState.gameEncoder newModel.game), cmds ]
+            if res.updateStorage && GameState.gameHasData res.model.game then
+                Cmd.batch [ setStorage (GameState.gameEncoder res.model.game), res.cmd ]
 
             else
-                cmds
+                res.cmd
     )
 
 

@@ -43,7 +43,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { record = Nothing }
     , Http.get
-        { url = "./hw_data/homework.json"
+        { url = "./hw_data/homework modrak.json"
         , expect = Http.expectJson RecordLoaded hwRecordDecoder
         }
     )
@@ -57,9 +57,11 @@ update msg model =
                 Ok rec ->
                     { model | record = Just rec }
 
-                Err err ->
-                    Tuple.second ( Debug.log "err" err, model )
+                Err _ ->
+                    model
 
+        --Err err ->
+        --Tuple.second ( Debug.log "err" err, model )
         Noop ->
             model
     , Cmd.none

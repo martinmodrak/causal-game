@@ -17,6 +17,7 @@ type alias Model =
     { submission : Bool
     , name : String
     , group : String
+    , stateURL : Maybe String
     }
 
 
@@ -25,6 +26,7 @@ type Msg
     | SubmissionEnd
     | SetName String
     | SetGroup String
+    | PrepareDownload
 
 
 init : Model
@@ -32,23 +34,46 @@ init =
     { submission = False
     , name = ""
     , group = ""
+    , stateURL = Nothing
     }
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Msg -> GameState.GameState -> Model -> ( Model, Cmd Msg )
+update msg game model =
     case msg of
         SubmissionStart ->
-            ( { model | submission = True }, Cmd.none )
+            ( { model
+                | submission = True
+                , stateURL =
+                    if allowDownload model then
+                        Just (buildStateURL game model)
+
+                    else
+                        Nothing
+              }
+            , Cmd.none
+            )
 
         SubmissionEnd ->
             ( { model | submission = False }, Cmd.none )
 
         SetName name ->
-            ( { model | name = name }, Cmd.none )
+            ( { model | name = name, stateURL = Nothing }, Cmd.none )
 
         SetGroup group ->
-            ( { model | group = group }, Cmd.none )
+            ( { model | group = group, stateURL = Nothing }, Cmd.none )
+
+        PrepareDownload ->
+            ( { model
+                | stateURL =
+                    if allowDownload model then
+                        Just (buildStateURL game model)
+
+                    else
+                        Nothing
+              }
+            , Cmd.none
+            )
 
 
 viewControls : GameState.GameState -> Html Msg
@@ -154,7 +179,7 @@ avgCorrectForTwoPoints =
 
 avgCorrectForThreePoints : Float
 avgCorrectForThreePoints =
-    0.85
+    0.8
 
 
 avgCostForThreePoints : Float
@@ -241,28 +266,30 @@ computeScore results =
             }
 
 
+allowDownload : Model -> Bool
+allowDownload model =
+    not (String.isEmpty model.name) && not (String.isEmpty model.group)
+
+
+buildStateURL : GameState.GameState -> Model -> String
+buildStateURL game model =
+    "data:application/json;base64,"
+        ++ (Json.Encode.object
+                [ ( "name", Json.Encode.string model.name )
+                , ( "group", Json.Encode.string model.group )
+                , ( "state", GameState.gameEncoder game )
+                ]
+                |> Json.Encode.encode 0
+                |> String.toList
+                |> List.map Char.toCode
+                |> Base64.encode
+                |> Result.withDefault "RXJyb3IgNTYyNw=="
+           )
+
+
 viewPopup : GameState.GameState -> Model -> Html Msg
 viewPopup game model =
     let
-        encoded =
-            if not (String.isEmpty model.name) && not (String.isEmpty model.group) then
-                Just
-                    (Json.Encode.object
-                        [ ( "name", Json.Encode.string model.name )
-                        , ( "group", Json.Encode.string model.group )
-                        , ( "state", GameState.gameEncoder game )
-                        ]
-                        |> Json.Encode.encode 0
-                        |> String.toList
-                        |> List.map Char.toCode
-                        |> Base64.encode
-                        |> Result.withDefault "RXJyb3IgNTYyNw=="
-                    )
-                --todo data url here
-
-            else
-                Nothing
-
         score =
             .score (computeScore (Game.getResults TwoRelationships.adapter.logic game.twoRel.history))
     in
@@ -279,12 +306,16 @@ viewPopup game model =
             , input [ Attr.type_ "text", Events.onInput SetGroup, Attr.value model.group ] []
             , br [] []
             , p [ Attr.class "downloadHW", Attr.class "left" ]
-                [ case encoded of
-                    Just enc ->
-                        a [ Attr.href ("data:application/json;base64," ++ enc), Attr.download "homework.json" ] [ strong [] [ text "Download homework file" ] ]
+                [ case model.stateURL of
+                    Just url ->
+                        a [ Attr.href url, Attr.download ("homework " ++ model.name ++ ".json") ] [ strong [] [ text "Download homework file" ] ]
 
                     Nothing ->
-                        strong [] [ text "Enter name and group to enable download" ]
+                        if allowDownload model then
+                            button [ Attr.type_ "input", Events.onClick PrepareDownload ] [ text "Prepare download" ]
+
+                        else
+                            strong [] [ text "Enter name and group to enable download" ]
                 ]
             , button [ Attr.type_ "button", Attr.class "right", Events.onClick SubmissionEnd ] [ text "Back to game" ]
             ]

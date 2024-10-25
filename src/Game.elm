@@ -114,58 +114,66 @@ initCmd adapter =
     Random.generate SpecGenerated (instanceGenerator adapter.logic.specGenerator)
 
 
+type alias UpdateResult expMsg guessMsg spec experiment outcome guess =
+    { scenario : Scenario spec experiment outcome guess
+    , cmd : Cmd (Msg expMsg guessMsg spec experiment outcome guess)
+    , updateStorage : Bool
+    }
+
+
 update :
     Adapter expMsg guessMsg spec experiment outcome guess
     -> Msg expMsg guessMsg spec experiment outcome guess
     -> Scenario spec experiment outcome guess
-    -> ( Scenario spec experiment outcome guess, Cmd (Msg expMsg guessMsg spec experiment outcome guess) )
+    -> UpdateResult expMsg guessMsg spec experiment outcome guess
 update adapter msg scenario =
     case msg of
         SpecGenerated ( name, sp ) ->
-            ( { scenario | history = { spec = sp, data = [], guess = Nothing, creatureName = name } :: scenario.history, proposedExperiment = adapter.init.defaultExperiment }, Cmd.none )
+            UpdateResult { scenario | history = { spec = sp, data = [], guess = Nothing, creatureName = name } :: scenario.history, proposedExperiment = adapter.init.defaultExperiment } Cmd.none True
 
         RunExperiment ->
             case scenario.history of
                 head :: _ ->
-                    ( scenario, Random.generate (DataGenerated scenario.proposedExperiment) (adapter.logic.generator head.spec scenario.proposedExperiment) )
+                    UpdateResult scenario (Random.generate (DataGenerated scenario.proposedExperiment) (adapter.logic.generator head.spec scenario.proposedExperiment)) False
 
                 _ ->
-                    ( scenario, Cmd.none )
+                    UpdateResult scenario Cmd.none False
 
         DataGenerated exp data ->
             case scenario.history of
                 active :: rest ->
                     if allowMoreExperiments active then
-                        ( { scenario | history = { active | data = ( exp, data ) :: active.data } :: rest }, Cmd.none )
+                        UpdateResult { scenario | history = { active | data = ( exp, data ) :: active.data } :: rest } Cmd.none True
 
                     else
-                        ( scenario, Cmd.none )
+                        UpdateResult scenario Cmd.none False
 
                 _ ->
-                    ( scenario, Cmd.none )
+                    UpdateResult scenario Cmd.none False
 
         ExperimentChanged eMsg ->
-            ( { scenario | proposedExperiment = adapter.logic.updateExperiment eMsg scenario.proposedExperiment }, Cmd.none )
+            UpdateResult { scenario | proposedExperiment = adapter.logic.updateExperiment eMsg scenario.proposedExperiment } Cmd.none False
 
         GuessChanged gMsg ->
-            ( { scenario | proposedGuess = adapter.logic.updateGuess gMsg scenario.proposedGuess }, Cmd.none )
+            UpdateResult { scenario | proposedGuess = adapter.logic.updateGuess gMsg scenario.proposedGuess } Cmd.none False
 
         MakeGuess ->
             case scenario.history of
                 active :: rest ->
-                    ( { scenario
-                        | history = { active | guess = Just scenario.proposedGuess } :: rest
-                        , proposedGuess = adapter.init.defaultGuess
-                      }
-                    , Cmd.none
-                    )
+                    UpdateResult
+                        { scenario
+                            | history = { active | guess = Just scenario.proposedGuess } :: rest
+                            , proposedGuess = adapter.init.defaultGuess
+                        }
+                        Cmd.none
+                        True
 
                 -- TODO update challenge state
                 _ ->
-                    ( scenario, Cmd.none )
+                    UpdateResult scenario Cmd.none False
 
         NewInstance ->
-            ( scenario, Random.generate SpecGenerated (instanceGenerator adapter.logic.specGenerator) )
+            UpdateResult scenario (Random.generate SpecGenerated (instanceGenerator adapter.logic.specGenerator)) False
 
 
 instanceGenerator : Random.Generator spec -> Random.Generator ( String, spec )
