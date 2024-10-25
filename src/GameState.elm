@@ -43,7 +43,7 @@ gameEncoder game =
                 )
 
         encryption =
-            Crypto.Strings.encrypt (Random.initialSeed rs) ps (Debug.log "XX" rawJson)
+            Crypto.Strings.encrypt (Random.initialSeed rs) ps rawJson
     in
     case encryption of
         Ok ( enc, _ ) ->
