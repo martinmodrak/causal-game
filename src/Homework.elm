@@ -1,6 +1,7 @@
 module Homework exposing (..)
 
 import Base64
+import Base64String
 import Game
 import GameState
 import Html exposing (..)
@@ -271,25 +272,16 @@ allowDownload model =
     not (String.isEmpty model.name) && not (String.isEmpty model.group)
 
 
-base64encodeString : String -> String
-base64encodeString s =
-    s
-        |> String.toList
-        |> List.map Char.toCode
-        |> Base64.encode
-        |> Result.withDefault "RXJyb3IgNTYyNw=="
-
-
 buildStateURL : GameState.GameState -> Model -> String
 buildStateURL game model =
     "data:application/json;base64,"
         ++ (Json.Encode.object
-                [ ( "base64name", Json.Encode.string (base64encodeString model.name) )
-                , ( "base64group", Json.Encode.string (base64encodeString model.group) )
+                [ ( "base64name", Json.Encode.string (Base64String.encode model.name) )
+                , ( "base64group", Json.Encode.string (Base64String.encode model.group) )
                 , ( "state", GameState.gameEncoder game )
                 ]
                 |> Json.Encode.encode 0
-                |> base64encodeString
+                |> Base64String.encode
            )
 
 

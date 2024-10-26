@@ -2,6 +2,7 @@ module HWView exposing (..)
 
 import Association
 import Base64
+import Base64String
 import Browser
 import Game
 import GameState exposing (GameState)
@@ -26,15 +27,22 @@ type alias HWRecord =
     }
 
 
+type alias FileInfo =
+    { name : String
+    , dir : String
+    , time : String
+    }
+
+
 type alias RecordInfo =
-    { filename : String
+    { file : FileInfo
     , eval : Homework.Eval
     }
 
 
 type alias Index =
     { updated : String
-    , files : List String
+    , files : List FileInfo
     }
 
 
@@ -46,14 +54,14 @@ type Showing
 type alias Model =
     { index : Maybe (Result Http.Error Index)
     , records : List ( RecordInfo, HWRecord )
-    , errors : List ( String, Http.Error )
+    , errors : List ( FileInfo, Http.Error )
     , showing : Showing
     }
 
 
 type Msg
     = IndexLoaded (Result Http.Error Index)
-    | RecordLoaded String (Result Http.Error HWRecord)
+    | RecordLoaded FileInfo (Result Http.Error HWRecord)
     | ShowIndex
     | ShowRecord HWRecord
     | Noop
@@ -66,7 +74,13 @@ indexDecoder =
         (Json.Decode.field "files"
             (Json.Decode.map Maybe.Extra.values
                 (Json.Decode.list
-                    (Json.Decode.nullable Json.Decode.string)
+                    (Json.Decode.nullable
+                        (Json.Decode.map3 FileInfo
+                            (Json.Decode.field "name" Json.Decode.string)
+                            (Json.Decode.field "dir" Json.Decode.string)
+                            (Json.Decode.field "time" Json.Decode.string)
+                        )
+                    )
                 )
             )
         )
@@ -77,12 +91,9 @@ base64StringDecoder =
     Json.Decode.string
         |> Json.Decode.andThen
             (\x ->
-                case Base64.decode x of
-                    Ok byteList ->
-                        byteList
-                            |> List.map Char.fromCode
-                            |> String.fromList
-                            |> Json.Decode.succeed
+                case Base64String.decode x of
+                    Ok res ->
+                        Json.Decode.succeed res
 
                     Err err ->
                         Json.Decode.fail err
@@ -128,10 +139,10 @@ update msg model =
                 Ok index ->
                     Cmd.batch
                         (List.map
-                            (\filename ->
+                            (\file ->
                                 Http.get
-                                    { url = "hw_data/" ++ filename
-                                    , expect = Http.expectJson (RecordLoaded filename) hwRecordDecoder
+                                    { url = file.dir ++ "/" ++ file.name
+                                    , expect = Http.expectJson (RecordLoaded file) hwRecordDecoder
                                     }
                             )
                             index.files
@@ -141,19 +152,19 @@ update msg model =
                     Cmd.none
             )
 
-        RecordLoaded filename res ->
+        RecordLoaded file res ->
             case res of
                 Ok rec ->
                     let
                         info =
-                            { filename = filename
+                            { file = file
                             , eval = Homework.computeScore (Game.getResults TwoRelationships.adapter.logic rec.state.twoRel.history)
                             }
                     in
                     ( { model | records = ( info, rec ) :: model.records }, Cmd.none )
 
                 Err err ->
-                    ( { model | errors = ( filename, err ) :: model.errors }, Cmd.none )
+                    ( { model | errors = ( file, err ) :: model.errors }, Cmd.none )
 
         ShowIndex ->
             ( { model | showing = All }, Cmd.none )
@@ -185,7 +196,7 @@ view model =
                     text "Loading..."
 
         Single rec ->
-            viewSingleRec rec
+            viewRecordDetail rec
 
 
 viewHttpError : Http.Error -> Html a
@@ -200,24 +211,14 @@ viewHttpError err =
 
 viewIndex : Model -> Html Msg
 viewIndex model =
-    let
-        singleRec =
-            \( info, rec ) ->
-                tr []
-                    [ td [] [ text rec.name ]
-                    , td [] [ text rec.group ]
-                    , td [] [ text (String.fromInt info.eval.score) ]
-                    , td [] [ text (Round.round 0 (info.eval.avgCorrect * 100) ++ "%") ]
-                    , td [] [ text (Round.round 0 (info.eval.avgCost / 1000) ++ "K") ]
-                    , td [] [ text info.filename ]
-                    , td [] [ a [ Attr.href "#", Events.onClick (ShowRecord rec) ] [ text "View" ] ]
-                    ]
-    in
     div []
-        [ viewErrors model.errors
+        [ --p [] [  "č" |>  ]
+          "č" |> Base64String.encode |> Base64String.decode |> Result.withDefault "err" |> text
+        , viewErrors model.errors
         , table []
             (tr []
-                [ th [] [ text "Name" ]
+                [ th [] [ text "Dir" ]
+                , th [] [ text "Name" ]
                 , th [] [ text "Group" ]
                 , th [] [ text "Score" ]
                 , th [] [ text "Correct" ]
@@ -225,16 +226,30 @@ viewIndex model =
                 , th [] [ text "Filename" ]
                 , th [] [ text "View" ]
                 ]
-                :: List.map singleRec model.records
+                :: List.map viewSingleRec model.records
             )
         ]
 
 
-viewErrors : List ( String, Http.Error ) -> Html a
+viewSingleRec : ( RecordInfo, HWRecord ) -> Html Msg
+viewSingleRec ( info, rec ) =
+    tr []
+        [ td [] [ text info.file.dir ]
+        , td [] [ text rec.name ]
+        , td [] [ text rec.group ]
+        , td [] [ text (String.fromInt info.eval.score) ]
+        , td [] [ text (Round.round 0 (info.eval.avgCorrect * 100) ++ "%") ]
+        , td [] [ text (Round.round 0 (info.eval.avgCost / 1000) ++ "K") ]
+        , td [] [ text info.file.name ]
+        , td [] [ a [ Attr.href "#", Events.onClick (ShowRecord rec) ] [ text "View" ] ]
+        ]
+
+
+viewErrors : List ( FileInfo, Http.Error ) -> Html a
 viewErrors errors =
     let
         viewErr =
-            \( file, err ) -> li [] [ strong [] [ text file ], viewHttpError err ]
+            \( file, err ) -> li [] [ strong [] [ text (file.dir ++ "/" ++ file.name) ], viewHttpError err ]
     in
     if List.isEmpty errors then
         text ""
@@ -246,8 +261,8 @@ viewErrors errors =
             ]
 
 
-viewSingleRec : HWRecord -> Html Msg
-viewSingleRec rec =
+viewRecordDetail : HWRecord -> Html Msg
+viewRecordDetail rec =
     div [ Attr.class "topContainer" ]
         [ p []
             [ button [ Attr.type_ "_button", Events.onClick ShowIndex ] [ text "Back to list" ]
