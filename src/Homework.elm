@@ -271,19 +271,25 @@ allowDownload model =
     not (String.isEmpty model.name) && not (String.isEmpty model.group)
 
 
+base64encodeString : String -> String
+base64encodeString s =
+    s
+        |> String.toList
+        |> List.map Char.toCode
+        |> Base64.encode
+        |> Result.withDefault "RXJyb3IgNTYyNw=="
+
+
 buildStateURL : GameState.GameState -> Model -> String
 buildStateURL game model =
     "data:application/json;base64,"
         ++ (Json.Encode.object
-                [ ( "name", Json.Encode.string model.name )
-                , ( "group", Json.Encode.string model.group )
+                [ ( "base64name", Json.Encode.string (base64encodeString model.name) )
+                , ( "base64group", Json.Encode.string (base64encodeString model.group) )
                 , ( "state", GameState.gameEncoder game )
                 ]
                 |> Json.Encode.encode 0
-                |> String.toList
-                |> List.map Char.toCode
-                |> Base64.encode
-                |> Result.withDefault "RXJyb3IgNTYyNw=="
+                |> base64encodeString
            )
 
 
