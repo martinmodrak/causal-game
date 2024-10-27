@@ -4,6 +4,8 @@ import Association
 import Base64
 import Base64String
 import Browser
+import Bytes
+import Bytes.Encode
 import Game
 import GameState exposing (GameState)
 import Homework
@@ -51,11 +53,19 @@ type Showing
     | Single HWRecord
 
 
+type LoadState
+    = WaitingForIndex
+    | WaitingForRecrods Int
+    | Loaded String
+
+
 type alias Model =
     { index : Maybe (Result Http.Error Index)
+    , recordsToLoad : Int
     , records : List ( RecordInfo, HWRecord )
     , errors : List ( FileInfo, Http.Error )
     , showing : Showing
+    , csvDownload : Maybe String
     }
 
 
@@ -119,9 +129,11 @@ hwRecordDecoder =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( { index = Nothing
+      , recordsToLoad = 0
       , records = []
       , errors = []
       , showing = All
+      , csvDownload = Nothing
       }
     , Http.get
         { url = "hw_data/index.json"
@@ -134,37 +146,50 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         IndexLoaded indexRes ->
-            ( { model | index = Just indexRes }
-            , case indexRes of
-                Ok index ->
-                    Cmd.batch
-                        (List.map
-                            (\file ->
-                                Http.get
-                                    { url = file.dir ++ "/" ++ file.name
-                                    , expect = Http.expectJson (RecordLoaded file) hwRecordDecoder
-                                    }
+            let
+                ( toLoad, cmd ) =
+                    case indexRes of
+                        Ok index ->
+                            ( List.length index.files
+                            , Cmd.batch
+                                (List.map
+                                    (\file ->
+                                        Http.get
+                                            { url = file.dir ++ "/" ++ file.name
+                                            , expect = Http.expectJson (RecordLoaded file) hwRecordDecoder
+                                            }
+                                    )
+                                    index.files
+                                )
                             )
-                            index.files
-                        )
 
-                Err _ ->
-                    Cmd.none
+                        Err _ ->
+                            ( 0, Cmd.none )
+            in
+            ( { model
+                | index = Just indexRes
+                , recordsToLoad = toLoad
+              }
+            , cmd
             )
 
         RecordLoaded file res ->
-            case res of
-                Ok rec ->
-                    let
-                        info =
-                            { file = file
-                            , eval = Homework.computeScore (Game.getResults TwoRelationships.adapter.logic rec.state.twoRel.history)
-                            }
-                    in
-                    ( { model | records = ( info, rec ) :: model.records }, Cmd.none )
+            let
+                modelAfterLoad =
+                    case res of
+                        Ok rec ->
+                            let
+                                info =
+                                    { file = file
+                                    , eval = Homework.computeScore (Game.getResults TwoRelationships.adapter.logic rec.state.twoRel.history)
+                                    }
+                            in
+                            { model | records = ( info, rec ) :: model.records, recordsToLoad = model.recordsToLoad - 1 }
 
-                Err err ->
-                    ( { model | errors = ( file, err ) :: model.errors }, Cmd.none )
+                        Err err ->
+                            { model | errors = ( file, err ) :: model.errors, recordsToLoad = model.recordsToLoad - 1 }
+            in
+            ( modelAfterLoad |> updateDownload, Cmd.none )
 
         ShowIndex ->
             ( { model | showing = All }, Cmd.none )
@@ -174,6 +199,46 @@ update msg model =
 
         Noop ->
             ( model, Cmd.none )
+
+
+updateDownload : Model -> Model
+updateDownload model =
+    case model.index of
+        Nothing ->
+            model
+
+        Just _ ->
+            if model.recordsToLoad <= 0 then
+                { model | csvDownload = Just (buildCSV model.records) }
+
+            else
+                model
+
+
+buildCSV : List ( RecordInfo, HWRecord ) -> String
+buildCSV records =
+    let
+        base64Content =
+            Bytes.Encode.sequence
+                (Bytes.Encode.string "name,lang,score\n"
+                    :: List.map (singleCSVLine >> Bytes.Encode.string) records
+                )
+                |> Bytes.Encode.encode
+                |> Base64.fromBytes
+                |> Maybe.withDefault "RXJyb3IgNTYyNw=="
+    in
+    "data:application/json;base64," ++ base64Content
+
+
+singleCSVLine : ( RecordInfo, HWRecord ) -> String
+singleCSVLine ( info, rec ) =
+    "\""
+        ++ rec.name
+        ++ "\",\""
+        ++ String.replace "hw_data/" "" info.file.dir
+        ++ "\","
+        ++ String.fromInt info.eval.score
+        ++ "\n"
 
 
 suppressMsg : Html a -> Html Msg
@@ -212,8 +277,20 @@ viewHttpError err =
 viewIndex : Model -> Html Msg
 viewIndex model =
     div []
-        [ --p [] [  "č" |>  ]
-          "č" |> Base64String.encode |> Base64String.decode |> Result.withDefault "err" |> text
+        [ p []
+            [ if model.recordsToLoad > 0 then
+                strong [] [ text ("Waiting for " ++ String.fromInt model.recordsToLoad ++ " records.") ]
+
+              else
+                case
+                    model.csvDownload
+                of
+                    Nothing ->
+                        text "Building CSV"
+
+                    Just csv ->
+                        a [ Attr.href csv, Attr.download "homework_causality.csv" ] [ text "Download CSV" ]
+            ]
         , viewErrors model.errors
         , table []
             (tr []
@@ -238,7 +315,7 @@ viewSingleRec ( info, rec ) =
         , td [] [ text rec.name ]
         , td [] [ text rec.group ]
         , td [] [ text (String.fromInt info.eval.score) ]
-        , td [] [ text (Round.round 0 (info.eval.avgCorrect * 100) ++ "%") ]
+        , td [] [ text (Round.round 0 (info.eval.avgCorrect * 100) ++ "% of " ++ String.fromInt info.eval.nInstances) ]
         , td [] [ text (Round.round 0 (info.eval.avgCost / 1000) ++ "K") ]
         , td [] [ text info.file.name ]
         , td [] [ a [ Attr.href "#", Events.onClick (ShowRecord rec) ] [ text "View" ] ]
