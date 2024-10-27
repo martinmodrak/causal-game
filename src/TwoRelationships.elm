@@ -181,9 +181,9 @@ updateGuess msg old =
             { old | cause12 = g }
 
 
-viewExperiment : Spec -> Int -> ( Experiment, Outcome ) -> Html Never
-viewExperiment spec =
-    Causality.viewExperiment spec.sorted
+viewExperiment : Game.ViewSettings -> Spec -> Int -> ( Experiment, Outcome ) -> Html Never
+viewExperiment viewSettings spec =
+    Causality.viewExperiment viewSettings spec.sorted
 
 
 viewProposedExperiment : Spec -> Experiment -> Html ExpMsg

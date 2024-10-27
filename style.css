@@ -2,8 +2,12 @@ td {
     text-align:center;
 }
 
+td.diagonal {
+    background-color:#eee;
+}
+
 td.diagonal h4 {
-    font-size: 200%;
+    font-size: 120%;
 }
 
 .pageSelection {
@@ -129,4 +133,30 @@ input, select {
 .instructions p, .scenarioHeader p {
     max-width: 50em;
     text-align:justify;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+table tr td, table tr th {
+    padding:0.5em;
+}
+
+.ratioRow td, .ratioRow th {
+    border-top: 1px solid black;
+}
+
+.ratioCol {
+    border-left: 1px solid black;
+}
+
+th.yName {
+    text-align: center;
+    writing-mode: sideways-lr;
+    min-width: 2em;
+}
+
+th.xName {
+    text-align: center;
 }

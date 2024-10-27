@@ -189,12 +189,12 @@ updateGuess msg _ =
             g
 
 
-viewExperiment : Spec -> Int -> ( Experiment, Outcome ) -> Html Never
-viewExperiment spec id ( experiment, data ) =
+viewExperiment : Game.ViewSettings -> Spec -> Int -> ( Experiment, Outcome ) -> Html Never
+viewExperiment viewSettings spec id ( experiment, data ) =
     div [ Attr.class "experiment" ]
         [ View.experimentTitle id
         , p [] [ text ("N = " ++ String.fromInt experiment ++ ", CZK " ++ String.fromInt (costExperiment experiment)) ]
-        , Html.Lazy.lazy2 Causality.viewOutcome spec.sorted data
+        , Html.Lazy.lazy3 Causality.viewOutcome viewSettings spec.sorted data
         ]
 
 

@@ -6,7 +6,7 @@ import Base64String
 import Browser
 import Bytes
 import Bytes.Encode
-import Game
+import Game exposing (ViewSettings)
 import GameState exposing (GameState)
 import Homework
 import Html exposing (..)
@@ -351,16 +351,16 @@ viewRecordDetail rec =
             ]
         , div
             [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view Association.adapter rec.state.association)
+            [ suppressMsg (Game.view Game.Both Association.adapter rec.state.association)
             ]
         , div [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view SingleRelationship.adapter rec.state.singleRel)
+            [ suppressMsg (Game.view Game.Both SingleRelationship.adapter rec.state.singleRel)
             ]
         , div [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view TwoRelationships.adapter rec.state.twoRel)
+            [ suppressMsg (Game.view Game.Both TwoRelationships.adapter rec.state.twoRel)
             ]
         , div [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view ThreeWay.adapter rec.state.threeWay)
+            [ suppressMsg (Game.view Game.Both ThreeWay.adapter rec.state.threeWay)
             ]
         ]
 

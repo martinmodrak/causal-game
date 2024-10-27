@@ -1,6 +1,7 @@
 module Causality exposing (..)
 
 import Constants
+import Game
 import Graph
 import Html exposing (..)
 import Html.Attributes as Attr
@@ -437,23 +438,22 @@ singlePairWaffleDataSpec xValues yValues xName yName =
 
 
 viewSingleDiagonal : List Bool -> String -> Html a
-viewSingleDiagonal vals name =
-    let
-        n =
-            List.length vals
-
-        true =
-            List.map Utils.boolToInt vals |> List.sum
-
-        mean =
-            toFloat true / toFloat n
-    in
+viewSingleDiagonal _ name =
+    -- let
+    --     n =
+    --         List.length vals
+    --     true =
+    --         List.map Utils.boolToInt vals |> List.sum
+    --     mean =
+    --         toFloat true / toFloat n
+    -- in
     div []
         [ h4 [ Attr.class "diagonalTitle" ] [ text name ]
-        , text (String.fromInt n)
-        , text " ("
-        , text (Round.round 1 (mean * 100))
-        , text "%) true"
+
+        -- , text (String.fromInt n)
+        -- , text " ("
+        -- , text (Round.round 1 (mean * 100))
+        -- , text "%) true"
         ]
 
 
@@ -465,27 +465,36 @@ viewSingleContingency xValues yValues xName yName =
     in
     table []
         [ tr []
-            [ th [ Attr.rowspan 2 ] [ text yName ]
+            [ th [ Attr.rowspan 3, Attr.class "yName" ] [ text yName ]
             , th [] [ text "True" ]
             , td [] [ text (String.fromInt counts.tf) ]
             , td [] [ text (String.fromInt counts.tt) ]
+            , td [ Attr.class "ratioCol" ] [ text (Round.round 2 (toFloat counts.tf / toFloat counts.tt)) ]
             ]
         , tr []
             [ th [] [ text "False" ]
             , td [] [ text (String.fromInt counts.ff) ]
             , td [] [ text (String.fromInt counts.ft) ]
+            , td [ Attr.class "ratioCol" ] [ text (Round.round 2 (toFloat counts.ff / toFloat counts.ft)) ]
+            ]
+        , tr [ Attr.class "ratioRow" ]
+            [ th [] [ text "Ratio T/F" ]
+            , td [] [ text (Round.round 2 (toFloat counts.tf / toFloat counts.ff)) ]
+            , td [] [ text (Round.round 2 (toFloat counts.tt / toFloat counts.ft)) ]
+            , td [ Attr.class "ratioCol" ] []
             ]
         , tr []
             [ td [] []
             , td [] []
             , th [] [ text "False" ]
             , th [] [ text "True" ]
+            , th [ Attr.class "ratioCol" ] [ text "Ratio F/T" ]
             ]
         , tr []
             [ td [] []
             , td [] []
             , th
-                [ Attr.colspan 2 ]
+                [ Attr.colspan 3, Attr.class "xName" ]
                 [ text xName ]
             ]
         ]
@@ -496,24 +505,38 @@ viewSingleWaffle xValues yValues xName yName =
     View.vegaPlot (singlePairWaffleDataSpec xValues yValues xName yName)
 
 
-viewOutcomeSubplot : Int -> Int -> List Bool -> List Bool -> String -> String -> Html Never
-viewOutcomeSubplot xOrd yOrd xValues yValues xName yName =
-    if xOrd < yOrd then
+viewOutcomeSubplot : Game.ViewSettings -> Int -> Int -> List Bool -> List Bool -> String -> String -> Html Never
+viewOutcomeSubplot viewSettings xOrd yOrd xValues yValues xName yName =
+    let
+        ( showWaffle, showContingency ) =
+            case viewSettings of
+                Game.DotPlot ->
+                    ( True, False )
+
+                Game.Contingency ->
+                    ( False, True )
+
+                Game.Both ->
+                    ( True, True )
+
+        showDiagonal =
+            viewSettings == Game.Both
+    in
+    if xOrd < yOrd && showWaffle then
         td [ Attr.class "waffle" ] [ viewSingleWaffle xValues yValues xName yName ]
+
+    else if xOrd == yOrd && showDiagonal then
+        td [ Attr.class "diagonal" ] [ viewSingleDiagonal xValues xName ]
+
+    else if xOrd > yOrd && showContingency then
+        td [ Attr.class "contigency" ] [ viewSingleContingency xValues yValues xName yName ]
 
     else
         td [] []
 
 
-
--- else if xOrd == yOrd then
---     td [ Attr.class "diagonal" ] [ viewSingleDiagonal xValues xName ]
--- else
---     td [ Attr.class "contigency" ] [ viewSingleContingency xValues yValues xName yName ]
-
-
-viewOutcome : SortedDAG -> Outcome -> Html Never
-viewOutcome sorted outcome =
+viewOutcome : Game.ViewSettings -> SortedDAG -> Outcome -> Html Never
+viewOutcome viewSettings sorted outcome =
     let
         varNames =
             variableNames sorted
@@ -521,7 +544,7 @@ viewOutcome sorted outcome =
         plotRow =
             \yOrd ( yName, yVals ) ->
                 tr []
-                    (List.indexedMap (\ord ( name, vals ) -> viewOutcomeSubplot ord yOrd vals yVals name yName) (List.map2 Tuple.pair varNames outcome))
+                    (List.indexedMap (\ord ( name, vals ) -> viewOutcomeSubplot viewSettings ord yOrd vals yVals name yName) (List.map2 Tuple.pair varNames outcome))
 
         allRows =
             case varNames of
@@ -782,8 +805,8 @@ viewCostCommentary =
         ]
 
 
-viewExperiment : SortedDAG -> Int -> ( Experiment, Outcome ) -> Html Never
-viewExperiment sorted id ( experiment, data ) =
+viewExperiment : Game.ViewSettings -> SortedDAG -> Int -> ( Experiment, Outcome ) -> Html Never
+viewExperiment viewSettings sorted id ( experiment, data ) =
     let
         typeText =
             if experiment.randomized then
@@ -807,7 +830,7 @@ viewExperiment sorted id ( experiment, data ) =
             , br [] []
             , text ("N = " ++ String.fromInt experiment.n ++ ", CZK " ++ String.fromInt (costExperiment experiment))
             ]
-        , Html.Lazy.lazy2 viewOutcome sorted data
+        , Html.Lazy.lazy3 viewOutcome viewSettings sorted data
         ]
 
 

@@ -152,13 +152,13 @@ updateGuess msg _ =
             g
 
 
-viewExperiment : Spec -> Int -> ( Experiment, Outcome ) -> Html Never
-viewExperiment spec id ( experiment, outcome ) =
+viewExperiment : Game.ViewSettings -> Spec -> Int -> ( Experiment, Outcome ) -> Html Never
+viewExperiment viewSettings spec id ( experiment, outcome ) =
     let
         filteredOutcome =
             List.take 2 outcome
     in
-    Causality.viewExperiment spec.sorted id ( experiment, filteredOutcome )
+    Causality.viewExperiment viewSettings spec.sorted id ( experiment, filteredOutcome )
 
 
 viewProposedExperiment : Spec -> Experiment -> Html ExpMsg

@@ -8,6 +8,13 @@ import Names
 import Random
 import Round
 import Utils
+import View
+
+
+type ViewSettings
+    = DotPlot
+    | Contingency
+    | Both
 
 
 type alias Scenario spec experiment outcome guess =
@@ -68,7 +75,7 @@ type alias LogicAdapter expMsg guessMsg spec experiment outcome guess =
 type alias ViewAdapter expMsg guessMsg spec experiment outcome guess =
     { viewHeader : Html Never
     , viewInstanceGoal : spec -> Html Never
-    , viewExperiment : spec -> Int -> ( experiment, outcome ) -> Html Never
+    , viewExperiment : ViewSettings -> spec -> Int -> ( experiment, outcome ) -> Html Never
     , viewProposedExperiment : spec -> experiment -> Html expMsg
     , viewCostCommentary : Html Never
     , viewGuess : spec -> guess -> Html Never
@@ -91,6 +98,7 @@ type Msg expMsg guessMsg spec experiment outcome guess
     | GuessChanged guessMsg
     | MakeGuess
     | NewInstance
+    | SetViewSettings ViewSettings
 
 
 type alias GuessEval =
@@ -117,45 +125,47 @@ initCmd adapter =
 type alias UpdateResult expMsg guessMsg spec experiment outcome guess =
     { scenario : Scenario spec experiment outcome guess
     , cmd : Cmd (Msg expMsg guessMsg spec experiment outcome guess)
+    , viewSettings : ViewSettings
     , updateStorage : Bool
     }
 
 
 update :
-    Adapter expMsg guessMsg spec experiment outcome guess
+    ViewSettings
+    -> Adapter expMsg guessMsg spec experiment outcome guess
     -> Msg expMsg guessMsg spec experiment outcome guess
     -> Scenario spec experiment outcome guess
     -> UpdateResult expMsg guessMsg spec experiment outcome guess
-update adapter msg scenario =
+update viewSettings adapter msg scenario =
     case msg of
         SpecGenerated ( name, sp ) ->
-            UpdateResult { scenario | history = { spec = sp, data = [], guess = Nothing, creatureName = name } :: scenario.history, proposedExperiment = adapter.init.defaultExperiment } Cmd.none True
+            UpdateResult { scenario | history = { spec = sp, data = [], guess = Nothing, creatureName = name } :: scenario.history, proposedExperiment = adapter.init.defaultExperiment } Cmd.none viewSettings True
 
         RunExperiment ->
             case scenario.history of
                 head :: _ ->
-                    UpdateResult scenario (Random.generate (DataGenerated scenario.proposedExperiment) (adapter.logic.generator head.spec scenario.proposedExperiment)) False
+                    UpdateResult scenario (Random.generate (DataGenerated scenario.proposedExperiment) (adapter.logic.generator head.spec scenario.proposedExperiment)) viewSettings False
 
                 _ ->
-                    UpdateResult scenario Cmd.none False
+                    UpdateResult scenario Cmd.none viewSettings False
 
         DataGenerated exp data ->
             case scenario.history of
                 active :: rest ->
                     if allowMoreExperiments active then
-                        UpdateResult { scenario | history = { active | data = ( exp, data ) :: active.data } :: rest } Cmd.none True
+                        UpdateResult { scenario | history = { active | data = ( exp, data ) :: active.data } :: rest } Cmd.none viewSettings True
 
                     else
-                        UpdateResult scenario Cmd.none False
+                        UpdateResult scenario Cmd.none viewSettings False
 
                 _ ->
-                    UpdateResult scenario Cmd.none False
+                    UpdateResult scenario Cmd.none viewSettings False
 
         ExperimentChanged eMsg ->
-            UpdateResult { scenario | proposedExperiment = adapter.logic.updateExperiment eMsg scenario.proposedExperiment } Cmd.none False
+            UpdateResult { scenario | proposedExperiment = adapter.logic.updateExperiment eMsg scenario.proposedExperiment } Cmd.none viewSettings False
 
         GuessChanged gMsg ->
-            UpdateResult { scenario | proposedGuess = adapter.logic.updateGuess gMsg scenario.proposedGuess } Cmd.none False
+            UpdateResult { scenario | proposedGuess = adapter.logic.updateGuess gMsg scenario.proposedGuess } Cmd.none viewSettings False
 
         MakeGuess ->
             case scenario.history of
@@ -166,14 +176,18 @@ update adapter msg scenario =
                             , proposedGuess = adapter.init.defaultGuess
                         }
                         Cmd.none
+                        viewSettings
                         True
 
                 -- TODO update challenge state
                 _ ->
-                    UpdateResult scenario Cmd.none False
+                    UpdateResult scenario Cmd.none viewSettings False
 
         NewInstance ->
-            UpdateResult scenario (Random.generate SpecGenerated (instanceGenerator adapter.logic.specGenerator)) False
+            UpdateResult scenario (Random.generate SpecGenerated (instanceGenerator adapter.logic.specGenerator)) viewSettings False
+
+        SetViewSettings newSettings ->
+            UpdateResult scenario Cmd.none newSettings False
 
 
 instanceGenerator : Random.Generator spec -> Random.Generator ( String, spec )
@@ -187,13 +201,14 @@ allowMoreExperiments instance =
 
 
 view :
-    Adapter expMsg guessMsg spec experiment outcome guess
+    ViewSettings
+    -> Adapter expMsg guessMsg spec experiment outcome guess
     -> Scenario spec experiment outcome guess
     -> Html (Msg expMsg guessMsg spec experiment outcome guess)
-view adapter scenario =
+view viewSettings adapter scenario =
     div [ Attr.class "scenario" ]
         [ viewGameControls adapter scenario
-        , viewHistory adapter scenario.history
+        , viewHistory viewSettings adapter scenario.history
         , div [ Attr.class "scenarioFooter" ] []
         ]
 
@@ -411,10 +426,11 @@ reverseIndexedMap f l =
 
 
 viewHistory :
-    Adapter expMsg guessMsg spec experiment outcome guess
+    ViewSettings
+    -> Adapter expMsg guessMsg spec experiment outcome guess
     -> List (HistoryItem spec experiment outcome guess)
     -> Html (Msg expMsg guessMsg spec experiment outcome guess)
-viewHistory adapter historyList =
+viewHistory viewSettings adapter historyList =
     case historyList of
         head :: rest ->
             let
@@ -422,7 +438,7 @@ viewHistory adapter historyList =
                     List.length historyList - 1
 
                 activeScenario =
-                    viewSingleHistory adapter True activeId head
+                    viewSingleHistory viewSettings adapter True activeId head
 
                 breakElement =
                     case rest of
@@ -433,7 +449,7 @@ viewHistory adapter historyList =
                             text ""
 
                 history =
-                    reverseIndexedMap (viewSingleHistory adapter False) rest
+                    reverseIndexedMap (viewSingleHistory viewSettings adapter False) rest
             in
             Html.Keyed.node
                 "div"
@@ -448,15 +464,16 @@ viewHistory adapter historyList =
 
 
 viewSingleHistory :
-    Adapter expMsg guessMsg spec experiment outcome guess
+    ViewSettings
+    -> Adapter expMsg guessMsg spec experiment outcome guess
     -> Bool
     -> Int
     -> HistoryItem spec experiment outcome guess
     -> Html (Msg expMsg guessMsg spec experiment outcome guess)
-viewSingleHistory adapter active id instance =
+viewSingleHistory viewSettings adapter active id instance =
     let
         experiments =
-            reverseIndexedMap (adapter.view.viewExperiment instance.spec) instance.data
+            reverseIndexedMap (adapter.view.viewExperiment viewSettings instance.spec) instance.data
                 |> List.map (Html.map never)
 
         dataDesc =
@@ -516,6 +533,53 @@ viewSingleHistory adapter active id instance =
                     , div [ Attr.class "guess" ] [ Html.map never (adapter.view.viewGuess instance.spec guess) ]
                     , guessResultDescription
                     ]
+        , viewViewSettings viewSettings
         , dataDesc
         , Html.Keyed.node "div" [ Attr.class "experiments" ] (withReverseIds experiments)
         ]
+
+
+viewViewSettings : ViewSettings -> Html (Msg expMsg guessMsg spec experiment outcome guess)
+viewViewSettings viewSettings =
+    let
+        singleOption =
+            \x ->
+                option [ Attr.selected (viewSettings == x), Attr.value (viewSettingsToString x) ] [ text (viewSettingsToString x) ]
+    in
+    div []
+        [ text "View experiment results as "
+        , select [ View.onChange (stringToViewSettings >> SetViewSettings) ]
+            [ singleOption DotPlot
+            , singleOption Contingency
+            , singleOption Both
+            ]
+        ]
+
+
+viewSettingsToString : ViewSettings -> String
+viewSettingsToString v =
+    case v of
+        DotPlot ->
+            "Dots"
+
+        Contingency ->
+            "Contingency"
+
+        Both ->
+            "Both"
+
+
+stringToViewSettings : String -> ViewSettings
+stringToViewSettings s =
+    case s of
+        "Dots" ->
+            DotPlot
+
+        "Contingency" ->
+            Contingency
+
+        "Both" ->
+            Both
+
+        _ ->
+            DotPlot

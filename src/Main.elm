@@ -35,6 +35,7 @@ type alias Model =
     , game : GameState.GameState
     , storedGame : Maybe GameState.GameState
     , homework : Homework.Model
+    , viewSettings : Game.ViewSettings
     }
 
 
@@ -72,9 +73,8 @@ init storedGame =
 
                 Err _ ->
                     Nothing
-
-      --Tuple.first ( Nothing, Debug.log "Err JSON: " a )
       , homework = Homework.init
+      , viewSettings = Game.DotPlot
       }
     , Cmd.batch
         [ Cmd.map AssocMsg (Game.initCmd Association.adapter)
@@ -102,32 +102,32 @@ update msg model =
         AssocMsg assocMsg ->
             let
                 res =
-                    Game.update Association.adapter assocMsg model.game.association
+                    Game.update model.viewSettings Association.adapter assocMsg model.game.association
             in
-            UpdateResult { model | game = { game | association = res.scenario } } (Cmd.map AssocMsg res.cmd) res.updateStorage
+            UpdateResult { model | game = { game | association = res.scenario }, viewSettings = res.viewSettings } (Cmd.map AssocMsg res.cmd) res.updateStorage
 
         SingleRel singleMsg ->
             let
                 res =
-                    Game.update SingleRelationship.adapter singleMsg model.game.singleRel
+                    Game.update model.viewSettings SingleRelationship.adapter singleMsg model.game.singleRel
             in
-            UpdateResult { model | game = { game | singleRel = res.scenario } }
+            UpdateResult { model | game = { game | singleRel = res.scenario }, viewSettings = res.viewSettings }
                 (Cmd.map SingleRel res.cmd)
                 res.updateStorage
 
         TwoRel twoWayMsg ->
             let
                 res =
-                    Game.update TwoRelationships.adapter twoWayMsg model.game.twoRel
+                    Game.update model.viewSettings TwoRelationships.adapter twoWayMsg model.game.twoRel
             in
-            UpdateResult { model | game = { game | twoRel = res.scenario } } (Cmd.map TwoRel res.cmd) res.updateStorage
+            UpdateResult { model | game = { game | twoRel = res.scenario }, viewSettings = res.viewSettings } (Cmd.map TwoRel res.cmd) res.updateStorage
 
         ThreeWay subMsg ->
             let
                 res =
-                    Game.update ThreeWay.adapter subMsg model.game.threeWay
+                    Game.update model.viewSettings ThreeWay.adapter subMsg model.game.threeWay
             in
-            UpdateResult { model | game = { game | threeWay = res.scenario } } (Cmd.map ThreeWay res.cmd) res.updateStorage
+            UpdateResult { model | game = { game | threeWay = res.scenario }, viewSettings = res.viewSettings } (Cmd.map ThreeWay res.cmd) res.updateStorage
 
         ActivatePage page ->
             UpdateResult { model | page = page } Cmd.none False
@@ -180,16 +180,16 @@ view model =
             [ Html.map never Instructions.view
             ]
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, AssocPage ) ( "block", "none" )) ]
-            [ Html.map AssocMsg (Game.view Association.adapter model.game.association)
+            [ Html.map AssocMsg (Game.view model.viewSettings Association.adapter model.game.association)
             ]
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, SingleRelPage ) ( "block", "none" )) ]
-            [ Html.map SingleRel (Game.view SingleRelationship.adapter model.game.singleRel)
+            [ Html.map SingleRel (Game.view model.viewSettings SingleRelationship.adapter model.game.singleRel)
             ]
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, TwoRelPage ) ( "block", "none" )) ]
-            [ Html.map TwoRel (Game.view TwoRelationships.adapter model.game.twoRel)
+            [ Html.map TwoRel (Game.view model.viewSettings TwoRelationships.adapter model.game.twoRel)
             ]
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, ThreeWayPage ) ( "block", "none" )) ]
-            [ Html.map ThreeWay (Game.view ThreeWay.adapter model.game.threeWay)
+            [ Html.map ThreeWay (Game.view model.viewSettings ThreeWay.adapter model.game.threeWay)
             ]
         , case model.storedGame of
             Just _ ->

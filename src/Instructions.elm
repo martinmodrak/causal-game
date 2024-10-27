@@ -30,7 +30,7 @@ view =
             valuesFromContingency 8 60 24 8
 
         ( noAssocSkewedX, noAssocSkewedY ) =
-            valuesFromContingency 22 45 11 22
+            valuesFromContingency 22 44 11 22
 
         -- ( testX, testY ) =
         --     valuesFromContingency 16 4 62 18
@@ -60,7 +60,7 @@ view =
             , a [ Attr.href "https://en.wikipedia.org/wiki/Contingency_table" ] [ text " contingency table" ]
             , text " . So let us assume that we observed 100 aliens and exactly 25 were sleeping and moving, 25 were sleeping and not moving,"
             , text "  25 were not sleeping and moving and 25 were neither sleeping nor moving. I.e. there is no association between the two."
-            , text " A contingency table for this case would look like this: "
+            , text " A contingency table for this case would look like this (note that we show ratios instead of the more common total sums per row/column): "
             ]
         , p [] [ Causality.viewSingleContingency allEqualX allEqualY "sleeping" "moving" ]
         , p [] [ text " To make this accessible to the eyes, we replace each alien with a single dot:" ]
