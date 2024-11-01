@@ -19,6 +19,11 @@ associationScenarioEncoder =
     scenarioEncoder associationSpecEncoder E.int categoryEncoder
 
 
+associationInstanceEncoder : Game.Instance Association.Spec Association.Experiment Association.Outcome Association.Guess -> E.Value
+associationInstanceEncoder =
+    instanceEncoder associationSpecEncoder E.int categoryEncoder
+
+
 associationScenarioDecoder : D.Decoder (Game.Scenario Association.Spec Association.Experiment Association.Outcome Association.Guess)
 associationScenarioDecoder =
     scenarioDecoder associationSpecDecoder D.int categoryDecoder
@@ -29,6 +34,11 @@ singleRelScenarioEncoder :
     -> E.Value
 singleRelScenarioEncoder =
     scenarioEncoder singleRelSpecEncoder experimentEncoder categoryEncoder
+
+
+singleRelInstanceEncoder : Game.Instance SingleRelationship.Spec SingleRelationship.Experiment SingleRelationship.Outcome SingleRelationship.Guess -> E.Value
+singleRelInstanceEncoder =
+    instanceEncoder singleRelSpecEncoder experimentEncoder categoryEncoder
 
 
 singleRelScenarioDecoder : D.Decoder (Game.Scenario SingleRelationship.Spec SingleRelationship.Experiment SingleRelationship.Outcome SingleRelationship.Guess)
@@ -43,6 +53,13 @@ twoRelScenarioEncoder =
     scenarioEncoder twoRelSpecEncoder experimentEncoder twoRelGuessEncoder
 
 
+twoRelInstanceEncoder :
+    Game.Instance TwoRelationships.Spec TwoRelationships.Experiment TwoRelationships.Outcome TwoRelationships.Guess
+    -> E.Value
+twoRelInstanceEncoder =
+    instanceEncoder twoRelSpecEncoder experimentEncoder twoRelGuessEncoder
+
+
 twoRelScenarioDecoder : D.Decoder (Game.Scenario TwoRelationships.Spec TwoRelationships.Experiment TwoRelationships.Outcome TwoRelationships.Guess)
 twoRelScenarioDecoder =
     scenarioDecoder twoRelSpecDecoder experimentDecoder twoRelGuessDecoder
@@ -53,6 +70,13 @@ threeWayScenarioEncoder :
     -> E.Value
 threeWayScenarioEncoder =
     scenarioEncoder threeWaySpecEncoder experimentEncoder threeWayGuessEncoder
+
+
+threeWayInstanceEncoder :
+    Game.Instance ThreeWay.Spec ThreeWay.Experiment ThreeWay.Outcome ThreeWay.Guess
+    -> E.Value
+threeWayInstanceEncoder =
+    instanceEncoder threeWaySpecEncoder experimentEncoder threeWayGuessEncoder
 
 
 threeWayScenarioDecoder : D.Decoder (Game.Scenario ThreeWay.Spec ThreeWay.Experiment ThreeWay.Outcome ThreeWay.Guess)

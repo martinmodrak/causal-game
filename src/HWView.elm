@@ -4,9 +4,9 @@ import Association
 import Base64
 import Base64String
 import Browser
-import Bytes
 import Bytes.Encode
-import Game exposing (ViewSettings)
+import Game
+import GameJson
 import GameState exposing (GameState)
 import Homework
 import Html exposing (..)
@@ -14,9 +14,12 @@ import Html.Attributes as Attr
 import Html.Events as Events
 import Http
 import Json.Decode
+import Json.Encode
 import Maybe.Extra
+import MultiBiDict
 import Platform.Cmd as Cmd
 import Round
+import Set
 import SingleRelationship
 import ThreeWay
 import TwoRelationships
@@ -59,6 +62,11 @@ type LoadState
     | Loaded String
 
 
+type alias InstanceDict =
+    --first key is instance
+    MultiBiDict.MultiBiDict String String
+
+
 type alias Model =
     { index : Maybe (Result Http.Error Index)
     , recordsToLoad : Int
@@ -66,6 +74,7 @@ type alias Model =
     , errors : List ( FileInfo, Http.Error )
     , showing : Showing
     , csvDownload : Maybe String
+    , instanceDict : InstanceDict
     }
 
 
@@ -134,6 +143,7 @@ init _ =
       , errors = []
       , showing = All
       , csvDownload = Nothing
+      , instanceDict = MultiBiDict.empty
       }
     , Http.get
         { url = "hw_data/index.json"
@@ -184,7 +194,11 @@ update msg model =
                                     , eval = Homework.computeScore (Game.getResults TwoRelationships.adapter.logic rec.state.twoRel.history)
                                     }
                             in
-                            { model | records = ( info, rec ) :: model.records, recordsToLoad = model.recordsToLoad - 1 }
+                            { model
+                                | records = ( info, rec ) :: model.records
+                                , recordsToLoad = model.recordsToLoad - 1
+                                , instanceDict = updateInstanceDict rec.name rec.state model.instanceDict
+                            }
 
                         Err err ->
                             { model | errors = ( file, err ) :: model.errors, recordsToLoad = model.recordsToLoad - 1 }
@@ -199,6 +213,28 @@ update msg model =
 
         Noop ->
             ( model, Cmd.none )
+
+
+updateInstanceDict : String -> GameState -> InstanceDict -> InstanceDict
+updateInstanceDict name state old =
+    old
+        |> updateInstanceDictSingle name GameJson.associationInstanceEncoder state.association
+        |> updateInstanceDictSingle name GameJson.singleRelInstanceEncoder state.singleRel
+        |> updateInstanceDictSingle name GameJson.twoRelInstanceEncoder state.twoRel
+        |> updateInstanceDictSingle name GameJson.threeWayInstanceEncoder state.threeWay
+
+
+updateInstanceDictSingle : String -> (Game.Instance spec experiment outcome guess -> Json.Encode.Value) -> Game.Scenario spec experiment outcome guess -> InstanceDict -> InstanceDict
+updateInstanceDictSingle name encoder scenario old =
+    let
+        instanceToString =
+            encoder >> Json.Encode.encode 0
+
+        processItem =
+            \item dict ->
+                MultiBiDict.insert (instanceToString item) name dict
+    in
+    List.foldl processItem old scenario.history
 
 
 updateDownload : Model -> Model
@@ -301,15 +337,24 @@ viewIndex model =
                 , th [] [ text "Correct" ]
                 , th [] [ text "Cost" ]
                 , th [] [ text "Filename" ]
+                , th [] [ text "Overlaps" ]
                 , th [] [ text "View" ]
                 ]
-                :: List.map viewSingleRec model.records
+                :: List.map (viewSingleRec (model.recordsToLoad == 0) model.instanceDict) model.records
             )
         ]
 
 
-viewSingleRec : ( RecordInfo, HWRecord ) -> Html Msg
-viewSingleRec ( info, rec ) =
+viewSingleRec : Bool -> InstanceDict -> ( RecordInfo, HWRecord ) -> Html Msg
+viewSingleRec allLoaded instanceDict ( info, rec ) =
+    let
+        overlaps =
+            if allLoaded then
+                getOverlaps instanceDict rec.name
+
+            else
+                []
+    in
     tr []
         [ td [] [ text info.file.dir ]
         , td [] [ text rec.name ]
@@ -318,8 +363,19 @@ viewSingleRec ( info, rec ) =
         , td [] [ text (Round.round 0 (info.eval.avgCorrect * 100) ++ "% of " ++ String.fromInt info.eval.nInstances) ]
         , td [] [ text (Round.round 0 (info.eval.avgCost / 1000) ++ "K") ]
         , td [] [ text info.file.name ]
+        , td [] (List.map (\x -> span [] [ text x, text ", " ]) overlaps)
         , td [] [ a [ Attr.href "#", Events.onClick (ShowRecord rec) ] [ text "View" ] ]
         ]
+
+
+getOverlaps : InstanceDict -> String -> List String
+getOverlaps instanceDict name =
+    MultiBiDict.getReverse name instanceDict
+        |> Set.toList
+        |> List.map (\inst -> MultiBiDict.get inst instanceDict)
+        |> List.foldl Set.union Set.empty
+        |> Set.remove name
+        |> Set.toList
 
 
 viewErrors : List ( FileInfo, Http.Error ) -> Html a
