@@ -5,6 +5,7 @@ import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
 import Html.Lazy
+import Settings
 
 
 valuesFromContingency : Int -> Int -> Int -> Int -> ( List Bool, List Bool )
@@ -33,6 +34,21 @@ view =
             valuesFromContingency 22 44 11 22
 
         -- ( testX, testY ) =
+        --     valuesFromContingency 0 49 49 0
+        -- ( test2X, test2Y ) =
+        --     valuesFromContingency 16 117 13 6
+        -- Positive assoc example
+        -- ( testX, testY ) =
+        --     valuesFromContingency 25 0 0 25
+        -- ( test2X, test2Y ) =
+        --     valuesFromContingency 75 10 30 40
+        -- No association example
+        -- ( testX, testY ) =
+        --     valuesFromContingency 16 16 16 16
+        -- ( test2X, test2Y ) =
+        --     valuesFromContingency 75 25 30 10
+        -- Problematic data example
+        -- ( testX, testY ) =
         --     valuesFromContingency 16 4 62 18
         -- ( test2X, test2Y ) =
         --     valuesFromContingency 73 13 6 8
@@ -41,14 +57,18 @@ view =
         [ h2 []
             [ text " The big picture" ]
 
-        -- , p [] [ Causality.viewSingleWaffle testX testY "sleeping" "moving" ]
-        -- , p [] [ Causality.viewSingleWaffle test2X test2Y "sleeping" "moving" ]
+        -- , p [] [ Causality.viewSingleWaffle testX testY "young" "breastfeeding" ]
+        -- , p [] [ Causality.viewSingleWaffle test2X test2Y "wounded" "fast" ]
         , p []
             [ ul []
                 [ li [] [ text " You are an exoepidemiologist. " ]
                 , li [] [ text " You will be asked to assess possible relationships between various binary (true/false) properties measured for a bunch of aliens." ]
                 , li [] [ text " The game is divided into multiple scenarios of increasing difficulty." ]
-                , li [] [ text " Homework is fulfilled by successfully handling the \"Homework\" scenario " ]
+                , if Settings.homeworkEnabled then
+                    li [] [ text " Homework is fulfilled by successfully handling the \"Homework\" scenario " ]
+
+                  else
+                    text ""
                 , li [] [ text " You can complete multiple instances of each scenario. Instances differ in what alien you study and what the true relationships are, but have the same structure." ]
                 , li [] [ text " In each instance, you can run several experiments and once you think you've learned enough, you make a guess about the causal relationships in the data." ]
                 , li [] [ text " Running experiments costs money. You aim for high correctness of your guess while spending as little money as possible" ]

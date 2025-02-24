@@ -7,6 +7,7 @@ import Html exposing (..)
 import Html.Attributes as Attr
 import Names
 import Random
+import Settings
 import Utils
 
 
@@ -234,7 +235,11 @@ viewHeader =
         , em [] [ text "We strongly recommend trying out the previous scenarios before going here." ]
         , p []
             [ text "Here we add another variable, but to make things manageable, you know that only two relationships are possible (as noted below). "
-            , text " This is the actual homework stuff. Good luck."
+            , if Settings.homeworkEnabled then
+                text " This is the actual homework stuff. Good luck."
+
+              else
+                text ""
             ]
         ]
 

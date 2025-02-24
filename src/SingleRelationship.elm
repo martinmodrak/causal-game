@@ -8,6 +8,7 @@ import Html exposing (..)
 import Html.Attributes as Attr
 import Names
 import Random
+import Settings
 
 
 type alias Spec =
@@ -212,7 +213,11 @@ viewHeader : Html Never
 viewHeader =
     div [ Attr.class "scenarioHeader" ]
         [ h2 [] [ text "Single causal relationship" ]
-        , p [] [ strong [] [ text "This scenario does not contribute to homework scoring, it is there to help you learn how the game works." ] ]
+        , if Settings.homeworkEnabled then
+            p [] [ strong [] [ text "This scenario does not contribute to homework scoring, it is there to help you learn how the game works." ] ]
+
+          else
+            text ""
         , p []
             [ text "Here, the change from the previous scenario is that now the direction of causality is not given and you have to find it yourself."
             , text " You can now also access randomized experiments that help you do exactly that. You mess up with the aliens, such that after randomization the randomized variable will be"

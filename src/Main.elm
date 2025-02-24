@@ -1,9 +1,8 @@
 port module Main exposing (..)
 
 import Association
-import Base64
+import Bitwise exposing (and)
 import Browser
-import Causality
 import Game
 import GameState
 import Homework
@@ -14,12 +13,10 @@ import Html.Lazy
 import Instructions
 import Json.Decode
 import Json.Encode
-import Round
+import Settings
 import SingleRelationship
 import ThreeWay
 import TwoRelationships
-import UnobservedConfounding
-import Utils
 
 
 type Page
@@ -174,7 +171,11 @@ updateWithStorage msg oldModel =
 view : Model -> Html Msg
 view model =
     div [ Attr.class "topContainer" ]
-        [ Html.map Homework (Homework.viewControls model.game)
+        [ if Settings.homeworkEnabled then
+            Html.map Homework (Homework.viewControls model.game)
+
+          else
+            text ""
         , Html.Lazy.lazy viewPageSelection model
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, InstructionsPage ) ( "block", "none" )) ]
             [ Html.map never Instructions.view
@@ -196,7 +197,7 @@ view model =
                 viewStoredPopup
 
             Nothing ->
-                if model.homework.submission then
+                if model.homework.submission && Settings.homeworkEnabled then
                     Html.map Homework (Homework.viewPopup model.game model.homework)
 
                 else
@@ -245,7 +246,11 @@ pageTitle page =
             "1: Cause"
 
         TwoRelPage ->
-            "Homework"
+            if Settings.homeworkEnabled then
+                "Homework"
+
+            else
+                "2: Two relationships"
 
         ThreeWayPage ->
             "Bonus"

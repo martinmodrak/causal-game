@@ -6,11 +6,10 @@ import Game exposing (GuessEval, Msg(..))
 import Graph
 import Html exposing (..)
 import Html.Attributes as Attr
-import Html.Events as Events
 import Html.Lazy
 import Names
 import Random
-import VegaLite as VL
+import Settings
 import View
 
 
@@ -267,7 +266,11 @@ viewHeader : Html Never
 viewHeader =
     div [ Attr.class "scenarioHeader" ]
         [ h2 [] [ text "Is there an association?" ]
-        , p [] [ strong [] [ text "This scenario does not contribute to homework scoring, it is there to help you learn how the game works." ] ]
+        , if Settings.homeworkEnabled then
+            p [] [ strong [] [ text "This scenario does not contribute to homework scoring, it is there to help you learn how the game works." ] ]
+
+          else
+            text ""
         , p [] [ text "In this scenario we know that there is only one possible direction of causality. It remains to be determined whether the relationship is positive (one trait promotes the other) or negative (one trait inhibits the other) or there might be no association at all." ]
         , p [] [ text "You should be able to reliably find the correct answer from a single experiment with 70 - 150 aliens. I.e. aim for 100% correctness over at least 4 scenarios in a row with average cost below CZK 15 000." ]
         ]

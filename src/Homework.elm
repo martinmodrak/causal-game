@@ -294,7 +294,7 @@ viewPopup game model =
     div [ Attr.class "popupBackground" ]
         [ div [ Attr.class "popup" ]
             [ p []
-                [ text "To submit your homework, fill in your name and group. Then use the link below to download a file and send it to martin.modrak@lfmotol.cuni.cz" ]
+                [ text "To submit your homework, fill in your name and group. Then use the link below to download a file verifying your results. Store the file on your device and send it as attachment to martin.modrak@lfmotol.cuni.cz" ]
             , p []
                 [ text "Your homework is currently worth ", strong [] [ text (String.fromInt score) ], text " points." ]
             , text "Your full name: "

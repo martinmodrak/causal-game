@@ -91,8 +91,9 @@ scenarioEncoder :
     -> Game.Scenario spec experiment Causality.Outcome guess
     -> E.Value
 scenarioEncoder specEnc experimentEnc guessEnc scenario =
+    -- keep only 40 or so experiments at most to avoid decoding problems
     E.object
-        [ ( "history", E.list (instanceEncoder specEnc experimentEnc guessEnc) scenario.history )
+        [ ( "history", E.list (instanceEncoder specEnc experimentEnc guessEnc) (List.take 40 scenario.history) )
         , ( "proposedExperiment", experimentEnc scenario.proposedExperiment )
         , ( "proposedGuess", guessEnc scenario.proposedGuess )
         ]
