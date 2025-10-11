@@ -156,16 +156,12 @@ instanceDecoder specDec experimentDec guessDec =
 
 outcomeEncoder : Causality.Outcome -> E.Value
 outcomeEncoder outcome =
-    --E.list (E.list E.bool) outcome
-    E.list (E.list E.int) (outcome |> List.map rleEncode)
+    E.list (E.list E.float) outcome
 
 
 outcomeDecoder : D.Decoder Causality.Outcome
 outcomeDecoder =
-    D.oneOf
-        [ D.list (D.list D.int |> D.map rleDecode)
-        , D.list (D.list D.bool)
-        ]
+    D.list (D.list D.float)
 
 
 rleEncode : List Bool -> List Int

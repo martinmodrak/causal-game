@@ -3,131 +3,479 @@
   "data": {
     "values": [
       {
-        "y": false,
-        "x": true
+        "x": false,
+        "y": -1.7876681963756866
       },
       {
-        "y": false,
-        "x": false
+        "x": false,
+        "y": 0.35273120563900495
       },
       {
-        "y": false,
-        "x": true
+        "x": false,
+        "y": 0.7025128363413263
       },
       {
-        "y": true,
-        "x": true
+        "x": false,
+        "y": 1.2325914032277392
       },
       {
-        "y": false,
-        "x": false
+        "x": false,
+        "y": -0.7340456618303358
       },
       {
-        "y": true,
-        "x": true
+        "x": true,
+        "y": -1.1914593278586985
+      },
+      {
+        "x": false,
+        "y": -1.9086775005251635
+      },
+      {
+        "x": false,
+        "y": 1.0570955465494674
+      },
+      {
+        "x": true,
+        "y": -0.36589499674311493
+      },
+      {
+        "x": true,
+        "y": -0.9716783280482848
+      },
+      {
+        "x": true,
+        "y": -0.9055910944363265
+      },
+      {
+        "x": false,
+        "y": 0.2763376264009722
+      },
+      {
+        "x": false,
+        "y": 0.45991623515447044
+      },
+      {
+        "x": false,
+        "y": 0.4878923942756469
+      },
+      {
+        "x": true,
+        "y": 0.4069500212456574
+      },
+      {
+        "x": false,
+        "y": -0.1331718409966523
+      },
+      {
+        "x": false,
+        "y": -1.3013310295683385
+      },
+      {
+        "x": true,
+        "y": -2.451013041138512
+      },
+      {
+        "x": false,
+        "y": 0.0026589640395188185
+      },
+      {
+        "x": false,
+        "y": 0.09933735211875777
+      },
+      {
+        "x": false,
+        "y": -0.7097968817899339
+      },
+      {
+        "x": false,
+        "y": -1.6450750998482402
+      },
+      {
+        "x": true,
+        "y": 1.795585750655534
+      },
+      {
+        "x": true,
+        "y": 0.014792797093826054
+      },
+      {
+        "x": false,
+        "y": -0.22543693509251328
+      },
+      {
+        "x": false,
+        "y": -0.3354192403159465
+      },
+      {
+        "x": false,
+        "y": -0.3264789780534798
+      },
+      {
+        "x": false,
+        "y": 0.23480596439510615
+      },
+      {
+        "x": true,
+        "y": 0.07979626098368053
+      },
+      {
+        "x": false,
+        "y": 1.5456599023178978
+      },
+      {
+        "x": false,
+        "y": -2.6732170275369143
+      },
+      {
+        "x": true,
+        "y": -0.6098436845749062
+      },
+      {
+        "x": false,
+        "y": 0.40161222051497547
+      },
+      {
+        "x": true,
+        "y": -0.47210874737759567
+      },
+      {
+        "x": false,
+        "y": -2.4485900229596433
+      },
+      {
+        "x": true,
+        "y": 0.43743388416172224
+      },
+      {
+        "x": true,
+        "y": 0.5731532265567899
+      },
+      {
+        "x": false,
+        "y": -0.7036723153250598
+      },
+      {
+        "x": false,
+        "y": 1.3365777314616971
+      },
+      {
+        "x": false,
+        "y": -0.2707764023448812
+      },
+      {
+        "x": false,
+        "y": -0.09383714688215314
+      },
+      {
+        "x": false,
+        "y": -2.0636418662640477
+      },
+      {
+        "x": false,
+        "y": 0.17157527814432855
+      },
+      {
+        "x": false,
+        "y": -0.19217815797980548
+      },
+      {
+        "x": false,
+        "y": 0.8170388887406009
+      },
+      {
+        "x": true,
+        "y": -0.9854276720232196
+      },
+      {
+        "x": true,
+        "y": 0.37340866485821833
+      },
+      {
+        "x": false,
+        "y": -1.2721898591208756
+      },
+      {
+        "x": false,
+        "y": -0.479885564841814
+      },
+      {
+        "x": false,
+        "y": 1.0087557945340986
+      },
+      {
+        "x": false,
+        "y": 0.705425612130066
+      },
+      {
+        "x": true,
+        "y": -1.238591516960903
+      },
+      {
+        "x": false,
+        "y": -1.3144522245273782
+      },
+      {
+        "x": true,
+        "y": 0.27961550842863986
+      },
+      {
+        "x": false,
+        "y": -1.6049996077753717
+      },
+      {
+        "x": false,
+        "y": 0.5473675796391894
+      },
+      {
+        "x": false,
+        "y": 0.0569218563001167
+      },
+      {
+        "x": true,
+        "y": 0.837900692022375
+      },
+      {
+        "x": false,
+        "y": -1.3175641582444568
+      },
+      {
+        "x": false,
+        "y": 0.14569396238036858
+      },
+      {
+        "x": false,
+        "y": 0.11309641307348484
+      },
+      {
+        "x": false,
+        "y": 0.5702472831269898
+      },
+      {
+        "x": true,
+        "y": -0.5606122207933537
+      },
+      {
+        "x": true,
+        "y": 0.9614019235536708
+      },
+      {
+        "x": false,
+        "y": 0.4330782386550134
+      },
+      {
+        "x": false,
+        "y": 1.59216546508903
+      },
+      {
+        "x": false,
+        "y": -1.169890292153902
+      },
+      {
+        "x": true,
+        "y": 0.3359055008502406
+      },
+      {
+        "x": false,
+        "y": -1.0635650160690595
+      },
+      {
+        "x": false,
+        "y": 0.5631586784050223
+      },
+      {
+        "x": false,
+        "y": 1.0932207095762998
+      },
+      {
+        "x": false,
+        "y": -0.5422060084421304
+      },
+      {
+        "x": true,
+        "y": 1.8285977682527916
+      },
+      {
+        "x": false,
+        "y": -0.8684994896031666
+      },
+      {
+        "x": false,
+        "y": -0.17611793900586808
+      },
+      {
+        "x": true,
+        "y": -0.359665095456872
+      },
+      {
+        "x": false,
+        "y": -0.23112201724127773
+      },
+      {
+        "x": true,
+        "y": 0.6001198289322514
+      },
+      {
+        "x": false,
+        "y": -1.447066211962226
+      },
+      {
+        "x": true,
+        "y": 1.7283151493121913
+      },
+      {
+        "x": false,
+        "y": 0.7283997501187972
+      },
+      {
+        "x": true,
+        "y": 0.39713318281734555
+      },
+      {
+        "x": false,
+        "y": -2.77813473031385
+      },
+      {
+        "x": false,
+        "y": -0.3547703462500629
+      },
+      {
+        "x": true,
+        "y": -0.5021253726649998
+      },
+      {
+        "x": false,
+        "y": 0.4692328666556367
+      },
+      {
+        "x": true,
+        "y": 0.5978209941540517
+      },
+      {
+        "x": false,
+        "y": -1.6952175514343244
+      },
+      {
+        "x": false,
+        "y": -0.9707763786560466
+      },
+      {
+        "x": false,
+        "y": -0.8398421790985685
+      },
+      {
+        "x": false,
+        "y": -0.8491591878843258
+      },
+      {
+        "x": true,
+        "y": -1.508609329998931
+      },
+      {
+        "x": true,
+        "y": 0.17320614735702605
+      },
+      {
+        "x": true,
+        "y": -0.4683402746050929
+      },
+      {
+        "x": false,
+        "y": 0.30586163217606394
+      },
+      {
+        "x": false,
+        "y": -0.45174769866453307
+      },
+      {
+        "x": true,
+        "y": 0.8967227939479945
+      },
+      {
+        "x": false,
+        "y": 1.2160915843968558
+      },
+      {
+        "x": true,
+        "y": -0.045160417963421406
+      },
+      {
+        "x": true,
+        "y": 0.8545542527949335
       }
     ]
   },
-  "layer" : [
-  {"transform": [
-    {
-      "joinaggregate": [
-        {
-          "op": "mean",
-          "field": "x",
-          "as": "xMean"
-        },
-        {
-          "op": "mean",
-          "field": "y",
-          "as": "yMean"
-        }
-      ],
-      "groupby": []
-    }
-    ,
-    {
-      "calculate": "if(datum.x, datum.xMean + (1 - datum.xMean) * random(), datum.xMean * random())",
-      "as": "xJit"
-    }
-    ,
-    {
-      "calculate": "if(datum.y, datum.yMean + (1 - datum.yMean) * random(), datum.yMean * random())",
-      "as": "yJit"
-    },
-    {"calculate": "toString(datum.x) + toString(datum.y)",
-    "as": "color"}
-  ],
-  "encoding": {
-    "x": {
-      "field": "xJit",
-      "type": "quantitative",
-      "axis": {
-        "title" : "x"
-      }
-    },
-    "y": {
-      "field": "yJit",
-      "type": "quantitative",
-      "axis": {
-        "title" : "y"
-      }
-    },
-    "color": {
-      "field":"color",
-      "type" : "nominal",
-      "legend" : null
-    }
-  },
-  "mark": "circle"
-},
-{
-  "encoding": {
-    "x" : {"field": "x", "aggregate" : "average"}
-  },
-  "mark" : "rule"
-},
-{
-  "encoding": {
-    "y" : {"field": "y", "aggregate" : "average"}
-  },
-  "mark" : "rule"
-},
-{
-  "encoding": {
-    "y" : {"datum": 0}
-  },
-  "mark" : "rule"
-},
-{
-  "encoding": {
-    "y" : {"datum": 1}
-  },
-  "mark" : "rule"
-},
-{
-  "encoding": {
-    "x" : {"datum": 0}
-  },
-  "mark" : "rule"
-},
-{
-  "encoding": {
-    "x" : {"datum": 1}
-  },
-  "mark" : "rule"
-}
-  ],
   "config": {
-    "view": {
-      "stroke": ""
+    "axisX": {
+      "domain": true,
+      "ticks": true,
+      "labels": true,
+      "labelExpr": "datum.value ? 'Yes' : 'No'",
+      "grid": true,
     },
-    "axis": {
+    "axisY": {
       "domain": false,
-      "ticks": false,
+      "ticks": true,
       "labels": false,
-      "grid": false,
-      //"title": false
+      "grid": false
     }
-  }
+  },
+  "encoding": {        "x": {
+          "field": "x",
+          "type": "nominal",
+          "axis": {
+            "title": "hit by scissors"
+          }
+        },
+},
+  "layer": [
+    {
+      "width": 150,
+      "encoding": {
+        "color":{
+          "field": "x",
+          "type": "nominal",
+          "legend" : null
+        },
+        "shape":{
+          "field": "x",
+          "type": "nominal"
+        },
+           "xOffset": {
+      "field": "offset",
+      "scale": {"domain": [0, 1]},
+      "type": "quantitative"
+    }, 
+        "y": {
+          "field": "y",
+          "type": "quantitative",
+          "axis": {
+            "title": "scared of unobtanium"
+          }
+        }
+      },
+     "transform": [{"calculate": "random()", "as": "offset"}] ,
+"mark": {
+        "type": "point",
+        "filled": true,
+        "opacity": 0.7
+      }},
+   {
+      "mark": {"type": "point", "filled": true, "size":150},
+      "encoding": {
+        "y": {
+          "aggregate": "mean",
+          "field": "y",
+          "type": "quantitative",
+          "title": ""
+        },
+        "color": {"value": "black"},
+      }
+    },
+    {
+      "mark": {"type": "errorbar", "extent": "ci", "thickness": 3},
+      "encoding": {
+        "y": {"field": "y", "type": "quantitative", "title": ""}
+      }
+    } 
+  ]
 }

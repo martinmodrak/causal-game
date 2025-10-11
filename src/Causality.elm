@@ -66,7 +66,7 @@ type alias ProcessingContribution =
 
 
 type alias Outcome =
-    List (List Bool)
+    List (List Float)
 
 
 processSingleVar : Int -> ProcessingContribution -> IntDict.IntDict (List Float) -> IntDict.IntDict (List Float)
@@ -140,7 +140,7 @@ allContrib vars =
         |> List.foldr (++) []
 
 
-dataFromNoise : SortedDAG -> Int -> List (List Float) -> List (List Bool)
+dataFromNoise : SortedDAG -> Int -> List (List Float) -> Outcome
 dataFromNoise dag intervention probitNoise =
     let
         singleInit =
@@ -159,24 +159,15 @@ dataFromNoise dag intervention probitNoise =
             List.map2 Tuple.pair dag.variables probitNoise
                 |> List.indexedMap singleInit
                 |> IntDict.fromList
-
-        resultsListFloat =
-            List.foldl (processSingleVar intervention) init (allContrib dag.sorted)
-                |> IntDict.values
     in
-    List.map (List.map (\x -> x > 0)) resultsListFloat
+    List.foldl (processSingleVar intervention) init (allContrib dag.sorted)
+        |> IntDict.values
 
 
 probitNoiseGenerator : Int -> Int -> Random.Generator (List (List Float))
 probitNoiseGenerator nVars nSubj =
     Random.list nVars
         (Random.list nSubj Random.Float.standardNormal)
-
-
-visNoiseGenerator : Int -> Int -> Random.Generator (List (List Float))
-visNoiseGenerator nVars nSubj =
-    Random.list nVars
-        (Random.list nSubj (Random.float 0 1))
 
 
 noIntervention : Int
@@ -196,244 +187,75 @@ generatorRandomized dag intervention nSubj =
         |> Random.map (dataFromNoise dag intervention)
 
 
-positionInGroupInner : { ff : Int, ft : Int, tf : Int, tt : Int } -> List Bool -> List Bool -> ( List ( Float, Float ), { ff : Int, ft : Int, tf : Int, tt : Int } )
-positionInGroupInner countsSoFar xValues yValues =
-    case ( xValues, yValues ) of
-        ( valX :: xRest, valY :: yRest ) ->
-            let
-                ( accessor, recurseWith ) =
-                    if valX then
-                        if valY then
-                            ( .tt, { countsSoFar | tt = countsSoFar.tt + 1 } )
-
-                        else
-                            ( .tf, { countsSoFar | tf = countsSoFar.tf + 1 } )
-
-                    else if valY then
-                        ( .ft, { countsSoFar | ft = countsSoFar.ft + 1 } )
-
-                    else
-                        ( .ff, { countsSoFar | ff = countsSoFar.ff + 1 } )
-
-                ( posRest, totalCounts ) =
-                    positionInGroupInner recurseWith xRest yRest
-
-                totalCount =
-                    accessor totalCounts
-
-                currentOrd =
-                    accessor countsSoFar
-
-                nData =
-                    toFloat (totalCounts.tt + totalCounts.tf + totalCounts.ft + totalCounts.ff)
-
-                rectWidth =
-                    toFloat
-                        (if valX then
-                            totalCounts.tt + totalCounts.tf
-
-                         else
-                            totalCounts.ft + totalCounts.ff
-                        )
-                        / nData
-
-                rectHeight =
-                    toFloat
-                        (if valY then
-                            totalCounts.tt + totalCounts.ft
-
-                         else
-                            totalCounts.tf + totalCounts.ff
-                        )
-                        / nData
-
-                sqrtAreaPerPoint =
-                    sqrt (rectWidth * rectHeight / toFloat totalCount)
-
-                minPerRowX =
-                    ceiling (rectWidth / sqrtAreaPerPoint)
-
-                minPerRowY =
-                    ceiling (rectHeight / sqrtAreaPerPoint)
-
-                stepSize =
-                    min (rectWidth / toFloat minPerRowX) (rectHeight / toFloat minPerRowY)
-
-                remainderX =
-                    max 0 (rectWidth - stepSize * (1 + toFloat ((totalCount - 1) // minPerRowY)))
-
-                maxFilledY =
-                    if totalCount >= minPerRowY then
-                        minPerRowY
-
-                    else
-                        totalCount
-
-                remainderY =
-                    max 0 (rectHeight - stepSize * toFloat maxFilledY)
-
-                xPos =
-                    remainderX * 0.5 + stepSize * (0.5 + toFloat (currentOrd // minPerRowY))
-
-                yPos =
-                    remainderY * 0.5 + stepSize * (0.5 + toFloat (modBy minPerRowY currentOrd))
-            in
-            ( ( xPos, yPos ) :: posRest, totalCounts )
-
-        _ ->
-            ( [], countsSoFar )
-
-
-positionInGroup : List Bool -> List Bool -> List ( Float, Float )
-positionInGroup xValues yValues =
+singlePairBeehiveDataSpec : List Bool -> List Float -> String -> String -> VL.Spec
+singlePairBeehiveDataSpec xValues yValues xName yName =
     let
-        ( res, _ ) =
-            positionInGroupInner { ff = 0, ft = 0, tf = 0, tt = 0 } xValues yValues
-    in
-    res
-
-
-singlePairWaffleDataSpec : List Bool -> List Bool -> String -> String -> VL.Spec
-singlePairWaffleDataSpec xValues yValues xName yName =
-    let
-        ( xPos, yPos ) =
-            positionInGroup xValues yValues
-                |> List.unzip
-
         data =
             (VL.dataFromColumns []
                 << VL.dataColumn "x" (VL.boos xValues)
-                << VL.dataColumn "y" (VL.boos yValues)
-                << VL.dataColumn "xPos" (VL.nums xPos)
-                << VL.dataColumn "yPos" (VL.nums yPos)
+                << VL.dataColumn "y" (VL.nums yValues)
             )
                 []
 
-        jitExpr =
-            \name ->
-                "if(datum." ++ name ++ ", (1 - datum." ++ name ++ "Mean) + datum." ++ name ++ "Pos,  datum." ++ name ++ "Pos)"
-
-        transforms =
-            VL.transform
-                << VL.joinAggregate
-                    [ VL.opAs VL.opMean "x" "xMean"
-                    , VL.opAs VL.opMean "y" "yMean"
-                    ]
-                    []
-                << VL.calculateAs (jitExpr "x") "xJit"
-                << VL.calculateAs (jitExpr "y")
-                    "yJit"
-                << VL.calculateAs "toString(datum.x) + toString(datum.y)"
-                    "x_y"
-
-        enc =
+        encShared =
             VL.encoding
-                << VL.position VL.X [ VL.pName "xJit", VL.pQuant, VL.pAxis [ VL.axTitle xName ] ]
-                << VL.position VL.Y [ VL.pName "yJit", VL.pQuant, VL.pAxis [ VL.axTitle yName ] ]
-                << VL.color [ VL.mName "x_y", VL.mNominal, VL.mLegend [] ]
+                << VL.position VL.X [ VL.pName "x", VL.pNominal, VL.pAxis [ VL.axTitle xName ] ]
 
-        rule =
-            \coord pos ->
-                VL.asSpec
-                    [ (VL.encoding << VL.position coord [ VL.pDatum (VL.num pos) ]) []
-                    , VL.rule []
-                    ]
+        encPoints =
+            VL.encoding
+                << VL.color [ VL.mName "x", VL.mNominal, VL.mLegend [] ]
+                << VL.shape [ VL.mName "x", VL.mNominal, VL.mLegend [] ]
+                << VL.position VL.XOffset [ VL.pName "offset", VL.pQuant, VL.pScale [ VL.scDomain (VL.doNums [ 0, 1 ]) ] ]
+                << VL.position VL.Y [ VL.pName "y", VL.pQuant, VL.pAxis [ VL.axTitle yName ] ]
 
-        internalRule =
-            \coord name ->
-                VL.asSpec
-                    [ (VL.transform
-                        << VL.calculateAs ("1 - datum." ++ name) (name ++ "1m")
-                      )
-                        []
-                    , (VL.encoding
-                        << VL.position coord
-                            [ VL.pName (name ++ "1m")
-                            , VL.pAggregate VL.opMean
-                            ]
-                      )
-                        []
-                    , VL.rule []
-                    ]
+        transPoints =
+            VL.transform
+                << VL.calculateAs "random()" "offset"
 
         config =
             VL.configure
-                << VL.configuration (VL.coAxis [ VL.axcoDomain False, VL.axcoTicks False, VL.axcoLabels False, VL.axcoGrid False ])
+                << VL.configuration
+                    (VL.coAxis [ VL.axcoDomain True, VL.axcoTicks True, VL.axcoLabels True, VL.axcoLabelExpr "datum.value ? 'Yes' : 'No'", VL.axcoGrid False ] |> VL.coAxisXFilter)
+                << VL.configuration
+                    (VL.coAxis [ VL.axcoDomain False, VL.axcoTicks True, VL.axcoLabels False, VL.axcoGrid False ] |> VL.coAxisYFilter)
 
-        myAxLabel =
-            \val isX ->
-                let
-                    ( text, align ) =
-                        if val then
-                            ( "True", "right" )
+        pointLayer =
+            VL.asSpec
+                [ VL.width 150
+                , encPoints []
+                , transPoints []
+                , VL.point [ VL.maFilled True, VL.maOpacity 0.7 ]
+                ]
 
-                        else
-                            ( "False", "left" )
+        encMean =
+            VL.encoding
+                << VL.position VL.Y [ VL.pName "y", VL.pAggregate VL.opMean, VL.pQuant, VL.pTitle "" ]
 
-                    ( angle, dy, baseline ) =
-                        if isX then
-                            ( 0, 5, "top" )
+        meanLayer =
+            VL.asSpec
+                [ encMean []
+                , VL.point [ VL.maFilled True, VL.maSize 150, VL.maColor "black" ]
+                ]
 
-                        else
-                            ( 270, -5, "bottom" )
+        encErrorBar =
+            VL.encoding
+                << VL.position VL.Y [ VL.pName "y", VL.pQuant, VL.pTitle "" ]
 
-                    ( x, y ) =
-                        if isX then
-                            ( if val then
-                                Json.Encode.string "width"
-
-                              else
-                                Json.Encode.float 0
-                            , Json.Encode.string "height"
-                            )
-
-                        else
-                            ( Json.Encode.float 0
-                            , if val then
-                                Json.Encode.float 0
-
-                              else
-                                Json.Encode.string "height"
-                            )
-                in
-                Json.Encode.object
-                    [ ( "mark"
-                      , Json.Encode.object
-                            [ ( "type", Json.Encode.string "text" )
-                            , ( "text", Json.Encode.string text )
-                            , ( "x", x )
-                            , ( "y", y )
-                            , ( "align", Json.Encode.string align )
-                            , ( "baseline", Json.Encode.string baseline )
-                            , ( "dy", Json.Encode.float dy )
-                            , ( "angle", Json.Encode.float angle )
-                            ]
-                      )
-                    ]
-
-        spec =
-            VL.layer
-                [ VL.asSpec
-                    [ transforms []
-                    , enc []
-                    , VL.circle []
-                    ]
-                , internalRule VL.X "x"
-                , internalRule VL.Y "y"
-                , rule VL.X 0
-                , rule VL.X 1
-                , rule VL.Y 0
-                , rule VL.Y 1
-                , myAxLabel False False
-                , myAxLabel False True
-                , myAxLabel True False
-                , myAxLabel True True
+        errorBarLayer =
+            VL.asSpec
+                [ encErrorBar []
+                , VL.errorbar [ VL.maExtent VL.exCi, VL.maThickness 3 ]
                 ]
     in
     VL.toVegaLite
         [ data
         , config []
-        , spec
+        , encShared []
+        , VL.layer
+            [ pointLayer
+            , meanLayer
+            , errorBarLayer
+            ]
         ]
 
 
@@ -466,19 +288,19 @@ viewSingleContingency xValues yValues xName yName =
     table []
         [ tr []
             [ th [ Attr.rowspan 3, Attr.class "yName" ] [ text yName ]
-            , th [] [ text "True" ]
+            , th [] [ text "Yes" ]
             , td [] [ text (String.fromInt counts.ft) ]
             , td [] [ text (String.fromInt counts.tt) ]
             , td [ Attr.class "ratioCol" ] [ text (Round.round 2 (toFloat counts.ft / toFloat counts.tt)) ]
             ]
         , tr []
-            [ th [] [ text "False" ]
+            [ th [] [ text "No" ]
             , td [] [ text (String.fromInt counts.ff) ]
             , td [] [ text (String.fromInt counts.tf) ]
             , td [ Attr.class "ratioCol" ] [ text (Round.round 2 (toFloat counts.ff / toFloat counts.tf)) ]
             ]
         , tr [ Attr.class "ratioRow" ]
-            [ th [] [ text "Ratio T/F" ]
+            [ th [] [ text "Ratio Y/N" ]
             , td [] [ text (Round.round 2 (toFloat counts.ft / toFloat counts.ff)) ]
             , td [] [ text (Round.round 2 (toFloat counts.tt / toFloat counts.tf)) ]
             , td [ Attr.class "ratioCol" ] []
@@ -486,9 +308,9 @@ viewSingleContingency xValues yValues xName yName =
         , tr []
             [ td [] []
             , td [] []
-            , th [] [ text "False" ]
-            , th [] [ text "True" ]
-            , th [ Attr.class "ratioCol" ] [ text "Ratio F/T" ]
+            , th [] [ text "No" ]
+            , th [] [ text "Yes" ]
+            , th [ Attr.class "ratioCol" ] [ text "Ratio N/Y" ]
             ]
         , tr []
             [ td [] []
@@ -500,43 +322,29 @@ viewSingleContingency xValues yValues xName yName =
         ]
 
 
-viewSingleWaffle : List Bool -> List Bool -> String -> String -> Html Never
-viewSingleWaffle xValues yValues xName yName =
-    View.vegaPlot (singlePairWaffleDataSpec xValues yValues xName yName)
+viewSingleBeehive : List Bool -> List Float -> String -> String -> Html Never
+viewSingleBeehive xValues yValues xName yName =
+    View.vegaPlot (singlePairBeehiveDataSpec xValues yValues xName yName)
 
 
-viewOutcomeSubplot : Game.ViewSettings -> Int -> Int -> List Bool -> List Bool -> String -> String -> Html Never
-viewOutcomeSubplot viewSettings xOrd yOrd xValues yValues xName yName =
+viewOutcomeSubplot : Int -> Int -> List Float -> List Float -> String -> String -> Html Never
+viewOutcomeSubplot xOrd yOrd xValues yValues xName yName =
     let
-        ( showWaffle, showContingency ) =
-            case viewSettings of
-                Game.DotPlot ->
-                    ( True, False )
-
-                Game.Contingency ->
-                    ( False, True )
-
-                Game.Both ->
-                    ( True, True )
-
-        showDiagonal =
-            viewSettings == Game.Both
+        floatToBin =
+            List.map (\x -> x > 0)
     in
-    if xOrd < yOrd && showWaffle then
-        td [ Attr.class "waffle" ] [ viewSingleWaffle xValues yValues xName yName ]
+    if xOrd > 0 && yOrd == 0 then
+        td [ Attr.class "beehive" ] [ viewSingleBeehive (floatToBin xValues) yValues xName yName ]
 
-    else if xOrd == yOrd && showDiagonal then
-        td [ Attr.class "diagonal" ] [ viewSingleDiagonal xValues xName ]
-
-    else if xOrd > yOrd && showContingency then
-        td [ Attr.class "contigency" ] [ viewSingleContingency xValues yValues xName yName ]
+    else if xOrd > yOrd then
+        td [ Attr.class "contigency" ] [ viewSingleContingency (floatToBin xValues) (floatToBin yValues) xName yName ]
 
     else
         td [] []
 
 
 viewOutcome : Game.ViewSettings -> SortedDAG -> Outcome -> Html Never
-viewOutcome viewSettings sorted outcome =
+viewOutcome _ sorted outcome =
     let
         varNames =
             variableNames sorted
@@ -544,7 +352,12 @@ viewOutcome viewSettings sorted outcome =
         plotRow =
             \yOrd ( yName, yVals ) ->
                 tr []
-                    (List.indexedMap (\ord ( name, vals ) -> viewOutcomeSubplot viewSettings ord yOrd vals yVals name yName) (List.map2 Tuple.pair varNames outcome))
+                    (List.indexedMap
+                        (\ord ( name, vals ) ->
+                            viewOutcomeSubplot ord yOrd vals yVals name yName
+                        )
+                        (List.map2 Tuple.pair varNames outcome)
+                    )
 
         allRows =
             case varNames of

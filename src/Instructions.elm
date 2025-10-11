@@ -83,18 +83,14 @@ view =
             , text " A contingency table for this case would look like this (note that we show ratios instead of the more common total sums per row/column): "
             ]
         , p [] [ Causality.viewSingleContingency allEqualX allEqualY "sleeping" "moving" ]
-        , p [] [ text " To make this accessible to the eyes, we replace each alien with a single dot:" ]
-        , p [] [ Causality.viewSingleWaffle allEqualX allEqualY "sleeping" "moving" ]
         , p []
             [ text " The uniformity of spacing between the dots in all quadrants indicates that indeed there is not much interesting going on."
             , text " What would however happen if there was a strong negative association, i.e. aliens that move are much less likely to sleep and vice versa? That's what we see in the image below:"
             ]
-        , p [] [ Causality.viewSingleWaffle negEvenX negEvenY "sleeping" "moving" ]
         , p []
             [ text " We see that this makes the upper-left and lower-right quadrants crowded while the other two quadrants have larger distances between points (or lower point density). Remember that each dot is a single alien."
             , text " Now let's say we investigate traits with positive association, \"moving\" and \"eyes open\", this could look something like this:"
             ]
-        , p [] [ Causality.viewSingleWaffle posEvenX posEvenY "eyes open" "moving" ]
         , p []
             [ text " We see that in this case there is more crowding in the lower-left and upper-right quadrants."
             , text " This visual evaluation of \"crowding\" or \"density\" is what you'll use for evaluation of associations in this game."
@@ -103,13 +99,11 @@ view =
             [ text " However, the data we've seen so far have been to neat - in both variables exactly 50% aliens produced \"True\"."
             , text "  The image below shows what happens when aliens spend only about third of their life sleeping and move a lot in general:"
             ]
-        , p [] [ Causality.viewSingleWaffle negSkewedX negSkewedY "sleeping" "moving" ]
         , p []
             [ text " Now the internal division lines have shifted to indicate that not sleeping is more prevalent than sleeping and moving is more prevalent than not moving (to be precise, the dividing lines indicate the overall proportion of sleeping/moving in the whole sample)."
             , text " We still however see an increased density in the upper left and lower right regions, indicating a negative association."
             , text " What if we study categories with overall uneven distribution but no association? Say we are studying the aliens inclination for math and hunger:"
             ]
-        , p [] [ Causality.viewSingleWaffle noAssocSkewedX noAssocSkewedY "likes math" "hungry" ]
         , p []
             [ text " The internal division lines are still shifted, but the overall distribution of points is uniform, indicating no relationship."
             , text "  Indeed when we look at the corresponding contingency table, we can compute that the ratio of hungry to non-hungry aliens is the same (1:2) among those that like math and those that do not like math at all."
