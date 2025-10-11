@@ -2,6 +2,7 @@ module Homework exposing (..)
 
 import Base64
 import Base64String
+import Crypto.Strings
 import Game
 import GameState
 import Html exposing (..)
@@ -9,16 +10,23 @@ import Html.Attributes as Attr
 import Html.Events as Events
 import Json.Decode
 import Json.Encode
+import Random
 import Round
 import TwoRelationships
 import Utils
+
+
+type alias PreparedSubmission =
+    { url : String
+    , confirmationCode : String
+    }
 
 
 type alias Model =
     { submission : Bool
     , name : String
     , group : String
-    , stateURL : Maybe String
+    , preparedSubmission : Maybe PreparedSubmission
     }
 
 
@@ -35,7 +43,7 @@ init =
     { submission = False
     , name = ""
     , group = ""
-    , stateURL = Nothing
+    , preparedSubmission = Nothing
     }
 
 
@@ -45,9 +53,9 @@ update msg game model =
         SubmissionStart ->
             ( { model
                 | submission = True
-                , stateURL =
+                , preparedSubmission =
                     if allowDownload model then
-                        Just (buildStateURL game model)
+                        Just (buildPreparedSubmission game model)
 
                     else
                         Nothing
@@ -59,16 +67,16 @@ update msg game model =
             ( { model | submission = False }, Cmd.none )
 
         SetName name ->
-            ( { model | name = name, stateURL = Nothing }, Cmd.none )
+            ( { model | name = name, preparedSubmission = Nothing }, Cmd.none )
 
         SetGroup group ->
-            ( { model | group = group, stateURL = Nothing }, Cmd.none )
+            ( { model | group = group, preparedSubmission = Nothing }, Cmd.none )
 
         PrepareDownload ->
             ( { model
-                | stateURL =
+                | preparedSubmission =
                     if allowDownload model then
-                        Just (buildStateURL game model)
+                        Just (buildPreparedSubmission game model)
 
                     else
                         Nothing
@@ -81,7 +89,7 @@ viewControls : GameState.GameState -> Html Msg
 viewControls game =
     let
         eval =
-            computeScore (Game.getResults TwoRelationships.adapter.logic game.twoRel.history)
+            computeScore game
     in
     div [ Attr.class "" ]
         [ h3 [] [ text "Homework scoring" ]
@@ -193,13 +201,13 @@ avgCostForFourPoints =
     300000
 
 
-computeScore : List ( Float, Int ) -> Eval
-computeScore results =
+computeScoreFromResults : List ( Float, Int ) -> Eval
+computeScoreFromResults results =
     case results of
         r0 :: r1 :: r2 :: rest ->
             let
                 recursion =
-                    computeScore (r1 :: r2 :: rest)
+                    computeScoreFromResults (r1 :: r2 :: rest)
 
                 currentCost =
                     Utils.safeAverage (List.map Tuple.second [ r0, r1, r2 ])
@@ -254,7 +262,7 @@ computeScore results =
         _ :: rest ->
             let
                 recursion =
-                    computeScore rest
+                    computeScoreFromResults rest
             in
             { recursion | nInstances = recursion.nInstances + 1 }
 
@@ -267,29 +275,54 @@ computeScore results =
             }
 
 
+computeScore : GameState.GameState -> Eval
+computeScore game =
+    computeScoreFromResults (Game.getResults TwoRelationships.adapter.logic game.twoRel.history)
+
+
 allowDownload : Model -> Bool
 allowDownload model =
     not (String.isEmpty model.name) && not (String.isEmpty model.group)
 
 
-buildStateURL : GameState.GameState -> Model -> String
-buildStateURL game model =
-    "data:application/json;base64,"
-        ++ (Json.Encode.object
-                [ ( "base64name", Json.Encode.string (Base64String.encode model.name) )
-                , ( "base64group", Json.Encode.string (Base64String.encode model.group) )
-                , ( "state", GameState.gameEncoder game )
-                ]
-                |> Json.Encode.encode 0
-                |> Base64String.encode
-           )
+getConfirmationCode : String -> String -> Int -> String
+getConfirmationCode name group score =
+    let
+        encodedRaw =
+            Crypto.Strings.encrypt (Random.initialSeed GameState.rs) GameState.ps (name ++ ":" ++ group ++ ":" ++ String.fromInt score)
+
+        encoded =
+            case encodedRaw of
+                Ok ( enc, _ ) ->
+                    enc
+
+                Err _ ->
+                    "68xadsf655aqq/=" ++ String.fromInt score ++ "fg56/="
+    in
+    name ++ ":" ++ group ++ ":" ++ encoded
+
+
+buildPreparedSubmission : GameState.GameState -> Model -> PreparedSubmission
+buildPreparedSubmission game model =
+    { url =
+        "data:application/json;base64,"
+            ++ (Json.Encode.object
+                    [ ( "base64name", Json.Encode.string (Base64String.encode model.name) )
+                    , ( "base64group", Json.Encode.string (Base64String.encode model.group) )
+                    , ( "state", GameState.gameEncoder game )
+                    ]
+                    |> Json.Encode.encode 0
+                    |> Base64String.encode
+               )
+    , confirmationCode = getConfirmationCode model.name model.group (.score (computeScore game))
+    }
 
 
 viewPopup : GameState.GameState -> Model -> Html Msg
 viewPopup game model =
     let
         score =
-            .score (computeScore (Game.getResults TwoRelationships.adapter.logic game.twoRel.history))
+            .score (computeScore game)
     in
     div [ Attr.class "popupBackground" ]
         [ div [ Attr.class "popup" ]
@@ -304,9 +337,9 @@ viewPopup game model =
             , input [ Attr.type_ "text", Events.onInput SetGroup, Attr.value model.group ] []
             , br [] []
             , p [ Attr.class "downloadHW", Attr.class "left" ]
-                [ case model.stateURL of
-                    Just url ->
-                        a [ Attr.href url, Attr.download ("homework " ++ model.name ++ ".json") ] [ strong [] [ text "Download homework file" ] ]
+                [ case model.preparedSubmission of
+                    Just submission ->
+                        a [ Attr.href submission.url, Attr.download ("homework " ++ model.name ++ ".json") ] [ strong [] [ text "Download homework file" ] ]
 
                     Nothing ->
                         if allowDownload model then
@@ -315,6 +348,18 @@ viewPopup game model =
                         else
                             strong [] [ text "Enter name and group to enable download" ]
                 ]
+            , p [ Attr.class "hwCode", Attr.class "left" ]
+                (case model.preparedSubmission of
+                    Just submission ->
+                        [ strong [] [ text "Confirmation code: " ]
+                        , em [] [ text submission.confirmationCode ]
+                        , br [] []
+                        , text "Please store/screenshot this code as a backup."
+                        ]
+
+                    Nothing ->
+                        []
+                )
             , button [ Attr.type_ "button", Attr.class "right", Events.onClick SubmissionEnd ] [ text "Back to game" ]
             ]
         ]

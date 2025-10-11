@@ -187,6 +187,103 @@ generatorRandomized dag intervention nSubj =
         |> Random.map (dataFromNoise dag intervention)
 
 
+positionInGroupInner : { ff : Int, ft : Int, tf : Int, tt : Int } -> List Bool -> List Bool -> ( List ( Float, Float ), { ff : Int, ft : Int, tf : Int, tt : Int } )
+positionInGroupInner countsSoFar xValues yValues =
+    case ( xValues, yValues ) of
+        ( valX :: xRest, valY :: yRest ) ->
+            let
+                ( accessor, recurseWith ) =
+                    if valX then
+                        if valY then
+                            ( .tt, { countsSoFar | tt = countsSoFar.tt + 1 } )
+
+                        else
+                            ( .tf, { countsSoFar | tf = countsSoFar.tf + 1 } )
+
+                    else if valY then
+                        ( .ft, { countsSoFar | ft = countsSoFar.ft + 1 } )
+
+                    else
+                        ( .ff, { countsSoFar | ff = countsSoFar.ff + 1 } )
+
+                ( posRest, totalCounts ) =
+                    positionInGroupInner recurseWith xRest yRest
+
+                totalCount =
+                    accessor totalCounts
+
+                currentOrd =
+                    accessor countsSoFar
+
+                nData =
+                    toFloat (totalCounts.tt + totalCounts.tf + totalCounts.ft + totalCounts.ff)
+
+                rectWidth =
+                    toFloat
+                        (if valX then
+                            totalCounts.tt + totalCounts.tf
+
+                         else
+                            totalCounts.ft + totalCounts.ff
+                        )
+                        / nData
+
+                rectHeight =
+                    toFloat
+                        (if valY then
+                            totalCounts.tt + totalCounts.ft
+
+                         else
+                            totalCounts.tf + totalCounts.ff
+                        )
+                        / nData
+
+                sqrtAreaPerPoint =
+                    sqrt (rectWidth * rectHeight / toFloat totalCount)
+
+                minPerRowX =
+                    ceiling (rectWidth / sqrtAreaPerPoint)
+
+                minPerRowY =
+                    ceiling (rectHeight / sqrtAreaPerPoint)
+
+                stepSize =
+                    min (rectWidth / toFloat minPerRowX) (rectHeight / toFloat minPerRowY)
+
+                remainderX =
+                    max 0 (rectWidth - stepSize * (1 + toFloat ((totalCount - 1) // minPerRowY)))
+
+                maxFilledY =
+                    if totalCount >= minPerRowY then
+                        minPerRowY
+
+                    else
+                        totalCount
+
+                remainderY =
+                    max 0 (rectHeight - stepSize * toFloat maxFilledY)
+
+                xPos =
+                    remainderX * 0.5 + stepSize * (0.5 + toFloat (currentOrd // minPerRowY))
+
+                yPos =
+                    remainderY * 0.5 + stepSize * (0.5 + toFloat (modBy minPerRowY currentOrd))
+            in
+            ( ( xPos, yPos ) :: posRest, totalCounts )
+
+        _ ->
+            ( [], countsSoFar )
+
+
+positionInGroup : List Bool -> List Bool -> List ( Float, Float )
+positionInGroup xValues yValues =
+    let
+        ( res, _ ) =
+            positionInGroupInner { ff = 0, ft = 0, tf = 0, tt = 0 } xValues yValues
+    in
+    res
+
+
 singlePairBeehiveDataSpec : List Bool -> List Float -> String -> String -> VL.Spec
 singlePairBeehiveDataSpec xValues yValues xName yName =
     let
@@ -214,6 +311,8 @@ singlePairBeehiveDataSpec xValues yValues xName yName =
 
         config =
             VL.configure
+                << VL.configuration
+                    (VL.coAxis [ VL.axcoTitleFontSize 15, VL.axcoLabelFontSize 14 ])
                 << VL.configuration
                     (VL.coAxis [ VL.axcoDomain True, VL.axcoTicks True, VL.axcoLabels True, VL.axcoLabelExpr "datum.value ? 'Yes' : 'No'", VL.axcoGrid False ] |> VL.coAxisXFilter)
                 << VL.configuration
