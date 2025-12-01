@@ -191,7 +191,7 @@ update msg model =
                             let
                                 info =
                                     { file = file
-                                    , eval = Homework.computeScore (Game.getResults TwoRelationships.adapter.logic rec.state.twoRel.history)
+                                    , eval = Homework.computeScore rec.state --(Game.getResults TwoRelationships.adapter.logic rec.state.twoRel.history)
                                     }
                             in
                             { model

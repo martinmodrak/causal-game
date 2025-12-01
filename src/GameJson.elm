@@ -7,9 +7,14 @@ import Graph
 import IntDict
 import Json.Decode as D
 import Json.Encode as E
+import Random
 import SingleRelationship
 import ThreeWay
 import TwoRelationships
+
+
+type alias OutcomeGenerator spec experiment =
+    spec -> experiment -> Random.Generator Causality.Outcome
 
 
 associationScenarioEncoder :
@@ -26,7 +31,7 @@ associationInstanceEncoder =
 
 associationScenarioDecoder : D.Decoder (Game.Scenario Association.Spec Association.Experiment Association.Outcome Association.Guess)
 associationScenarioDecoder =
-    scenarioDecoder associationSpecDecoder D.int categoryDecoder
+    scenarioDecoder Association.generator associationSpecDecoder D.int categoryDecoder
 
 
 singleRelScenarioEncoder :
@@ -43,7 +48,7 @@ singleRelInstanceEncoder =
 
 singleRelScenarioDecoder : D.Decoder (Game.Scenario SingleRelationship.Spec SingleRelationship.Experiment SingleRelationship.Outcome SingleRelationship.Guess)
 singleRelScenarioDecoder =
-    scenarioDecoder singleRelSpecDecoder experimentDecoder categoryDecoder
+    scenarioDecoder SingleRelationship.generator singleRelSpecDecoder experimentDecoder categoryDecoder
 
 
 twoRelScenarioEncoder :
@@ -62,7 +67,7 @@ twoRelInstanceEncoder =
 
 twoRelScenarioDecoder : D.Decoder (Game.Scenario TwoRelationships.Spec TwoRelationships.Experiment TwoRelationships.Outcome TwoRelationships.Guess)
 twoRelScenarioDecoder =
-    scenarioDecoder twoRelSpecDecoder experimentDecoder twoRelGuessDecoder
+    scenarioDecoder TwoRelationships.generator twoRelSpecDecoder experimentDecoder twoRelGuessDecoder
 
 
 threeWayScenarioEncoder :
@@ -81,7 +86,7 @@ threeWayInstanceEncoder =
 
 threeWayScenarioDecoder : D.Decoder (Game.Scenario ThreeWay.Spec ThreeWay.Experiment ThreeWay.Outcome ThreeWay.Guess)
 threeWayScenarioDecoder =
-    scenarioDecoder threeWaySpecDecoder experimentDecoder threeWayGuessDecoder
+    scenarioDecoder ThreeWay.generator threeWaySpecDecoder experimentDecoder threeWayGuessDecoder
 
 
 scenarioEncoder :
@@ -96,19 +101,22 @@ scenarioEncoder specEnc experimentEnc guessEnc scenario =
         [ ( "history", E.list (instanceEncoder specEnc experimentEnc guessEnc) (List.take 40 scenario.history) )
         , ( "proposedExperiment", experimentEnc scenario.proposedExperiment )
         , ( "proposedGuess", guessEnc scenario.proposedGuess )
+        , ( "seed", E.int scenario.seed )
         ]
 
 
 scenarioDecoder :
-    D.Decoder spec
+    OutcomeGenerator spec experiment
+    -> D.Decoder spec
     -> D.Decoder experiment
     -> D.Decoder guess
     -> D.Decoder (Game.Scenario spec experiment Causality.Outcome guess)
-scenarioDecoder specDec experimentDec guessDec =
-    D.map3 Game.Scenario
-        (D.field "history" (D.list (instanceDecoder specDec experimentDec guessDec)))
+scenarioDecoder generator specDec experimentDec guessDec =
+    D.map4 Game.Scenario
+        (D.field "history" (D.list (instanceDecoder generator specDec experimentDec guessDec)))
         (D.field "proposedExperiment" experimentDec)
         (D.field "proposedGuess" guessDec)
+        (D.field "seed" D.int)
 
 
 instanceEncoder :
@@ -119,14 +127,17 @@ instanceEncoder :
     -> E.Value
 instanceEncoder specEnc experimentEnc guessEnc instance =
     let
-        ( dataExp, dataOut ) =
-            List.unzip instance.data
+        dataExp =
+            List.map .experiment instance.data
+
+        dataSeed =
+            List.map .seed instance.data
     in
     E.object
         [ ( "spec", specEnc instance.spec )
         , ( "creatureName", E.string instance.creatureName )
         , ( "dataExp", E.list experimentEnc dataExp )
-        , ( "dataOut", E.list outcomeEncoder dataOut )
+        , ( "dataSeed", E.list E.int dataSeed )
         , ( "guess"
           , case instance.guess of
                 Just g ->
@@ -139,19 +150,39 @@ instanceEncoder specEnc experimentEnc guessEnc instance =
 
 
 instanceDecoder :
-    D.Decoder spec
+    OutcomeGenerator spec experiment
+    -> D.Decoder spec
     -> D.Decoder experiment
     -> D.Decoder guess
     -> D.Decoder (Game.Instance spec experiment Causality.Outcome guess)
-instanceDecoder specDec experimentDec guessDec =
-    D.map4 Game.Instance
+instanceDecoder generator specDec experimentDec guessDec =
+    D.map5 (instanceBuilder generator)
         (D.field "spec" specDec)
         (D.field "creatureName" D.string)
-        (D.map2 (List.map2 Tuple.pair)
-            (D.field "dataExp" (D.list experimentDec))
-            (D.field "dataOut" (D.list outcomeDecoder))
-        )
+        (D.field "dataExp" (D.list experimentDec))
+        (D.field "dataSeed" (D.list D.int))
         (D.field "guess" (D.nullable guessDec))
+
+
+instanceBuilder : OutcomeGenerator spec experiment -> spec -> String -> List experiment -> List Int -> Maybe guess -> Game.Instance spec experiment Causality.Outcome guess
+instanceBuilder generator spec creatureName expList seedList guess =
+    { spec = spec
+    , creatureName = creatureName
+    , data = List.map2 (experimentWithOutcomeBuilder (generator spec)) expList seedList
+    , guess = guess
+    }
+
+
+experimentWithOutcomeBuilder : (experiment -> Random.Generator Causality.Outcome) -> experiment -> Int -> Game.ExperimentWithOutcome experiment Causality.Outcome
+experimentWithOutcomeBuilder generator experiment seed =
+    let
+        ( outcome, _ ) =
+            Random.step (generator experiment) (Game.loadSeed seed)
+    in
+    { experiment = experiment
+    , outcome = outcome
+    , seed = seed
+    }
 
 
 outcomeEncoder : Causality.Outcome -> E.Value

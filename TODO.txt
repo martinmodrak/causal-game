@@ -1,7 +1,13 @@
 Important:
-- Fix problem, e.g. (16, 4, 62, 18), (73, 13, 6, 8) is misleading
+- Adjust and test scenarios
+- Update instructions
+- Update scoring
 
 Needed for homework:
+- Save/restore as bool list for everything except outcome
+- More efficient save/restore
+
+- Update and test HWView
 
 Nice to have:
 

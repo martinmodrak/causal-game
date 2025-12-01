@@ -21,6 +21,7 @@ type alias Scenario spec experiment outcome guess =
     { history : List (HistoryItem spec experiment outcome guess)
     , proposedExperiment : experiment
     , proposedGuess : guess
+    , seed : Int
 
     --    , activeChallenge : Maybe ChallengeState
     }
@@ -39,10 +40,17 @@ type alias HistoryItem spec experiment outcome guess =
     Instance spec experiment outcome guess
 
 
+type alias ExperimentWithOutcome experiment outcome =
+    { experiment : experiment
+    , seed : Int
+    , outcome : outcome
+    }
+
+
 type alias Instance spec experiment outcome guess =
     { spec : spec
     , creatureName : String
-    , data : List ( experiment, outcome )
+    , data : List (ExperimentWithOutcome experiment outcome)
     , guess : Maybe guess
     }
 
@@ -75,7 +83,7 @@ type alias LogicAdapter expMsg guessMsg spec experiment outcome guess =
 type alias ViewAdapter expMsg guessMsg spec experiment outcome guess =
     { viewHeader : Html Never
     , viewInstanceGoal : spec -> Html Never
-    , viewExperiment : ViewSettings -> spec -> Int -> ( experiment, outcome ) -> Html Never
+    , viewExperiment : ViewSettings -> spec -> Int -> ExperimentWithOutcome experiment outcome -> Html Never
     , viewProposedExperiment : spec -> experiment -> Html expMsg
     , viewCostCommentary : Html Never
     , viewGuess : spec -> guess -> Html Never
@@ -90,10 +98,9 @@ type alias Adapter expMsg guessMsg spec experiment outcome guess =
     }
 
 
-type Msg expMsg guessMsg spec experiment outcome guess
-    = SpecGenerated ( String, spec )
+type Msg expMsg guessMsg
+    = SetSeed Int
     | RunExperiment
-    | DataGenerated experiment outcome
     | ExperimentChanged expMsg
     | GuessChanged guessMsg
     | MakeGuess
@@ -110,21 +117,34 @@ init adapter =
     { history = []
     , proposedExperiment = adapter.init.defaultExperiment
     , proposedGuess = adapter.init.defaultGuess
+    , seed = 42
 
     --    , activeChallenge = Nothing
     }
 
 
-initCmd :
-    Adapter expMsg guessMsg spec experiment outcome guess
-    -> Cmd (Msg expMsg guessMsg spec experiment outcome guess)
-initCmd adapter =
-    Random.generate SpecGenerated (instanceGenerator adapter.logic.specGenerator)
+
+-- Working around the inability to actually store seeds in JSON https://github.com/elm/random/issues/17
+
+
+storeSeed : Random.Seed -> Int
+storeSeed seed =
+    Random.step (Random.int Random.minInt Random.maxInt) seed |> Tuple.first
+
+
+loadSeed : Int -> Random.Seed
+loadSeed =
+    Random.initialSeed
+
+
+initCmd : Cmd (Msg expMsg guessMsg)
+initCmd =
+    Random.generate SetSeed (Random.independentSeed |> Random.map storeSeed)
 
 
 type alias UpdateResult expMsg guessMsg spec experiment outcome guess =
     { scenario : Scenario spec experiment outcome guess
-    , cmd : Cmd (Msg expMsg guessMsg spec experiment outcome guess)
+    , cmd : Cmd (Msg expMsg guessMsg)
     , viewSettings : ViewSettings
     , updateStorage : Bool
     }
@@ -133,27 +153,35 @@ type alias UpdateResult expMsg guessMsg spec experiment outcome guess =
 update :
     ViewSettings
     -> Adapter expMsg guessMsg spec experiment outcome guess
-    -> Msg expMsg guessMsg spec experiment outcome guess
+    -> Msg expMsg guessMsg
     -> Scenario spec experiment outcome guess
     -> UpdateResult expMsg guessMsg spec experiment outcome guess
 update viewSettings adapter msg scenario =
     case msg of
-        SpecGenerated ( name, sp ) ->
-            UpdateResult { scenario | history = { spec = sp, data = [], guess = Nothing, creatureName = name } :: scenario.history, proposedExperiment = adapter.init.defaultExperiment } Cmd.none viewSettings True
+        SetSeed seed ->
+            update viewSettings adapter NewInstance { scenario | seed = seed }
 
         RunExperiment ->
             case scenario.history of
-                head :: _ ->
-                    UpdateResult scenario (Random.generate (DataGenerated scenario.proposedExperiment) (adapter.logic.generator head.spec scenario.proposedExperiment)) viewSettings False
-
-                _ ->
-                    UpdateResult scenario Cmd.none viewSettings False
-
-        DataGenerated exp data ->
-            case scenario.history of
                 active :: rest ->
                     if allowMoreExperiments active then
-                        UpdateResult { scenario | history = { active | data = ( exp, data ) :: active.data } :: rest } Cmd.none viewSettings True
+                        let
+                            ( newOutcome, newSeed ) =
+                                Random.step (adapter.logic.generator active.spec scenario.proposedExperiment) (loadSeed scenario.seed)
+
+                            newExpOutcome =
+                                { experiment = scenario.proposedExperiment
+                                , seed = scenario.seed
+                                , outcome = newOutcome
+                                }
+
+                            newScenario =
+                                { scenario
+                                    | history = { active | data = newExpOutcome :: active.data } :: rest
+                                    , seed = storeSeed newSeed
+                                }
+                        in
+                        UpdateResult newScenario Cmd.none viewSettings True
 
                     else
                         UpdateResult scenario Cmd.none viewSettings False
@@ -184,7 +212,20 @@ update viewSettings adapter msg scenario =
                     UpdateResult scenario Cmd.none viewSettings False
 
         NewInstance ->
-            UpdateResult scenario (Random.generate SpecGenerated (instanceGenerator adapter.logic.specGenerator)) viewSettings False
+            let
+                ( ( name, sp ), newSeed ) =
+                    Random.step (instanceGenerator adapter.logic.specGenerator) (loadSeed scenario.seed)
+            in
+            --UpdateResult { scenario | history = { spec = Debug.log "Spec: " sp, data = [], guess = Nothing, creatureName = name } :: scenario.history, proposedExperiment = adapter.init.defaultExperiment } Cmd.none viewSettings True
+            UpdateResult
+                { scenario
+                    | history = { spec = Debug.log "Spec: " sp, data = [], guess = Nothing, creatureName = name } :: scenario.history
+                    , proposedExperiment = adapter.init.defaultExperiment
+                    , seed = storeSeed newSeed
+                }
+                Cmd.none
+                viewSettings
+                False
 
         SetViewSettings newSettings ->
             UpdateResult scenario Cmd.none newSettings False
@@ -204,7 +245,7 @@ view :
     ViewSettings
     -> Adapter expMsg guessMsg spec experiment outcome guess
     -> Scenario spec experiment outcome guess
-    -> Html (Msg expMsg guessMsg spec experiment outcome guess)
+    -> Html (Msg expMsg guessMsg)
 view viewSettings adapter scenario =
     div [ Attr.class "scenario" ]
         [ viewGameControls adapter scenario
@@ -239,7 +280,7 @@ getResults adapter history =
 viewStats :
     Adapter expMsg guessMsg spec experiment outcome guess
     -> Scenario spec experiment outcome guess
-    -> Html (Msg expMsg guessMsg spec experiment outcome guess)
+    -> Html (Msg expMsg guessMsg)
 viewStats adapter scenario =
     let
         ( correct, cost ) =
@@ -290,7 +331,7 @@ viewStats adapter scenario =
 viewGameControls :
     Adapter expMsg guessMsg spec experiment outcome guess
     -> Scenario spec experiment outcome guess
-    -> Html (Msg expMsg guessMsg spec experiment outcome guess)
+    -> Html (Msg expMsg guessMsg)
 viewGameControls adapter scenario =
     case scenario.history of
         instance :: _ ->
@@ -370,7 +411,7 @@ viewGameControls adapter scenario =
 viewScenarioControl :
     Adapter expMsg guessMsg spec experiment outcome guess
     -> Scenario spec experiment outcome guess
-    -> Html (Msg expMsg guessMsg spec experiment outcome guess)
+    -> Html (Msg expMsg guessMsg)
 viewScenarioControl adapter scenario =
     let
         allowNewInstance =
@@ -395,7 +436,7 @@ viewScenarioControl adapter scenario =
 
 computeCost : LogicAdapter expMsg guessMsg spec experiment outcome guess -> Instance spec experiment outcome guess -> Int
 computeCost adapter instance =
-    List.map Tuple.first instance.data
+    List.map .experiment instance.data
         |> List.map adapter.costExperiment
         |> List.sum
 
@@ -429,7 +470,7 @@ viewHistory :
     ViewSettings
     -> Adapter expMsg guessMsg spec experiment outcome guess
     -> List (HistoryItem spec experiment outcome guess)
-    -> Html (Msg expMsg guessMsg spec experiment outcome guess)
+    -> Html (Msg expMsg guessMsg)
 viewHistory viewSettings adapter historyList =
     case historyList of
         head :: rest ->
@@ -469,7 +510,7 @@ viewSingleHistory :
     -> Bool
     -> Int
     -> HistoryItem spec experiment outcome guess
-    -> Html (Msg expMsg guessMsg spec experiment outcome guess)
+    -> Html (Msg expMsg guessMsg)
 viewSingleHistory viewSettings adapter active id instance =
     let
         experiments =
@@ -533,13 +574,14 @@ viewSingleHistory viewSettings adapter active id instance =
                     , div [ Attr.class "guess" ] [ Html.map never (adapter.view.viewGuess instance.spec guess) ]
                     , guessResultDescription
                     ]
-        , viewViewSettings viewSettings
+
+        --, viewViewSettings viewSettings
         , dataDesc
         , Html.Keyed.node "div" [ Attr.class "experiments" ] (withReverseIds experiments)
         ]
 
 
-viewViewSettings : ViewSettings -> Html (Msg expMsg guessMsg spec experiment outcome guess)
+viewViewSettings : ViewSettings -> Html (Msg expMsg guessMsg)
 viewViewSettings viewSettings =
     let
         singleOption =

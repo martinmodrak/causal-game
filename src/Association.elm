@@ -40,7 +40,7 @@ type GuessMsg
 
 
 type alias Msg =
-    Game.Msg ExpMsg GuessMsg Spec Experiment Outcome Guess
+    Game.Msg ExpMsg GuessMsg
 
 
 type alias Model =
@@ -95,7 +95,7 @@ specGenerator =
                 |> Random.andThen (\assocVal -> Random.map (Tuple.pair assocVal) (Causality.contribGenerator assocVal))
 
         varNamesGen =
-            Names.nameGenerator 2
+            Random.map2 (::) Names.outcomeGenerator (Names.nameGenerator 1)
 
         variables =
             Random.map2
@@ -110,7 +110,7 @@ specGenerator =
                         []
 
                     _ ->
-                        [ { from = 0, to = 1, label = contribVal } ]
+                        [ { from = 1, to = 0, label = contribVal } ]
 
         graphFromCauses =
             \assocVal contribVal ->
@@ -188,12 +188,12 @@ updateGuess msg _ =
             g
 
 
-viewExperiment : Game.ViewSettings -> Spec -> Int -> ( Experiment, Outcome ) -> Html Never
-viewExperiment viewSettings spec id ( experiment, data ) =
+viewExperiment : Game.ViewSettings -> Spec -> Int -> Game.ExperimentWithOutcome Experiment Outcome -> Html Never
+viewExperiment viewSettings spec id experiment =
     div [ Attr.class "experiment" ]
         [ View.experimentTitle id
-        , p [] [ text ("N = " ++ String.fromInt experiment ++ ", CZK " ++ String.fromInt (costExperiment experiment)) ]
-        , Html.Lazy.lazy3 Causality.viewOutcome viewSettings spec.sorted data
+        , p [] [ text ("N = " ++ String.fromInt experiment.experiment ++ ", CZK " ++ String.fromInt (costExperiment experiment.experiment)) ]
+        , Html.Lazy.lazy3 Causality.viewOutcome viewSettings spec.sorted experiment.outcome
         ]
 
 
@@ -233,7 +233,7 @@ viewGuess spec guess =
             specToNames spec
     in
     div []
-        [ Causality.causalityDescription name0 name1 guess
+        [ Causality.causalityDescription name1 name0 guess
         ]
 
 
@@ -249,7 +249,7 @@ viewProposedGuess spec guess =
     in
     div []
         [ text "I believe "
-        , em [] [ text name0 ]
+        , em [] [ text name1 ]
         , text " "
         , select [ View.onChange (Causality.categoryFromShortString >> SetGuess) ]
             [ singleOption Causality.NoCause
@@ -257,7 +257,7 @@ viewProposedGuess spec guess =
             , singleOption Causality.RightNeg
             ]
         , text " "
-        , em [] [ text name1 ]
+        , em [] [ text name0 ]
         , text "."
         ]
 
@@ -282,4 +282,4 @@ viewInstanceGoal spec =
         ( name1, name2 ) =
             specToNames spec
     in
-    span [] [ text "Investigate a possible association between traits ", em [] [ text name1 ], text " and ", em [] [ text name2 ] ]
+    span [] [ text "Investigate a possible association between ", em [] [ text name1 ], text " (outcome) and the ", em [] [ text name2 ], text " trait" ]

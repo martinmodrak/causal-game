@@ -4,6 +4,21 @@ import Random
 import Random.List
 
 
+outcomesHead : String
+outcomesHead =
+    "body size"
+
+
+outcomes : List String
+outcomes =
+    []
+
+
+outcomeGenerator : Random.Generator String
+outcomeGenerator =
+    Random.uniform outcomesHead outcomes
+
+
 things : List String
 things =
     [ "rock"

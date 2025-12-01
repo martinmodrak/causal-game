@@ -38,7 +38,7 @@ type alias GuessMsg =
 
 
 type alias Msg =
-    Game.Msg ExpMsg GuessMsg Spec Experiment Outcome Guess
+    Game.Msg ExpMsg GuessMsg
 
 
 type alias Model =
@@ -93,7 +93,7 @@ specGenerator =
                 |> Random.andThen (\assocVal -> Random.map (Tuple.pair assocVal) (Causality.contribGenerator assocVal))
 
         varNamesGen =
-            Names.nameGenerator 2
+            Random.map2 (::) Names.outcomeGenerator (Names.nameGenerator 1)
 
         variables =
             Random.map2
@@ -176,9 +176,9 @@ guessEval spec guess =
         )
 
 
-viewExperiment : Game.ViewSettings -> Spec -> Int -> ( Experiment, Outcome ) -> Html Never
-viewExperiment viewSettings spec =
-    Causality.viewExperiment viewSettings spec.sorted
+viewExperiment : Game.ViewSettings -> Spec -> Int -> Game.ExperimentWithOutcome Experiment Outcome -> Html Never
+viewExperiment viewSettings spec id exp =
+    Causality.viewExperiment viewSettings spec.sorted id exp.experiment exp.outcome
 
 
 viewProposedExperiment : Spec -> Experiment -> Html ExpMsg

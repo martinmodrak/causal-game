@@ -42,6 +42,7 @@ customElements.define('vega-plot',
         {          
             const spec = this._spec;
             const thisref = this;
+            console.log(spec);
             if(!spec) {
                 requestAnimationFrame(function() {
                         while (thisref.firstChild) {

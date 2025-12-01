@@ -38,7 +38,7 @@ type GuessMsg
 
 
 type alias Msg =
-    Game.Msg ExpMsg GuessMsg Spec Experiment Outcome Guess
+    Game.Msg ExpMsg GuessMsg
 
 
 type alias Model =
@@ -152,13 +152,13 @@ updateGuess msg _ =
             g
 
 
-viewExperiment : Game.ViewSettings -> Spec -> Int -> ( Experiment, Outcome ) -> Html Never
-viewExperiment viewSettings spec id ( experiment, outcome ) =
+viewExperiment : Game.ViewSettings -> Spec -> Int -> Game.ExperimentWithOutcome Experiment Outcome -> Html Never
+viewExperiment viewSettings spec id exp =
     let
         filteredOutcome =
-            List.take 2 outcome
+            List.take 2 exp.outcome
     in
-    Causality.viewExperiment viewSettings spec.sorted id ( experiment, filteredOutcome )
+    Causality.viewExperiment viewSettings spec.sorted id exp.experiment filteredOutcome
 
 
 viewProposedExperiment : Spec -> Experiment -> Html ExpMsg

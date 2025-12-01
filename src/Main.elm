@@ -27,10 +27,16 @@ type Page
     | ThreeWayPage
 
 
+type alias StoredModel =
+    { page : Page
+    , game : GameState.GameState
+    }
+
+
 type alias Model =
     { page : Page
     , game : GameState.GameState
-    , storedGame : Maybe GameState.GameState
+    , storedModel : Maybe StoredModel
     , homework : Homework.Model
     , viewSettings : Game.ViewSettings
     }
@@ -51,7 +57,7 @@ port setStorage : Json.Encode.Value -> Cmd msg
 
 
 init : Json.Encode.Value -> ( Model, Cmd Msg )
-init storedGame =
+init storedModel =
     ( { page = InstructionsPage
       , game =
             { association = Game.init Association.adapter
@@ -59,10 +65,10 @@ init storedGame =
             , twoRel = Game.init TwoRelationships.adapter
             , threeWay = Game.init ThreeWay.adapter
             }
-      , storedGame =
-            case Json.Decode.decodeValue GameState.gameDecoder storedGame of
+      , storedModel =
+            case Json.Decode.decodeValue storedModelDecoder storedModel of
                 Ok stored ->
-                    if GameState.gameHasData stored then
+                    if GameState.gameHasData stored.game then
                         Just stored
 
                     else
@@ -74,10 +80,10 @@ init storedGame =
       , viewSettings = Game.DotPlot
       }
     , Cmd.batch
-        [ Cmd.map AssocMsg (Game.initCmd Association.adapter)
-        , Cmd.map SingleRel (Game.initCmd SingleRelationship.adapter)
-        , Cmd.map TwoRel (Game.initCmd TwoRelationships.adapter)
-        , Cmd.map ThreeWay (Game.initCmd ThreeWay.adapter)
+        [ Cmd.map AssocMsg Game.initCmd
+        , Cmd.map SingleRel Game.initCmd
+        , Cmd.map TwoRel Game.initCmd
+        , Cmd.map ThreeWay Game.initCmd
         ]
     )
 
@@ -130,15 +136,15 @@ update msg model =
             UpdateResult { model | page = page } Cmd.none False
 
         LoadStored ->
-            case model.storedGame of
+            case model.storedModel of
                 Just stored ->
-                    UpdateResult { model | game = stored, storedGame = Nothing } Cmd.none False
+                    UpdateResult { model | page = stored.page, game = stored.game, storedModel = Nothing } Cmd.none False
 
                 Nothing ->
                     UpdateResult model Cmd.none False
 
         DismissStored ->
-            UpdateResult { model | storedGame = Nothing } Cmd.none False
+            UpdateResult { model | storedModel = Nothing } Cmd.none False
 
         Homework subMsg ->
             let
@@ -155,13 +161,13 @@ updateWithStorage msg oldModel =
             update msg oldModel
     in
     ( res.model
-    , case oldModel.storedGame of
+    , case oldModel.storedModel of
         Just _ ->
             res.cmd
 
         Nothing ->
             if res.updateStorage && GameState.gameHasData res.model.game then
-                Cmd.batch [ setStorage (GameState.gameEncoder res.model.game), res.cmd ]
+                Cmd.batch [ setStorage (storedModelEncoder { page = res.model.page, game = res.model.game }), res.cmd ]
 
             else
                 res.cmd
@@ -171,7 +177,12 @@ updateWithStorage msg oldModel =
 view : Model -> Html Msg
 view model =
     div [ Attr.class "topContainer" ]
-        [ if Settings.homeworkEnabled then
+        [ if Settings.displayTruth then
+            div [ Attr.style "font-size" "4em", Attr.style "color" "red" ] [ text "Showing truth!" ]
+
+          else
+            text ""
+        , if Settings.homeworkEnabled then
             Html.map Homework (Homework.viewControls model.game)
 
           else
@@ -192,7 +203,7 @@ view model =
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, ThreeWayPage ) ( "block", "none" )) ]
             [ Html.map ThreeWay (Game.view model.viewSettings ThreeWay.adapter model.game.threeWay)
             ]
-        , case model.storedGame of
+        , case model.storedModel of
             Just _ ->
                 viewStoredPopup
 
@@ -263,6 +274,71 @@ ifActive ( activePage, page ) ( activeOutput, inactiveOutput ) =
 
     else
         inactiveOutput
+
+
+pageDecoder : Json.Decode.Decoder Page
+pageDecoder =
+    let
+        stringToPage s =
+            case s of
+                "Instr" ->
+                    InstructionsPage
+
+                "Assoc" ->
+                    AssocPage
+
+                "SingleRel" ->
+                    SingleRelPage
+
+                "TwoRel" ->
+                    TwoRelPage
+
+                "ThreeWay" ->
+                    ThreeWayPage
+
+                _ ->
+                    InstructionsPage
+    in
+    Json.Decode.string
+        |> Json.Decode.map stringToPage
+
+
+pageEncoder : Page -> Json.Encode.Value
+pageEncoder page =
+    let
+        stringRepr =
+            case page of
+                InstructionsPage ->
+                    "Instr"
+
+                AssocPage ->
+                    "Assoc"
+
+                SingleRelPage ->
+                    "SingleRel"
+
+                TwoRelPage ->
+                    "TwoRel"
+
+                ThreeWayPage ->
+                    "ThreeWay"
+    in
+    Json.Encode.string stringRepr
+
+
+storedModelDecoder : Json.Decode.Decoder StoredModel
+storedModelDecoder =
+    Json.Decode.map2 StoredModel
+        (Json.Decode.field "page" pageDecoder)
+        (Json.Decode.field "game" GameState.gameDecoder)
+
+
+storedModelEncoder : StoredModel -> Json.Encode.Value
+storedModelEncoder sm =
+    Json.Encode.object
+        [ ( "page", pageEncoder sm.page )
+        , ( "game", GameState.gameEncoder sm.game )
+        ]
 
 
 main : Program Json.Encode.Value Model Msg

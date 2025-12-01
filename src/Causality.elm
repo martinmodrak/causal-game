@@ -386,7 +386,7 @@ viewSingleContingency xValues yValues xName yName =
     in
     table []
         [ tr []
-            [ th [ Attr.rowspan 3, Attr.class "yName" ] [ text yName ]
+            [ th [ Attr.rowspan 4 ] [ div [ Attr.class "yName" ] [ text yName ] ]
             , th [] [ text "Yes" ]
             , td [] [ text (String.fromInt counts.ft) ]
             , td [] [ text (String.fromInt counts.tt) ]
@@ -406,7 +406,6 @@ viewSingleContingency xValues yValues xName yName =
             ]
         , tr []
             [ td [] []
-            , td [] []
             , th [] [ text "No" ]
             , th [] [ text "Yes" ]
             , th [ Attr.class "ratioCol" ] [ text "Ratio N/Y" ]
@@ -717,8 +716,8 @@ viewCostCommentary =
         ]
 
 
-viewExperiment : Game.ViewSettings -> SortedDAG -> Int -> ( Experiment, Outcome ) -> Html Never
-viewExperiment viewSettings sorted id ( experiment, data ) =
+viewExperiment : Game.ViewSettings -> SortedDAG -> Int -> Experiment -> Outcome -> Html Never
+viewExperiment viewSettings sorted id experiment data =
     let
         typeText =
             if experiment.randomized then

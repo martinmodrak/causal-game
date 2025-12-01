@@ -151,7 +151,7 @@ table tr td, table tr th {
     border-left: 1px solid black;
 }
 
-th.yName {
+.yName {
     text-align: center;
     writing-mode: sideways-lr;
     min-width: 2em;
