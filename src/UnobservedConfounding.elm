@@ -194,15 +194,15 @@ viewGuess spec guess =
         ]
 
 
-viewProposedGuess : Spec -> Guess -> Html GuessMsg
-viewProposedGuess spec guess =
+viewProposedGuess : Spec -> Guess -> Bool -> Html GuessMsg
+viewProposedGuess spec guess glow =
     let
         ( name0, name1, _ ) =
             specToNames spec
     in
     div []
         [ text "I believe "
-        , Causality.causalityProposedGuess name0 name1 SetCause guess
+        , Causality.causalityProposedGuess name0 name1 SetCause guess glow
         ]
 
 

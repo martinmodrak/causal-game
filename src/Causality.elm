@@ -526,9 +526,9 @@ causalityChooser causeMsg currentVal =
         ]
 
 
-causalityProposedGuess : String -> String -> (Category -> msg) -> Category -> Html msg
-causalityProposedGuess name1 name2 causeMsg currentVal =
-    div []
+causalityProposedGuess : String -> String -> (Category -> msg) -> Category -> Bool -> Html msg
+causalityProposedGuess name1 name2 causeMsg currentVal glow =
+    div [ Attr.classList [ ( "glow", glow ) ] ]
         [ em [] [ text name1 ]
         , text " "
         , causalityChooser causeMsg currentVal

@@ -237,8 +237,8 @@ viewGuess spec guess =
         ]
 
 
-viewProposedGuess : Spec -> Guess -> Html GuessMsg
-viewProposedGuess spec guess =
+viewProposedGuess : Spec -> Guess -> Bool -> Html GuessMsg
+viewProposedGuess spec guess glow =
     let
         ( name0, name1 ) =
             specToNames spec
@@ -247,7 +247,7 @@ viewProposedGuess spec guess =
             \val ->
                 option [ Attr.selected (guess == val), Attr.value (Causality.categoryToShortString val) ] [ text (Causality.categoryToString val) ]
     in
-    div []
+    div [ Attr.classList [ ( "glow", glow ) ] ]
         [ text "I believe "
         , em [] [ text name1 ]
         , text " "

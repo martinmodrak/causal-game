@@ -87,7 +87,7 @@ type alias ViewAdapter expMsg guessMsg spec experiment outcome guess =
     , viewProposedExperiment : spec -> experiment -> Html expMsg
     , viewCostCommentary : Html Never
     , viewGuess : spec -> guess -> Html Never
-    , viewProposedGuess : spec -> guess -> Html guessMsg
+    , viewProposedGuess : spec -> guess -> Bool -> Html guessMsg
     }
 
 
@@ -336,6 +336,9 @@ viewGameControls adapter scenario =
     case scenario.history of
         instance :: _ ->
             let
+                glowGuess =
+                    List.length instance.data >= 2
+
                 ( wasGuessed, guessElement ) =
                     case instance.guess of
                         Just _ ->
@@ -347,8 +350,8 @@ viewGameControls adapter scenario =
                                 _ :: _ ->
                                     div [ Attr.class "proposedGuess" ]
                                         [ h3 [] [ text "Ready to make a guess?" ]
-                                        , Html.map GuessChanged (adapter.view.viewProposedGuess instance.spec scenario.proposedGuess)
-                                        , button [ Attr.type_ "button", Attr.class "guessButton", Events.onClick MakeGuess ] [ text "Make a guess!" ]
+                                        , Html.map GuessChanged (adapter.view.viewProposedGuess instance.spec scenario.proposedGuess glowGuess)
+                                        , button [ Attr.type_ "button", Attr.class "guessButton", Attr.classList [ ( "glow", glowGuess ) ], Events.onClick MakeGuess ] [ text "Make a guess!" ]
                                         ]
 
                                 [] ->
@@ -359,12 +362,14 @@ viewGameControls adapter scenario =
                     if not wasGuessed then
                         div []
                             [ h3 [] [ text "Run an experiment" ]
-                            , Html.map ExperimentChanged (adapter.view.viewProposedExperiment instance.spec scenario.proposedExperiment)
+                            , div [ Attr.classList [ ( "glow", not glowGuess ) ] ]
+                                [ Html.map ExperimentChanged (adapter.view.viewProposedExperiment instance.spec scenario.proposedExperiment)
+                                ]
                             , if allowMoreExperiments instance then
                                 div []
                                     [ Html.map never adapter.view.viewCostCommentary
                                     , br [] []
-                                    , button [ Attr.type_ "button", Events.onClick RunExperiment ] [ text ("Gather more data for CZK " ++ String.fromInt (adapter.logic.costExperiment scenario.proposedExperiment)) ]
+                                    , button [ Attr.type_ "button", Events.onClick RunExperiment, Attr.classList [ ( "glow", not glowGuess ) ] ] [ text ("Gather more data for CZK " ++ String.fromInt (adapter.logic.costExperiment scenario.proposedExperiment)) ]
                                     ]
 
                               else
@@ -382,8 +387,10 @@ viewGameControls adapter scenario =
                             ]
             in
             div [ Attr.class "controls" ]
-                [ Html.map never adapter.view.viewHeader
-                , viewStats adapter scenario
+                [ div [ Attr.class "controlsTop" ]
+                    [ Html.map never adapter.view.viewHeader
+                    , viewStats adapter scenario
+                    ]
 
                 --, div [ Attr.class "afterHeader" ] []
                 , div [ Attr.class "scenarioControl" ] [ viewScenarioControl adapter scenario ]
@@ -428,7 +435,7 @@ viewScenarioControl adapter scenario =
                     True
     in
     if allowNewInstance then
-        div [] [ button [ Attr.type_ "button", Events.onClick NewInstance ] [ text "Start new instance" ] ]
+        div [] [ button [ Attr.type_ "button", Attr.class "glow", Events.onClick NewInstance ] [ text "Start new instance" ] ]
 
     else
         text ""

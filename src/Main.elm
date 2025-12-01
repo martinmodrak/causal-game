@@ -233,7 +233,7 @@ viewStoredPopup =
 
 viewPageSelection : Model -> Html Msg
 viewPageSelection model =
-    div [] (List.map (viewPageSelectionButton model.page) [ InstructionsPage, AssocPage, SingleRelPage, TwoRelPage, ThreeWayPage ])
+    div [ Attr.class "pageSelectionBox" ] (List.map (viewPageSelectionButton model.page) [ InstructionsPage, AssocPage, SingleRelPage, TwoRelPage, ThreeWayPage ])
 
 
 viewPageSelectionButton : Page -> Page -> Html Msg
@@ -251,17 +251,17 @@ pageTitle page =
             "Instructions"
 
         AssocPage ->
-            "0: Association"
+            "1: Association"
 
         SingleRelPage ->
-            "1: Cause"
+            "2: Cause"
 
         TwoRelPage ->
             if Settings.homeworkEnabled then
                 "Homework"
 
             else
-                "2: Two relationships"
+                "3: Two relationships"
 
         ThreeWayPage ->
             "Bonus"
