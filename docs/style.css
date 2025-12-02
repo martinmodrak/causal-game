@@ -1,3 +1,74 @@
+@keyframes glowing {
+    0% { background-position: 0 0; }
+    100% { background-position: 400% 0; }
+}
+
+@keyframes sometimes {
+    0% { opacity: 0; }
+    65% { opacity: 0; }
+    75% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+@keyframes appear {
+    0% {opacity : 0}
+    100% {opacity : 1}
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.glow {
+    position: relative;
+    z-index: 0;
+}
+
+.glow:before {
+    content: '';
+    background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+    position: absolute;
+    top: -2px;
+    left:-2px;
+    background-size: 400%;
+    z-index: -1;
+    filter: blur(5px);
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    animation: glowing 10s linear infinite, sometimes 12s linear infinite;
+    opacity: 1;
+}
+
+
+.glow:after {
+    z-index: -1;
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    border-radius: 2px;
+}
+
+div.glow:after{
+    background-color: #fff;   
+}
+
+
+button.glow:after{
+    background-color: #ddd;   
+}
+
+button.glow:hover:after {
+    background-color:#bbb;
+}
+
+.activeInstance {
+    animation: appear 1s 1;
+}
+
 td {
     text-align:center;
 }
@@ -11,7 +82,6 @@ td.diagonal h4 {
 }
 
 .pageSelection {
-    float: left; 
     border-style: solid; 
     border-width: 1px; 
     border-bottom-style: none;
@@ -77,8 +147,25 @@ h2.historyStart, .instance, .scenarioFooter, .afterHeader {
     border-top: 1px solid gray;
 }
 
+.pageSelectionBox {
+    display:flex;
+    flex-wrap: wrap;
+}
+
+.controlsTop {
+    display: flex;
+    border-bottom: 1px solid;
+    padding-bottom: 0.75em;
+}
+
+
 .stats {
-    float:right;
+   padding-left: 0.75em;
+   border-left: 1px solid;   
+}
+
+.scenarioHeader {
+    padding-right: 1em;
 }
 
 .popupBackground {
@@ -112,7 +199,12 @@ button {
     font-size:120%;
     padding:0.3em;
     margin-top: 0.3em;
-    margin-bottom: 0.3em;   
+    margin-bottom: 0.3em;
+    cursor: pointer;
+}
+
+select {
+    cursor: pointer;
 }
 
 input, select {
@@ -125,6 +217,7 @@ input, select {
 .nChooser .num{
     width: 4em
 }
+
 
 .nChooser .range {
     vertical-align: top;
@@ -151,7 +244,7 @@ table tr td, table tr th {
     border-left: 1px solid black;
 }
 
-th.yName {
+.yName {
     text-align: center;
     writing-mode: sideways-lr;
     min-width: 2em;
@@ -159,4 +252,8 @@ th.yName {
 
 th.xName {
     text-align: center;
+}
+
+.activeInstance {
+    animation: glow 10s 1;
 }

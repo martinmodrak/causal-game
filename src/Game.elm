@@ -225,7 +225,7 @@ update viewSettings adapter msg scenario =
             in
             UpdateResult
                 { scenario
-                    | history = { spec = Debug.log "Spec: " sp, data = [], guess = Nothing, creatureName = name } :: scenario.history
+                    | history = { spec = sp, data = [], guess = Nothing, creatureName = name } :: scenario.history
                     , proposedExperiment = adapter.init.defaultExperiment
                     , seed = storeSeed newSeed
                     , dismissGuessPopup = False

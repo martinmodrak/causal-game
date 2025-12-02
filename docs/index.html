@@ -42,15 +42,14 @@ customElements.define('vega-plot',
         {          
             const spec = this._spec;
             const thisref = this;
+            console.log(spec);
             if(!spec) {
-                console.log(spec);
                 requestAnimationFrame(function() {
                         while (thisref.firstChild) {
                             thisref.removeChild(thisref.firstChild);
                         }
                     }); 
             } else {
-                console.log(spec);
                 vegaEmbed(spec).then((newplot) => {
                    requestAnimationFrame(function() {
                         while (thisref.firstChild) {
