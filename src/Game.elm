@@ -7,6 +7,8 @@ import Html.Keyed
 import Names
 import Random
 import Round
+import Scroll
+import Task
 import Utils
 import View
 
@@ -21,6 +23,7 @@ type alias Scenario spec experiment outcome guess =
     { history : List (HistoryItem spec experiment outcome guess)
     , proposedExperiment : experiment
     , proposedGuess : guess
+    , dismissGuessPopup : Bool
     , seed : Int
 
     --    , activeChallenge : Maybe ChallengeState
@@ -88,6 +91,7 @@ type alias ViewAdapter expMsg guessMsg spec experiment outcome guess =
     , viewCostCommentary : Html Never
     , viewGuess : spec -> guess -> Html Never
     , viewProposedGuess : spec -> guess -> Bool -> Html guessMsg
+    , idPrefix : String
     }
 
 
@@ -105,7 +109,9 @@ type Msg expMsg guessMsg
     | GuessChanged guessMsg
     | MakeGuess
     | NewInstance
+    | DismissGuessPopup
     | SetViewSettings ViewSettings
+    | NoOp
 
 
 type alias GuessEval =
@@ -118,6 +124,7 @@ init adapter =
     , proposedExperiment = adapter.init.defaultExperiment
     , proposedGuess = adapter.init.defaultGuess
     , seed = 42
+    , dismissGuessPopup = False
 
     --    , activeChallenge = Nothing
     }
@@ -216,12 +223,24 @@ update viewSettings adapter msg scenario =
                 ( ( name, sp ), newSeed ) =
                     Random.step (instanceGenerator adapter.logic.specGenerator) (loadSeed scenario.seed)
             in
-            --UpdateResult { scenario | history = { spec = Debug.log "Spec: " sp, data = [], guess = Nothing, creatureName = name } :: scenario.history, proposedExperiment = adapter.init.defaultExperiment } Cmd.none viewSettings True
             UpdateResult
                 { scenario
                     | history = { spec = Debug.log "Spec: " sp, data = [], guess = Nothing, creatureName = name } :: scenario.history
                     , proposedExperiment = adapter.init.defaultExperiment
                     , seed = storeSeed newSeed
+                    , dismissGuessPopup = False
+                }
+                (Task.attempt
+                    (always NoOp)
+                    (Scroll.scrollY (activeInstanceElementId adapter) 0 0)
+                )
+                viewSettings
+                True
+
+        DismissGuessPopup ->
+            UpdateResult
+                { scenario
+                    | dismissGuessPopup = True
                 }
                 Cmd.none
                 viewSettings
@@ -229,6 +248,9 @@ update viewSettings adapter msg scenario =
 
         SetViewSettings newSettings ->
             UpdateResult scenario Cmd.none newSettings False
+
+        NoOp ->
+            UpdateResult scenario Cmd.none viewSettings False
 
 
 instanceGenerator : Random.Generator spec -> Random.Generator ( String, spec )
@@ -245,12 +267,46 @@ view :
     ViewSettings
     -> Adapter expMsg guessMsg spec experiment outcome guess
     -> Scenario spec experiment outcome guess
-    -> Html (Msg expMsg guessMsg)
-view viewSettings adapter scenario =
+    -> Html a
+    -> (Msg expMsg guessMsg -> a)
+    -> Html a
+view viewSettings adapter scenario homeworkHtml msgMap =
     div [ Attr.class "scenario" ]
-        [ viewGameControls adapter scenario
-        , viewHistory viewSettings adapter scenario.history
+        [ viewGameControls adapter scenario homeworkHtml msgMap
+        , Html.map msgMap (viewHistory viewSettings adapter scenario.history)
         , div [ Attr.class "scenarioFooter" ] []
+        , if not scenario.dismissGuessPopup then
+            case scenario.history of
+                head :: _ ->
+                    case head.guess of
+                        Just guess ->
+                            Html.map msgMap (viewGuessPopup adapter head guess)
+
+                        Nothing ->
+                            text ""
+
+                _ ->
+                    text ""
+
+          else
+            text ""
+        ]
+
+
+viewGuessPopup :
+    Adapter expMsg guessMsg spec experiment outcome guess
+    -> HistoryItem spec experiment outcome guess
+    -> guess
+    -> Html (Msg expMsg guessMsg)
+viewGuessPopup adapter instance guess =
+    div [ Attr.class "popupBackground" ]
+        [ div [ Attr.class "popup" ]
+            [ viewGuessResults adapter instance guess
+            , div []
+                [ button [ Attr.type_ "button", Events.onClick NewInstance ] [ text "Start new instance" ]
+                , button [ Attr.type_ "button", Events.onClick DismissGuessPopup ] [ text "Revisit this instance" ]
+                ]
+            ]
         ]
 
 
@@ -280,8 +336,9 @@ getResults adapter history =
 viewStats :
     Adapter expMsg guessMsg spec experiment outcome guess
     -> Scenario spec experiment outcome guess
-    -> Html (Msg expMsg guessMsg)
-viewStats adapter scenario =
+    -> Html a
+    -> Html a
+viewStats adapter scenario homeworkHtml =
     let
         ( correct, cost ) =
             getResults adapter.logic scenario.history
@@ -309,33 +366,42 @@ viewStats adapter scenario =
             Utils.safeAverage costShort
     in
     div [ Attr.class "stats" ]
-        (h3 [] [ text "Results summary" ]
-            :: (if nRes == 0 then
-                    [ text "No instances completed yet." ]
+        (homeworkHtml
+            :: (h3 [] [ text "Results summary" ]
+                    :: (if nRes == 0 then
+                            [ text "No instances completed yet." ]
 
-                else
-                    [ p []
-                        [ strong [] [ text "Last ", text (String.fromInt adapter.init.instancesToAverage), text " instances: " ]
-                        , if nRes >= adapter.init.instancesToAverage then
-                            text (Round.round 0 (propCorrectShort * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCostShort))
+                        else
+                            [ p []
+                                [ strong [] [ text "Last ", text (String.fromInt adapter.init.instancesToAverage), text " instances: " ]
+                                , if nRes >= adapter.init.instancesToAverage then
+                                    text (Round.round 0 (propCorrectShort * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCostShort))
 
-                          else
-                            text "--"
-                        ]
-                    , p []
-                        [ strong [] [ text "All ", text (String.fromInt nRes), text " instances: " ]
-                        , text (Round.round 0 (propCorrect * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCost))
-                        ]
-                    ]
+                                  else
+                                    text "--"
+                                ]
+                            , p []
+                                [ strong [] [ text "All ", text (String.fromInt nRes), text " instances: " ]
+                                , text (Round.round 0 (propCorrect * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCost))
+                                ]
+                            ]
+                       )
                )
         )
+
+
+activeInstanceElementId : Adapter expMsg guessMsg spec experiment outcome guess -> String
+activeInstanceElementId adapter =
+    adapter.view.idPrefix ++ "activeInstance"
 
 
 viewGameControls :
     Adapter expMsg guessMsg spec experiment outcome guess
     -> Scenario spec experiment outcome guess
-    -> Html (Msg expMsg guessMsg)
-viewGameControls adapter scenario =
+    -> Html a
+    -> (Msg expMsg guessMsg -> a)
+    -> Html a
+viewGameControls adapter scenario homeworkHtml msgMap =
     case scenario.history of
         instance :: _ ->
             let
@@ -395,14 +461,14 @@ viewGameControls adapter scenario =
             div [ Attr.class "controls" ]
                 [ div [ Attr.class "controlsTop" ]
                     [ Html.map never adapter.view.viewHeader
-                    , viewStats adapter scenario
+                    , viewStats adapter scenario homeworkHtml
                     ]
 
                 --, div [ Attr.class "afterHeader" ] []
-                , div [ Attr.class "scenarioControl" ] [ viewScenarioControl adapter scenario ]
+                , div [ Attr.class "scenarioControl" ] [ Html.map msgMap (viewScenarioControl adapter scenario) ]
                 , case scenario.history of
                     activeInstance :: _ ->
-                        div []
+                        div [ Attr.class "activeInstance", Attr.id (activeInstanceElementId adapter) ]
                             [ h3 []
                                 [ text ("Instance " ++ String.fromInt (List.length scenario.history) ++ ": ")
                                 , em [] [ text activeInstance.creatureName ]
@@ -413,8 +479,8 @@ viewGameControls adapter scenario =
 
                     _ ->
                         text ""
-                , activeElement
-                , guessElement
+                , Html.map msgMap activeElement
+                , Html.map msgMap guessElement
                 ]
 
         _ ->
@@ -560,37 +626,46 @@ viewSingleHistory viewSettings adapter active id instance =
                 text ""
 
             Just guess ->
-                let
-                    ( correct, desc ) =
-                        adapter.logic.guessEval instance.spec guess
-
-                    guessResultDescription =
-                        div []
-                            [ text "The guess was "
-                            , strong []
-                                [ text
-                                    (if correct >= 1.0 then
-                                        "CORRECT"
-
-                                     else if correct <= 0.0 then
-                                        "INCORRECT"
-
-                                     else
-                                        String.fromInt (round (correct * 100)) ++ "% CORRECT"
-                                    )
-                                ]
-                            , div [ Attr.class "guessResultDesc" ] [ Html.map never desc ]
-                            ]
-                in
-                div [ Attr.class "guessArea" ]
-                    [ h4 [] [ text "Your guess: " ]
-                    , div [ Attr.class "guess" ] [ Html.map never (adapter.view.viewGuess instance.spec guess) ]
-                    , guessResultDescription
-                    ]
+                viewGuessResults adapter instance guess
 
         --, viewViewSettings viewSettings
         , dataDesc
         , Html.Keyed.node "div" [ Attr.class "experiments" ] (withReverseIds experiments)
+        ]
+
+
+viewGuessResults :
+    Adapter expMsg guessMsg spec experiment outcome guess
+    -> HistoryItem spec experiment outcome guess
+    -> guess
+    -> Html (Msg expMsg guessMsg)
+viewGuessResults adapter instance guess =
+    let
+        ( correct, desc ) =
+            adapter.logic.guessEval instance.spec guess
+
+        guessResultDescription =
+            div []
+                [ text "The guess was "
+                , strong []
+                    [ text
+                        (if correct >= 1.0 then
+                            "CORRECT"
+
+                         else if correct <= 0.0 then
+                            "INCORRECT"
+
+                         else
+                            String.fromInt (round (correct * 100)) ++ "% CORRECT"
+                        )
+                    ]
+                , div [ Attr.class "guessResultDesc" ] [ Html.map never desc ]
+                ]
+    in
+    div [ Attr.class "guessArea" ]
+        [ h4 [] [ text "Your guess: " ]
+        , div [ Attr.class "guess" ] [ Html.map never (adapter.view.viewGuess instance.spec guess) ]
+        , guessResultDescription
         ]
 
 

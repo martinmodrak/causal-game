@@ -48,7 +48,7 @@ type alias Model =
 initAdapter : Game.InitAdapter Guess Experiment
 initAdapter =
     { defaultGuess = Causality.NoCause
-    , defaultExperiment = { randomized = False, n = 100, intervention = 0 }
+    , defaultExperiment = Causality.sanitizeExperiment { randomized = False, n = 40, intervention = 1 }
     , instancesToAverage = 4
     }
 
@@ -73,6 +73,7 @@ viewAdapter =
     , viewCostCommentary = Causality.viewCostCommentary
     , viewGuess = viewGuess
     , viewProposedGuess = viewProposedGuess
+    , idPrefix = "singleRel"
     }
 
 
@@ -108,16 +109,16 @@ specGenerator =
                         []
 
                     Causality.RightPos ->
-                        [ { from = 0, to = 1, label = contribVal } ]
+                        [ { from = 1, to = 0, label = contribVal } ]
 
                     Causality.RightNeg ->
-                        [ { from = 0, to = 1, label = contribVal } ]
+                        [ { from = 1, to = 0, label = contribVal } ]
 
                     Causality.LeftPos ->
-                        [ { from = 1, to = 0, label = contribVal } ]
+                        [ { from = 0, to = 1, label = contribVal } ]
 
                     Causality.LeftNeg ->
-                        [ { from = 1, to = 0, label = contribVal } ]
+                        [ { from = 0, to = 1, label = contribVal } ]
 
         graphFromCauses =
             \assocVal contribVal ->
@@ -172,7 +173,7 @@ guessEval spec guess =
 
     else
         ( 0.0
-        , Causality.causalityDescription name0 name1 spec.category
+        , Causality.causalityDescription name1 name0 spec.category
         )
 
 
@@ -193,7 +194,7 @@ viewGuess spec guess =
             specToNames spec
     in
     div []
-        [ Causality.causalityDescription name0 name1 guess
+        [ Causality.causalityDescription name1 name0 guess
         ]
 
 
@@ -205,7 +206,7 @@ viewProposedGuess spec guess glow =
     in
     div []
         [ text "I believe "
-        , Causality.causalityProposedGuess name0 name1 Association.SetGuess guess glow
+        , Causality.causalityProposedGuess name1 name0 Association.SetGuess guess glow
         ]
 
 
@@ -226,7 +227,7 @@ viewHeader =
             , text " The problem with randomized experiments is that they are really expensive. So it might make sense to try an observational study before investing in a randomized one."
             ]
         , p []
-            [ text " You should be able to obtain almost 100% accuracy while spending on average at most CZK 200 000 "
+            [ text " You should be able to obtain almost 100% accuracy while spending on average at most CZK 140 000 "
             ]
         ]
 
@@ -234,7 +235,7 @@ viewHeader =
 viewInstanceGoal : Spec -> Html Never
 viewInstanceGoal spec =
     let
-        ( name1, name2 ) =
+        ( name0, name1 ) =
             specToNames spec
     in
-    span [] [ text "Investigate a possible causal relationship between traits ", em [] [ text name1 ], text " and ", em [] [ text name2 ] ]
+    span [] [ text "Investigate a possible causal relationship between traits ", em [] [ text name1 ], text " and ", em [] [ text name0 ] ]

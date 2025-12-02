@@ -21,7 +21,8 @@
             "elm-community/maybe-extra": "5.3.0",
             "elm-community/random-extra": "3.2.0",
             "gicentre/elm-vegalite": "5.7.0",
-            "myrho/elm-round": "1.0.5"
+            "myrho/elm-round": "1.0.5",
+            "ursi/elm-scroll": "1.0.0"
         },
         "indirect": {
             "avh4/elm-fifo": "1.0.4",

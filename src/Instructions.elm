@@ -31,7 +31,13 @@ view =
             valuesFromContingency 8 60 24 8
 
         ( noAssocSkewedX, noAssocSkewedY ) =
-            valuesFromContingency 22 44 11 22
+            valuesFromContingency 24 43 11 22
+
+        exBeehiveX =
+            List.append (List.repeat 20 True) (List.repeat 20 False)
+
+        exBeehiveY =
+            [ -0.1, -0.01, -2.1, -1.62, -0.34, 0.4, 0.44, -1.27, -0.14, 0.06, 1.05, 1.36, -0.64, -1.06, 1.03, -1.8, -0.31, -0.54, -1.47, -0.44, 0.31, 1.24, 2.84, 1.89, 1.38, 0.92, 1.1, 1.74, -1.22, 1.9, 0.69, 0.76, -0.27, -0.22, 0.79, 0.52, 1.64, 2.81, 1.53, 1.73 ]
 
         -- ( testX, testY ) =
         --     valuesFromContingency 0 49 49 0
@@ -62,7 +68,7 @@ view =
         , p []
             [ ul []
                 [ li [] [ text " You are an exoepidemiologist. " ]
-                , li [] [ text " You will be asked to assess possible relationships between various binary (true/false) properties measured for a bunch of aliens." ]
+                , li [] [ text " You will be asked to assess possible relationships between a single continuous outcome and one or two binary (true/false) properties measured for a bunch of aliens." ]
                 , li [] [ text " The game is divided into multiple scenarios of increasing difficulty." ]
                 , if Settings.homeworkEnabled then
                     li [] [ text " Homework is fulfilled by successfully handling the \"Homework\" scenario " ]
@@ -74,43 +80,46 @@ view =
                 , li [] [ text " Running experiments costs money. You aim for high correctness of your guess while spending as little money as possible" ]
                 ]
             ]
-        , h2 [] [ text " Visualisation" ]
+        , h2 [] [ text " Displaying results" ]
         , p []
-            [ text " To let your eyes do \"informal statistics\" we present the data in a slightly unusual format closely related to the "
+            [ text " We expect yout to do some \"informal statistics\"  - for continuous data, we show the observed numbers split by binary variable levels, along with means and 95% confidence intervals (black)." ]
+        , p [] [ Causality.viewSingleBeehive exBeehiveX exBeehiveY "sleeping" "speed" ]
+        , p []
+            [ text "For relationships between two binary outcomes we show a "
             , a [ Attr.href "https://en.wikipedia.org/wiki/Contingency_table" ] [ text " contingency table" ]
-            , text " . So let us assume that we observed 100 aliens and exactly 25 were sleeping and moving, 25 were sleeping and not moving,"
+            , text " . If you are not familiar with contingency tables, we will do a small refresh here."
+            ]
+        , p []
+            [ text "So let us assume that we observed 100 aliens and exactly 25 were sleeping and moving, 25 were sleeping and not moving,"
             , text "  25 were not sleeping and moving and 25 were neither sleeping nor moving. I.e. there is no association between the two."
             , text " A contingency table for this case would look like this (note that we show ratios instead of the more common total sums per row/column): "
             ]
         , p [] [ Causality.viewSingleContingency allEqualX allEqualY "sleeping" "moving" ]
         , p []
-            [ text " The uniformity of spacing between the dots in all quadrants indicates that indeed there is not much interesting going on."
-            , text " What would however happen if there was a strong negative association, i.e. aliens that move are much less likely to sleep and vice versa? That's what we see in the image below:"
+            [ text " What would however happen if there was a strong negative association, i.e. aliens that move are much less likely to sleep and vice versa? That's what we see in the table below:"
             ]
+        , p [] [ Causality.viewSingleContingency negEvenX negEvenY "sleeping" "moving" ]
         , p []
-            [ text " We see that this makes the upper-left and lower-right quadrants crowded while the other two quadrants have larger distances between points (or lower point density). Remember that each dot is a single alien."
+            [ text " We see that this makes the upper-left and lower-right cells show high numbers while the other two cells have lower counts. The ratios are also uneven across rows/columns"
             , text " Now let's say we investigate traits with positive association, \"moving\" and \"eyes open\", this could look something like this:"
             ]
+        , p [] [ Causality.viewSingleContingency posEvenX posEvenY "eyes open" "moving" ]
         , p []
-            [ text " We see that in this case there is more crowding in the lower-left and upper-right quadrants."
-            , text " This visual evaluation of \"crowding\" or \"density\" is what you'll use for evaluation of associations in this game."
+            [ text " We see that in this case there are high counts in the lower-left and upper-right quadrants."
             ]
         , p []
             [ text " However, the data we've seen so far have been to neat - in both variables exactly 50% aliens produced \"True\"."
-            , text "  The image below shows what happens when aliens spend only about third of their life sleeping and move a lot in general:"
+            , text "  The table below shows what happens when aliens spend only about third of their life sleeping and move a lot in general:"
             ]
+        , p [] [ Causality.viewSingleContingency negSkewedX negSkewedY "sleeping" "moving" ]
         , p []
-            [ text " Now the internal division lines have shifted to indicate that not sleeping is more prevalent than sleeping and moving is more prevalent than not moving (to be precise, the dividing lines indicate the overall proportion of sleeping/moving in the whole sample)."
-            , text " We still however see an increased density in the upper left and lower right regions, indicating a negative association."
+            [ text " The numbers are different, but we still see increased counts in the upper left and lower right cells, indicating a negative association."
             , text " What if we study categories with overall uneven distribution but no association? Say we are studying the aliens inclination for math and hunger:"
-            ]
-        , p []
-            [ text " The internal division lines are still shifted, but the overall distribution of points is uniform, indicating no relationship."
-            , text "  Indeed when we look at the corresponding contingency table, we can compute that the ratio of hungry to non-hungry aliens is the same (1:2) among those that like math and those that do not like math at all."
+            , text "  We will see that the ratio of hungry to non-hungry aliens is approximately the same among those that like math and those that do not like math at all."
             ]
         , p [] [ Causality.viewSingleContingency noAssocSkewedX noAssocSkewedY "likes math" "hungry" ]
         , p []
-            [ text " So to summarise - roughly even spacing between points in all quadrants means there's likely no association. Overrepresentation on one of the diagonals than corresponds to either positive or negative association."
+            [ text " So to summarise - similar ratios across rows/columns mean there's likely no association. High counts on one of the diagonals than correspond to either positive or negative association."
             , text "  That should be all you need to get started on the first task."
             ]
         ]

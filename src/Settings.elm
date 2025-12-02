@@ -8,4 +8,4 @@ homeworkEnabled =
 
 displayTruth : Bool
 displayTruth =
-    True
+    False

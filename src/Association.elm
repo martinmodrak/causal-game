@@ -75,6 +75,7 @@ viewAdapter =
     , viewCostCommentary = viewCostCommentary
     , viewGuess = viewGuess
     , viewProposedGuess = viewProposedGuess
+    , idPrefix = "association"
     }
 
 

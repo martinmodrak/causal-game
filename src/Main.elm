@@ -176,14 +176,17 @@ updateWithStorage msg oldModel =
 
 view : Model -> Html Msg
 view model =
+    let
+        homeworkControls =
+            if Settings.homeworkEnabled then
+                Html.map Homework (Homework.viewControls model.game)
+
+            else
+                text ""
+    in
     div [ Attr.class "topContainer" ]
         [ if Settings.displayTruth then
             div [ Attr.style "font-size" "4em", Attr.style "color" "red" ] [ text "Showing truth!" ]
-
-          else
-            text ""
-        , if Settings.homeworkEnabled then
-            Html.map Homework (Homework.viewControls model.game)
 
           else
             text ""
@@ -192,16 +195,16 @@ view model =
             [ Html.map never Instructions.view
             ]
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, AssocPage ) ( "block", "none" )) ]
-            [ Html.map AssocMsg (Game.view model.viewSettings Association.adapter model.game.association)
+            [ Game.view model.viewSettings Association.adapter model.game.association (text "") AssocMsg
             ]
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, SingleRelPage ) ( "block", "none" )) ]
-            [ Html.map SingleRel (Game.view model.viewSettings SingleRelationship.adapter model.game.singleRel)
+            [ Game.view model.viewSettings SingleRelationship.adapter model.game.singleRel (text "") SingleRel
             ]
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, TwoRelPage ) ( "block", "none" )) ]
-            [ Html.map TwoRel (Game.view model.viewSettings TwoRelationships.adapter model.game.twoRel)
+            [ Game.view model.viewSettings TwoRelationships.adapter model.game.twoRel homeworkControls TwoRel
             ]
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, ThreeWayPage ) ( "block", "none" )) ]
-            [ Html.map ThreeWay (Game.view model.viewSettings ThreeWay.adapter model.game.threeWay)
+            [ Game.view model.viewSettings ThreeWay.adapter model.game.threeWay (text "") ThreeWay
             ]
         , case model.storedModel of
             Just _ ->
@@ -261,10 +264,14 @@ pageTitle page =
                 "Homework"
 
             else
-                "3: Two relationships"
+                "3: Two causes"
 
         ThreeWayPage ->
-            "Bonus"
+            if Settings.homeworkEnabled then
+                "Bonus"
+
+            else
+                "4: Three causes"
 
 
 ifActive : ( Page, Page ) -> ( a, a ) -> a

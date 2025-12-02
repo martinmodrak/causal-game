@@ -307,7 +307,11 @@ viewHttpError err =
             text errText
 
         _ ->
-            Tuple.first ( text "Other error", Debug.log "Err" err )
+            Tuple.first ( text "Other error", err )
+
+
+
+-- Debug.log "Err" err )
 
 
 viewIndex : Model -> Html Msg
@@ -407,16 +411,16 @@ viewRecordDetail rec =
             ]
         , div
             [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view Game.Both Association.adapter rec.state.association)
+            [ suppressMsg (Game.view Game.Both Association.adapter rec.state.association (text "") identity)
             ]
         , div [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view Game.Both SingleRelationship.adapter rec.state.singleRel)
+            [ suppressMsg (Game.view Game.Both SingleRelationship.adapter rec.state.singleRel (text "") identity)
             ]
         , div [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view Game.Both TwoRelationships.adapter rec.state.twoRel)
+            [ suppressMsg (Game.view Game.Both TwoRelationships.adapter rec.state.twoRel (text "") identity)
             ]
         , div [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view Game.Both ThreeWay.adapter rec.state.threeWay)
+            [ suppressMsg (Game.view Game.Both ThreeWay.adapter rec.state.threeWay (text "") identity)
             ]
         ]
 

@@ -11,6 +11,14 @@
     100% { opacity: 0; }
 }
 
+@keyframes appear {
+    0% {opacity : 0}
+    100% {opacity : 1}
+}
+
+html {
+  scroll-behavior: smooth;
+}
 
 .glow {
     position: relative;
@@ -55,6 +63,10 @@ button.glow:after{
 
 button.glow:hover:after {
     background-color:#bbb;
+}
+
+.activeInstance {
+    animation: appear 1s 1;
 }
 
 td {
@@ -240,4 +252,8 @@ table tr td, table tr th {
 
 th.xName {
     text-align: center;
+}
+
+.activeInstance {
+    animation: glow 10s 1;
 }

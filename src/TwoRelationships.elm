@@ -53,8 +53,8 @@ adapter : Game.Adapter ExpMsg GuessMsg Spec Experiment Outcome Guess
 adapter =
     { init =
         { defaultGuess = { cause01 = Causality.NoCause, cause12 = Causality.NoCause }
-        , defaultExperiment = { randomized = False, n = 100, intervention = 0 }
-        , instancesToAverage = 3
+        , defaultExperiment = Causality.sanitizeExperiment { randomized = False, n = 40, intervention = 1 }
+        , instancesToAverage = 4
         }
     , logic =
         { specGenerator = specGenerator
@@ -72,6 +72,7 @@ adapter =
         , viewCostCommentary = Causality.viewCostCommentary
         , viewGuess = viewGuess
         , viewProposedGuess = viewProposedGuess
+        , idPrefix = "twoRel"
         }
     }
 

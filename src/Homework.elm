@@ -175,7 +175,7 @@ avgCorrectForOnePoint =
 
 avgCorrectForTwoPoints : Float
 avgCorrectForTwoPoints =
-    0.8
+    0.7
 
 
 avgCorrectForThreePoints : Float

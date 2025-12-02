@@ -112,10 +112,11 @@ scenarioDecoder :
     -> D.Decoder guess
     -> D.Decoder (Game.Scenario spec experiment Causality.Outcome guess)
 scenarioDecoder generator specDec experimentDec guessDec =
-    D.map4 Game.Scenario
+    D.map5 Game.Scenario
         (D.field "history" (D.list (instanceDecoder generator specDec experimentDec guessDec)))
         (D.field "proposedExperiment" experimentDec)
         (D.field "proposedGuess" guessDec)
+        (D.succeed False)
         (D.field "seed" D.int)
 
 

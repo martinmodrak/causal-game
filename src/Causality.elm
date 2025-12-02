@@ -483,7 +483,7 @@ viewProposedExperiment sorted experiment =
 
         interventionOption =
             \id var ->
-                option [ Attr.selected (experiment.intervention == id), Attr.value (String.fromInt id) ] [ text var.name ]
+                option [ Attr.selected (experiment.intervention == id + 1), Attr.value (String.fromInt id) ] [ text var.name ]
 
         intervention =
             if experiment.randomized then
@@ -649,7 +649,7 @@ contribGenerator cat =
             \val ->
                 val * categoryMult cat
     in
-    Random.map fromVal (Random.float 1 2.5)
+    Random.map fromVal (Random.float 1.5 2.5)
 
 
 outcomeGenerator : SortedDAG -> Experiment -> Random.Generator Outcome
@@ -666,9 +666,19 @@ variableNames sorted =
     sorted.variables |> List.map .name
 
 
+sanitizeExperiment : Experiment -> Experiment
+sanitizeExperiment experiment =
+    if experiment.intervention <= 0 then
+        --disallow intervening on the outcome
+        { experiment | intervention = 1 }
+
+    else
+        experiment
+
+
 updateExperiment : ExpMsg -> Experiment -> Experiment
 updateExperiment msg experiment =
-    case msg of
+    (case msg of
         SetN newN ->
             case String.toInt newN of
                 Just n ->
@@ -689,7 +699,9 @@ updateExperiment msg experiment =
             { experiment | randomized = newRand, intervention = newIntervention }
 
         SetIntervention newIntervention ->
-            { experiment | intervention = newIntervention + 1 }
+            { experiment | intervention = max 1 (newIntervention + 1) }
+    )
+        |> sanitizeExperiment
 
 
 costPerParticipant : Bool -> Int
