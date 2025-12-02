@@ -50,7 +50,7 @@ type alias Model =
 initAdapter : Game.InitAdapter Guess Experiment
 initAdapter =
     { defaultGuess = Causality.NoCause
-    , defaultExperiment = 100
+    , defaultExperiment = 50
     , instancesToAverage = 4
     }
 
@@ -272,7 +272,7 @@ viewHeader =
           else
             text ""
         , p [] [ text "In this scenario we know that there is only one possible direction of causality. It remains to be determined whether the relationship is positive (one trait promotes the other) or negative (one trait inhibits the other) or there might be no association at all." ]
-        , p [] [ text "You should be able to reliably find the correct answer from a single experiment with 70 - 150 aliens. I.e. aim for 100% correctness over at least 4 scenarios in a row with average cost below CZK 15 000." ]
+        , p [] [ text "You should be able to reliably find the correct answer from a single experiment with 30 - 40 aliens. I.e. aim for 100% correctness over at least 4 scenarios in a row with average cost below CZK 6 000." ]
         ]
 
 

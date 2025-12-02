@@ -1,7 +1,6 @@
 @keyframes glowing {
     0% { background-position: 0 0; }
-    50% { background-position: 400% 0; }
-    100% { background-position: 0 0; }
+    100% { background-position: 400% 0; }
 }
 
 @keyframes sometimes {
@@ -29,7 +28,7 @@
     filter: blur(5px);
     width: calc(100% + 4px);
     height: calc(100% + 4px);
-    animation: glowing 20s linear infinite, sometimes 12s linear infinite;
+    animation: glowing 10s linear infinite, sometimes 12s linear infinite;
     opacity: 1;
 }
 

@@ -314,15 +314,18 @@ viewStats adapter scenario =
                     [ text "No instances completed yet." ]
 
                 else
-                    [ strong [] [ text "All ", text (String.fromInt nRes), text " instances: " ]
-                    , text (Round.round 0 (propCorrect * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCost))
-                    , br [] []
-                    , strong [] [ text "Last ", text (String.fromInt adapter.init.instancesToAverage), text " instances: " ]
-                    , if nRes >= adapter.init.instancesToAverage then
-                        text (Round.round 0 (propCorrectShort * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCostShort))
+                    [ p []
+                        [ strong [] [ text "Last ", text (String.fromInt adapter.init.instancesToAverage), text " instances: " ]
+                        , if nRes >= adapter.init.instancesToAverage then
+                            text (Round.round 0 (propCorrectShort * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCostShort))
 
-                      else
-                        text "--"
+                          else
+                            text "--"
+                        ]
+                    , p []
+                        [ strong [] [ text "All ", text (String.fromInt nRes), text " instances: " ]
+                        , text (Round.round 0 (propCorrect * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCost))
+                        ]
                     ]
                )
         )
@@ -336,8 +339,11 @@ viewGameControls adapter scenario =
     case scenario.history of
         instance :: _ ->
             let
+                glowExperiment =
+                    List.length instance.data <= 1
+
                 glowGuess =
-                    List.length instance.data >= 2
+                    List.length instance.data >= 1
 
                 ( wasGuessed, guessElement ) =
                     case instance.guess of
@@ -362,14 +368,14 @@ viewGameControls adapter scenario =
                     if not wasGuessed then
                         div []
                             [ h3 [] [ text "Run an experiment" ]
-                            , div [ Attr.classList [ ( "glow", not glowGuess ) ] ]
+                            , div [ Attr.classList [ ( "glow", glowExperiment ) ] ]
                                 [ Html.map ExperimentChanged (adapter.view.viewProposedExperiment instance.spec scenario.proposedExperiment)
                                 ]
                             , if allowMoreExperiments instance then
                                 div []
                                     [ Html.map never adapter.view.viewCostCommentary
                                     , br [] []
-                                    , button [ Attr.type_ "button", Events.onClick RunExperiment, Attr.classList [ ( "glow", not glowGuess ) ] ] [ text ("Gather more data for CZK " ++ String.fromInt (adapter.logic.costExperiment scenario.proposedExperiment)) ]
+                                    , button [ Attr.type_ "button", Events.onClick RunExperiment, Attr.classList [ ( "glow", glowExperiment ) ] ] [ text ("Gather more data for CZK " ++ String.fromInt (adapter.logic.costExperiment scenario.proposedExperiment)) ]
                                     ]
 
                               else

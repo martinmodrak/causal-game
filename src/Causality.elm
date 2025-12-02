@@ -489,20 +489,28 @@ viewProposedExperiment sorted experiment =
             if experiment.randomized then
                 span []
                     [ text ", randomizing "
-                    , select [ View.onChange (String.toInt >> Maybe.withDefault noIntervention >> SetIntervention) ]
-                        (List.indexedMap interventionOption sorted.variables)
+                    , case sorted.variables of
+                        _ :: second :: third :: rest ->
+                            select [ View.onChange (String.toInt >> Maybe.withDefault noIntervention >> SetIntervention) ]
+                                (List.indexedMap interventionOption (second :: third :: rest))
+
+                        _ :: second :: [] ->
+                            strong [] [ text second.name ]
+
+                        _ ->
+                            text "Invalid!"
                     ]
 
             else
-                text ""
+                text " "
     in
     div []
-        [ text "Run an "
+        [ text "Run "
         , select [ View.onChange (Utils.boolFromString >> SetRandomized) ]
-            [ randomizedOption False "observational"
-            , randomizedOption True "randomized"
+            [ randomizedOption False "an observational"
+            , randomizedOption True "a randomized"
             ]
-        , text " study "
+        , text " study"
         , intervention
         , text " with "
         , View.nChooser SetN experiment.n
@@ -681,7 +689,7 @@ updateExperiment msg experiment =
             { experiment | randomized = newRand, intervention = newIntervention }
 
         SetIntervention newIntervention ->
-            { experiment | intervention = newIntervention }
+            { experiment | intervention = newIntervention + 1 }
 
 
 costPerParticipant : Bool -> Int

@@ -100,37 +100,34 @@ viewControls game =
             , text " "
             ]
         , p []
-            [ if eval.nInstances >= 3 then
+            [ if eval.nInstances >= nInstancesAverage then
                 text ""
 
               else
-                div [] [ text "You need to complete at least 3 instances of the homework problem to gain points." ]
-            , text "Your average correctness and average cost are computed over 3 consecutive instances of the homework problem."
+                div [] [ text ("You need to complete at least " ++ String.fromInt nInstancesAverage ++ " instances of the homework problem to gain points.") ]
+            , text ("Your average correctness and average cost are computed over " ++ String.fromInt nInstancesAverage ++ " consecutive instances of the homework problem.")
             , div []
                 [ text
                     (case eval.score of
-                        4 ->
-                            "This is the maximum and is achieved when you obtain >" ++ Round.round 0 (100 * avgCorrectForThreePoints) ++ "% correct with average cost < CZK " ++ Round.round 0 avgCostForFourPoints ++ " over three consecutive instances of the  problem."
-
                         3 ->
-                            "This is achieved when you obtain >" ++ Round.round 0 (100 * avgCorrectForThreePoints) ++ "% correct with average cost < CZK " ++ Round.round 0 avgCostForThreePoints ++ " over three consecutive instances of the  problem."
+                            "This is the maximum and is achieved when you obtain >" ++ Round.round 0 (100 * avgCorrectForThreePoints) ++ "% correct with average cost < CZK " ++ Round.round 0 avgCostForThreePoints ++ " over " ++ String.fromInt nInstancesAverage ++ " consecutive instances of the  problem."
 
                         2 ->
-                            "This is achieved when you obtain >" ++ Round.round 0 (100 * avgCorrectForTwoPoints) ++ "% correct regardless of cost over three consecutive instances of the  problem."
+                            "This is achieved when you obtain >" ++ Round.round 0 (100 * avgCorrectForTwoPoints) ++ "% correct with average cost < CZK " ++ Round.round 0 avgCostForTwoPoints ++ " over " ++ String.fromInt nInstancesAverage ++ " consecutive instances of the  problem."
 
                         1 ->
-                            "This is achieved when you obtain >" ++ Round.round 0 (100 * avgCorrectForOnePoint) ++ "% correct regardless of cost over three consecutive instances of the  problem."
+                            "This is achieved when you obtain >" ++ Round.round 0 (100 * avgCorrectForOnePoint) ++ "% correct regardless of cost over " ++ String.fromInt nInstancesAverage ++ " consecutive instances of the  problem."
 
                         _ ->
                             ""
                     )
                 ]
-            , if eval.nInstances >= 3 then
+            , if eval.nInstances >= nInstancesAverage then
                 text
                     ("Your best score was obtained from instances "
                         ++ String.fromInt eval.startingAt
                         ++ " - "
-                        ++ String.fromInt (eval.startingAt + 2)
+                        ++ String.fromInt (eval.startingAt + nInstancesAverage - 1)
                         ++ " where you had "
                         ++ Round.round 0 (100 * eval.avgCorrect)
                         ++ "% correct with average cost of CZK "
@@ -146,17 +143,12 @@ viewControls game =
                   else
                     text ""
                 , if eval.score < 2 then
-                    li [] [ text ("To gain 2 points you need, >" ++ Round.round 0 (100 * avgCorrectForTwoPoints) ++ "% correct regardless of cost.") ]
+                    li [] [ text ("To gain 2 points, you need >" ++ Round.round 0 (100 * avgCorrectForTwoPoints) ++ "% correct with average cost < CZK " ++ Round.round 0 avgCostForTwoPoints ++ ".") ]
 
                   else
                     text ""
                 , if eval.score < 3 then
                     li [] [ text ("To gain 3 points, you need >" ++ Round.round 0 (100 * avgCorrectForThreePoints) ++ "% correct with average cost < CZK " ++ Round.round 0 avgCostForThreePoints ++ ".") ]
-
-                  else
-                    text ""
-                , if eval.score < 4 then
-                    li [] [ text ("To gain 4 points, you need >" ++ Round.round 0 (100 * avgCorrectForThreePoints) ++ "% correct with average cost < CZK " ++ Round.round 0 avgCostForFourPoints ++ ".") ]
 
                   else
                     text ""
@@ -178,7 +170,7 @@ type alias Eval =
 
 avgCorrectForOnePoint : Float
 avgCorrectForOnePoint =
-    0.5
+    0.6
 
 
 avgCorrectForTwoPoints : Float
@@ -191,45 +183,47 @@ avgCorrectForThreePoints =
     0.8
 
 
-avgCostForThreePoints : Float
-avgCostForThreePoints =
+avgCostForTwoPoints : Float
+avgCostForTwoPoints =
     500000
 
 
-avgCostForFourPoints : Float
-avgCostForFourPoints =
+avgCostForThreePoints : Float
+avgCostForThreePoints =
     300000
+
+
+nInstancesAverage : Int
+nInstancesAverage =
+    4
 
 
 computeScoreFromResults : List ( Float, Int ) -> Eval
 computeScoreFromResults results =
     case results of
-        r0 :: r1 :: r2 :: rest ->
+        r0 :: r1 :: r2 :: r3 :: rest ->
             let
                 recursion =
-                    computeScoreFromResults (r1 :: r2 :: rest)
+                    computeScoreFromResults (r1 :: r2 :: r3 :: rest)
 
                 currentCost =
-                    Utils.safeAverage (List.map Tuple.second [ r0, r1, r2 ])
+                    Utils.safeAverage (List.map Tuple.second [ r0, r1, r2, r3 ])
 
                 currentCorrect =
-                    Utils.safeAverageF (List.map Tuple.first [ r0, r1, r2 ])
+                    Utils.safeAverageF (List.map Tuple.first [ r0, r1, r2, r3 ])
 
                 currentScore =
                     if currentCorrect < avgCorrectForOnePoint then
                         0
 
-                    else if currentCorrect < avgCorrectForTwoPoints then
+                    else if currentCorrect < avgCorrectForTwoPoints || currentCost > avgCostForTwoPoints then
                         1
 
                     else if currentCorrect < avgCorrectForThreePoints || currentCost > avgCostForThreePoints then
                         2
 
-                    else if currentCost > avgCostForFourPoints then
-                        3
-
                     else
-                        4
+                        3
 
                 candidateRes =
                     { recursion
