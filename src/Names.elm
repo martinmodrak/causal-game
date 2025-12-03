@@ -11,7 +11,7 @@ outcomesHead =
 
 outcomes : List String
 outcomes =
-    []
+    [ "night vision", "radioactivity", "sensitivity to light", "movement speed", "head size", "body temperature", "aggresivity", "sleep duration" ]
 
 
 outcomeGenerator : Random.Generator String

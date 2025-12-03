@@ -232,7 +232,7 @@ viewProposedGuess spec guess glow =
 viewHeader : Html Never
 viewHeader =
     div [ Attr.class "scenarioHeader" ]
-        [ h2 [] [ text "Two way causality" ]
+        [ h2 [] [ text "Scenario 3: Two way causality" ]
         , em [] [ text "We strongly recommend trying out the previous scenarios before going here." ]
         , p []
             [ text "Here we add another variable, but to make things manageable, you know that only two relationships are possible (as noted below). "

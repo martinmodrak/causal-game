@@ -266,14 +266,14 @@ viewProposedGuess spec guess glow =
 viewHeader : Html Never
 viewHeader =
     div [ Attr.class "scenarioHeader" ]
-        [ h2 [] [ text "Is there an association?" ]
+        [ h2 [] [ text "Scenario 1: Is there an association?" ]
         , if Settings.homeworkEnabled then
-            p [] [ strong [] [ text "This scenario does not contribute to homework scoring, it is there to help you learn how the game works." ] ]
+            p [] [ strong [] [ text "This scenario does not contribute to homework scoring, it is there to help you learn how the game works. Don't be afraid to just try things out!" ] ]
 
           else
             text ""
         , p [] [ text "In this scenario we know that there is only one possible direction of causality. It remains to be determined whether the relationship is positive (one trait promotes the other) or negative (one trait inhibits the other) or there might be no association at all." ]
-        , p [] [ text "You should be able to reliably find the correct answer from a single experiment with 30 - 40 aliens. I.e. aim for 100% correctness over at least 4 scenarios in a row with average cost below CZK 6 000." ]
+        , p [] [ text "You should be able to reliably find the correct answer from a single experiment with 30 - 40 aliens. I.e. aim for 100% correctness over at least 4 instances in a row with average cost below CZK 6 000." ]
         ]
 
 

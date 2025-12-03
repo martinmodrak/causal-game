@@ -68,7 +68,8 @@ view =
         , p []
             [ ul []
                 [ li [] [ text " This homework aims to show some of the differences between randomized and observational studies and let you attempt causal thinking. " ]
-                , li [] [ text " You play an exoepidemiologist. " ]
+                , li [] [ text " This is a game where you play an exoepidemiologist (epidemiology, but with ALIENS). " ]
+                , li [] [ text " Feel free to mess around with the game - there is no penalty for bad starts, only your best results count. " ]
                 , li [] [ text " You will be asked to assess possible relationships between a single continuous outcome and one or two binary (true/false) properties measured for a bunch of aliens." ]
                 , li [] [ text " The game is divided into multiple scenarios of increasing difficulty." ]
                 , if Settings.homeworkEnabled then
@@ -83,7 +84,7 @@ view =
             ]
         , h2 [] [ text " Data displays" ]
         , p []
-            [ text " We expect yout to do some \"informal statistics\"  - for continuous data, we show the observed numbers split by binary variable levels, along with means and 95% confidence intervals (black)." ]
+            [ text " We expect you to do some \"informal statistics\"  - for continuous data, we show the observed numbers split by binary variable levels, along with means and 95% confidence intervals (black)." ]
         , p [] [ Causality.viewSingleBeehive exBeehiveX exBeehiveY "sleeping" "speed" ]
         , p []
             [ text "For relationships between two binary outcomes we show a "
@@ -101,7 +102,7 @@ view =
             ]
         , p [] [ Causality.viewSingleContingency negEvenX negEvenY "sleeping" "moving" ]
         , p []
-            [ text " We see that this makes the upper-left and lower-right cells show high numbers while the other two cells have lower counts. The ratios are also uneven across rows/columns"
+            [ text " We see that this makes the upper-left and lower-right cells show high numbers while the other two cells have lower counts. The ratios are also quite different across rows/columns"
             , text " Now let's say we investigate traits with positive association, \"moving\" and \"eyes open\", this could look something like this:"
             ]
         , p [] [ Causality.viewSingleContingency posEvenX posEvenY "eyes open" "moving" ]

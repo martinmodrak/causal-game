@@ -213,9 +213,9 @@ viewProposedGuess spec guess glow =
 viewHeader : Html Never
 viewHeader =
     div [ Attr.class "scenarioHeader" ]
-        [ h2 [] [ text "Single causal relationship" ]
+        [ h2 [] [ text "Scenario 2: Single causal relationship" ]
         , if Settings.homeworkEnabled then
-            p [] [ strong [] [ text "This scenario does not contribute to homework scoring, it is there to help you learn how the game works." ] ]
+            p [] [ strong [] [ text "This scenario does not contribute to homework scoring, it is there to help you learn how the game works. Don't be afraid to just try things out!" ] ]
 
           else
             text ""
@@ -227,7 +227,7 @@ viewHeader =
             , text " The problem with randomized experiments is that they are really expensive. So it might make sense to try an observational study before investing in a randomized one."
             ]
         , p []
-            [ text " You should be able to obtain almost 100% accuracy while spending on average at most CZK 140 000 "
+            [ text " You should be able to obtain almost 100% accuracy while spending on average at most CZK 140 000 per instance."
             ]
         ]
 

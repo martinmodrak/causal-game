@@ -4,6 +4,7 @@ Needed for homework:
 
 Nice to have:
 
+- Feedback when you should continue to next scenario
 - Empty selections on scenario start
 - Better formatting of large numbers
 

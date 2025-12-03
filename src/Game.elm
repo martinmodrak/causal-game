@@ -303,8 +303,9 @@ viewGuessPopup adapter instance guess =
         [ div [ Attr.class "popup" ]
             [ viewGuessResults adapter instance guess
             , div []
-                [ button [ Attr.type_ "button", Events.onClick NewInstance ] [ text "Start new instance" ]
-                , button [ Attr.type_ "button", Events.onClick DismissGuessPopup ] [ text "Revisit this instance" ]
+                [ button [ Attr.type_ "button", Attr.class "left", Events.onClick NewInstance ] [ text "Start new instance" ]
+                , text ""
+                , button [ Attr.type_ "button", Attr.class "right", Events.onClick DismissGuessPopup ] [ text "Review this instance" ]
                 ]
             ]
         ]
