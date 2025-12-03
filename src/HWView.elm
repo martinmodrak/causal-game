@@ -411,16 +411,16 @@ viewRecordDetail rec =
             ]
         , div
             [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view Game.Both Association.adapter rec.state.association (text "") identity)
+            [ suppressMsg (Game.view Game.Both Association.adapter rec.state.association (text "") Nothing identity)
             ]
         , div [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view Game.Both SingleRelationship.adapter rec.state.singleRel (text "") identity)
+            [ suppressMsg (Game.view Game.Both SingleRelationship.adapter rec.state.singleRel (text "") Nothing identity)
             ]
         , div [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view Game.Both TwoRelationships.adapter rec.state.twoRel (text "") identity)
+            [ suppressMsg (Game.view Game.Both TwoRelationships.adapter rec.state.twoRel (text "") Nothing identity)
             ]
         , div [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view Game.Both ThreeWay.adapter rec.state.threeWay (text "") identity)
+            [ suppressMsg (Game.view Game.Both ThreeWay.adapter rec.state.threeWay (text "") Nothing identity)
             ]
         ]
 
