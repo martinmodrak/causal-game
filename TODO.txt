@@ -1,13 +1,6 @@
 Important:
-- Adjust and test scenarios
-- Update instructions
-- Update scoring
 
 Needed for homework:
-- Save/restore as bool list for everything except outcome
-- More efficient save/restore
-
-- Update and test HWView
 
 Nice to have:
 

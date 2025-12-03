@@ -28,7 +28,7 @@ view =
             valuesFromContingency 35 15 15 35
 
         ( negSkewedX, negSkewedY ) =
-            valuesFromContingency 8 60 24 8
+            valuesFromContingency 8 60 24 10
 
         ( noAssocSkewedX, noAssocSkewedY ) =
             valuesFromContingency 24 43 11 22
@@ -67,11 +67,12 @@ view =
         -- , p [] [ Causality.viewSingleWaffle test2X test2Y "wounded" "fast" ]
         , p []
             [ ul []
-                [ li [] [ text " You are an exoepidemiologist. " ]
+                [ li [] [ text " This homework aims to show some of the differences between randomized and observational studies and let you attempt causal thinking. " ]
+                , li [] [ text " You play an exoepidemiologist. " ]
                 , li [] [ text " You will be asked to assess possible relationships between a single continuous outcome and one or two binary (true/false) properties measured for a bunch of aliens." ]
                 , li [] [ text " The game is divided into multiple scenarios of increasing difficulty." ]
                 , if Settings.homeworkEnabled then
-                    li [] [ text " Homework is fulfilled by successfully handling the \"Homework\" scenario " ]
+                    li [] [ text " Homework is fulfilled by successfully handling the \"Homework\" scenario, downloading a results file and sending it by e-mail. " ]
 
                   else
                     text ""
@@ -80,14 +81,14 @@ view =
                 , li [] [ text " Running experiments costs money. You aim for high correctness of your guess while spending as little money as possible" ]
                 ]
             ]
-        , h2 [] [ text " Displaying results" ]
+        , h2 [] [ text " Data displays" ]
         , p []
             [ text " We expect yout to do some \"informal statistics\"  - for continuous data, we show the observed numbers split by binary variable levels, along with means and 95% confidence intervals (black)." ]
         , p [] [ Causality.viewSingleBeehive exBeehiveX exBeehiveY "sleeping" "speed" ]
         , p []
             [ text "For relationships between two binary outcomes we show a "
-            , a [ Attr.href "https://en.wikipedia.org/wiki/Contingency_table" ] [ text " contingency table" ]
-            , text " . If you are not familiar with contingency tables, we will do a small refresh here."
+            , a [ Attr.href "https://en.wikipedia.org/wiki/Contingency_table" ] [ text " contingency table." ]
+            , text " If you are not familiar with contingency tables, we will do a small refresh here."
             ]
         , p []
             [ text "So let us assume that we observed 100 aliens and exactly 25 were sleeping and moving, 25 were sleeping and not moving,"
@@ -113,7 +114,7 @@ view =
             ]
         , p [] [ Causality.viewSingleContingency negSkewedX negSkewedY "sleeping" "moving" ]
         , p []
-            [ text " The numbers are different, but we still see increased counts in the upper left and lower right cells, indicating a negative association."
+            [ text " The numbers are different, but we still see increased counts in the upper left and lower right cells and wildly different ratios, indicating a negative association."
             , text " What if we study categories with overall uneven distribution but no association? Say we are studying the aliens inclination for math and hunger:"
             , text "  We will see that the ratio of hungry to non-hungry aliens is approximately the same among those that like math and those that do not like math at all."
             ]

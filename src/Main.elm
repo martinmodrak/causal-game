@@ -193,6 +193,9 @@ view model =
         , Html.Lazy.lazy viewPageSelection model
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, InstructionsPage ) ( "block", "none" )) ]
             [ Html.map never Instructions.view
+            , p []
+                [ button [ Attr.type_ "input", Events.onClick (ActivatePage AssocPage) ] [ text "Start the first scenario!" ]
+                ]
             ]
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, AssocPage ) ( "block", "none" )) ]
             [ Game.view model.viewSettings Association.adapter model.game.association (text "") AssocMsg

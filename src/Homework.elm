@@ -96,7 +96,7 @@ viewControls game =
         , p []
             [ text "Currently, you would get "
             , strong [] [ text (String.fromInt eval.score) ]
-            , text " points."
+            , text (" points out of " ++ String.fromInt maxScore ++ ".")
             , text " "
             ]
         , p []
@@ -105,24 +105,23 @@ viewControls game =
 
               else
                 div [] [ text ("You need to complete at least " ++ String.fromInt nInstancesAverage ++ " instances of the homework problem to gain points.") ]
-            , text ("Your average correctness and average cost are computed over " ++ String.fromInt nInstancesAverage ++ " consecutive instances of the homework problem.")
-            , div []
-                [ text
-                    (case eval.score of
-                        3 ->
-                            "This is the maximum and is achieved when you obtain >" ++ Round.round 0 (100 * avgCorrectForThreePoints) ++ "% correct with average cost < CZK " ++ Round.round 0 avgCostForThreePoints ++ " over " ++ String.fromInt nInstancesAverage ++ " consecutive instances of the  problem."
-
-                        2 ->
-                            "This is achieved when you obtain >" ++ Round.round 0 (100 * avgCorrectForTwoPoints) ++ "% correct with average cost < CZK " ++ Round.round 0 avgCostForTwoPoints ++ " over " ++ String.fromInt nInstancesAverage ++ " consecutive instances of the  problem."
-
-                        1 ->
-                            "This is achieved when you obtain >" ++ Round.round 0 (100 * avgCorrectForOnePoint) ++ "% correct regardless of cost over " ++ String.fromInt nInstancesAverage ++ " consecutive instances of the  problem."
-
-                        _ ->
-                            ""
-                    )
-                ]
-            , if eval.nInstances >= nInstancesAverage then
+            , text ("Your average correctness and average cost are computed over " ++ String.fromInt nInstancesAverage ++ " consecutive instances of the homework problem. ")
+            ]
+        , p []
+            [ -- , div []
+              --     [ text
+              --         (case eval.score of
+              --             3 ->
+              --                 "This is the maximum and is achieved when you obtain >" ++ Round.round 0 (100 * avgCorrectForThreePoints) ++ "% correct with average cost < CZK " ++ Round.round 0 avgCostForThreePoints ++ " over " ++ String.fromInt nInstancesAverage ++ " consecutive instances of the  problem."
+              --             2 ->
+              --                 "This is achieved when you obtain >" ++ Round.round 0 (100 * avgCorrectForTwoPoints) ++ "% correct with average cost < CZK " ++ Round.round 0 avgCostForTwoPoints ++ " over " ++ String.fromInt nInstancesAverage ++ " consecutive instances of the  problem."
+              --             1 ->
+              --                 "This is achieved when you obtain >" ++ Round.round 0 (100 * avgCorrectForOnePoint) ++ "% correct regardless of cost over " ++ String.fromInt nInstancesAverage ++ " consecutive instances of the  problem."
+              --             _ ->
+              --                 ""
+              --         )
+              --     ]
+              if eval.nInstances >= nInstancesAverage then
                 text
                     ("Your best score was obtained from instances "
                         ++ String.fromInt eval.startingAt
@@ -155,6 +154,7 @@ viewControls game =
                 ]
             , text "You cannot loose points by trying some more. Your progress is stored in your browser (you can close this window and return later)."
             ]
+        , p [] [ text "To ", strong [] [ text "complete the homework" ], text " you have to ", strong [] [ text " download " ], text " the results file!" ]
         , button [ Attr.type_ "button", Events.onClick SubmissionStart ] [ strong [] [ text "Download  result" ] ]
         ]
 
@@ -196,6 +196,11 @@ avgCostForThreePoints =
 nInstancesAverage : Int
 nInstancesAverage =
     4
+
+
+maxScore : Int
+maxScore =
+    3
 
 
 computeScoreFromResults : List ( Float, Int ) -> Eval
@@ -321,9 +326,9 @@ viewPopup game model =
     div [ Attr.class "popupBackground" ]
         [ div [ Attr.class "popup" ]
             [ p []
-                [ text "To submit your homework, fill in your name and group. Then use the link below to download a file verifying your results. Store the file on your device and send it as attachment to martin.modrak@lfmotol.cuni.cz" ]
+                [ text "To submit your homework, fill in your name and group. Then use the link below to download a file verifying your results. Store the file on your device and send it as attachment to ", em [] [ text "martin.modrak@lfmotol.cuni.cz" ] ]
             , p []
-                [ text "Your homework is currently worth ", strong [] [ text (String.fromInt score) ], text " points." ]
+                [ text "Your homework is currently worth ", strong [] [ text (String.fromInt score) ], text (" points out of " ++ String.fromInt maxScore ++ ".") ]
             , text "Your full name: "
             , input [ Attr.type_ "text", Events.onInput SetName, Attr.value model.name ] []
             , br [] []
