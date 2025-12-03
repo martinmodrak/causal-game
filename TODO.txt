@@ -4,9 +4,23 @@ Needed for homework:
 
 Nice to have:
 
-- Feedback when you should continue to next scenario
+- Feedback when you should continue to next scenario !
+- Stronger highlight new scenario
+- Bold na proměnné
+
+- Hinty:
+  - Jen obs. experiment u rand. => Doporučujeme randomizaci
+  - Nízký success, málo instancí předchozích => Zvaž návrat
+
+
 - Empty selections on scenario start
 - Better formatting of large numbers
+
+
+Next year:
+
+- Split pos/neg a kauzalita
+
 
 Extras:
   - Highlight subset in plots

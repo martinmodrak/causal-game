@@ -268,11 +268,12 @@ view :
     -> Adapter expMsg guessMsg spec experiment outcome guess
     -> Scenario spec experiment outcome guess
     -> Html a
+    -> Maybe (Html a)
     -> (Msg expMsg guessMsg -> a)
     -> Html a
-view viewSettings adapter scenario homeworkHtml msgMap =
+view viewSettings adapter scenario homeworkHtml nextScenarioButton msgMap =
     div [ Attr.class "scenario" ]
-        [ viewGameControls adapter scenario homeworkHtml msgMap
+        [ viewGameControls adapter scenario homeworkHtml msgMap nextScenarioButton
         , Html.map msgMap (viewHistory viewSettings adapter scenario.history)
         , div [ Attr.class "scenarioFooter" ] []
         , if not scenario.dismissGuessPopup then
@@ -338,8 +339,9 @@ viewStats :
     Adapter expMsg guessMsg spec experiment outcome guess
     -> Scenario spec experiment outcome guess
     -> Html a
+    -> Maybe (Html a)
     -> Html a
-viewStats adapter scenario homeworkHtml =
+viewStats adapter scenario homeworkHtml nextScenarioButton =
     let
         ( correct, cost ) =
             getResults adapter.logic scenario.history
@@ -385,6 +387,20 @@ viewStats adapter scenario homeworkHtml =
                                 [ strong [] [ text "All ", text (String.fromInt nRes), text " instances: " ]
                                 , text (Round.round 0 (propCorrect * 100) ++ "% correct, avg cost: CZK " ++ String.fromInt (round avgCost))
                                 ]
+                            , if nRes >= adapter.init.instancesToAverage && propCorrectShort >= 0.75 then
+                                case nextScenarioButton of
+                                    Just button ->
+                                        p []
+                                            [ text "You seem to be doing well in this scenario."
+                                            , br [] []
+                                            , button
+                                            ]
+
+                                    Nothing ->
+                                        text ""
+
+                              else
+                                text ""
                             ]
                        )
                )
@@ -401,8 +417,9 @@ viewGameControls :
     -> Scenario spec experiment outcome guess
     -> Html a
     -> (Msg expMsg guessMsg -> a)
+    -> Maybe (Html a)
     -> Html a
-viewGameControls adapter scenario homeworkHtml msgMap =
+viewGameControls adapter scenario homeworkHtml msgMap nextScenarioButton =
     case scenario.history of
         instance :: _ ->
             let
@@ -410,7 +427,7 @@ viewGameControls adapter scenario homeworkHtml msgMap =
                     List.length instance.data <= 1
 
                 glowGuess =
-                    List.length instance.data >= 1
+                    List.length instance.data >= 2
 
                 ( wasGuessed, guessElement ) =
                     case instance.guess of
@@ -462,7 +479,7 @@ viewGameControls adapter scenario homeworkHtml msgMap =
             div [ Attr.class "controls" ]
                 [ div [ Attr.class "controlsTop" ]
                     [ Html.map never adapter.view.viewHeader
-                    , viewStats adapter scenario homeworkHtml
+                    , viewStats adapter scenario homeworkHtml nextScenarioButton
                     ]
 
                 --, div [ Attr.class "afterHeader" ] []
@@ -657,7 +674,7 @@ viewGuessResults adapter instance guess =
                             "INCORRECT"
 
                          else
-                            String.fromInt (round (correct * 100)) ++ "% CORRECT"
+                            "PARTIALLY correct (" ++ String.fromInt (round (correct * 100)) ++ "%)"
                         )
                     ]
                 , div [ Attr.class "guessResultDesc" ] [ Html.map never desc ]

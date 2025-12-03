@@ -77,6 +77,7 @@ view =
 
                   else
                     text ""
+                , li [] [ text " In principle, you can guess the correct answer by chance, but there is always a method to get a correct answer reliably." ]
                 , li [] [ text " You can complete multiple instances of each scenario. Instances differ in what alien you study and what the true relationships are, but have the same structure." ]
                 , li [] [ text " In each instance, you can run several experiments and once you think you've learned enough, you make a guess about the causal relationships in the data." ]
                 , li [] [ text " Running experiments costs money. You aim for high correctness of your guess while spending as little money as possible" ]
@@ -89,7 +90,7 @@ view =
         , p []
             [ text "For relationships between two binary outcomes we show a "
             , a [ Attr.href "https://en.wikipedia.org/wiki/Contingency_table" ] [ text " contingency table." ]
-            , text " If you are not familiar with contingency tables, we will do a small refresh here."
+            , text " If you are not familiar with contingency tables, we will do a small refresh here. If you know them, feel free to start solving the scenarios."
             ]
         , p []
             [ text "So let us assume that we observed 100 aliens and exactly 25 were sleeping and moving, 25 were sleeping and not moving,"

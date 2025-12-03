@@ -174,6 +174,11 @@ updateWithStorage msg oldModel =
     )
 
 
+nextScenarioButton : Page -> Html Msg
+nextScenarioButton page =
+    button [ Attr.type_ "input", Events.onClick (ActivatePage page), Attr.class "glow" ] [ text "Start next scenario" ]
+
+
 view : Model -> Html Msg
 view model =
     let
@@ -198,16 +203,16 @@ view model =
                 ]
             ]
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, AssocPage ) ( "block", "none" )) ]
-            [ Game.view model.viewSettings Association.adapter model.game.association (text "") AssocMsg
+            [ Game.view model.viewSettings Association.adapter model.game.association (text "") (Just (nextScenarioButton SingleRelPage)) AssocMsg
             ]
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, SingleRelPage ) ( "block", "none" )) ]
-            [ Game.view model.viewSettings SingleRelationship.adapter model.game.singleRel (text "") SingleRel
+            [ Game.view model.viewSettings SingleRelationship.adapter model.game.singleRel (text "") (Just (nextScenarioButton TwoRelPage)) SingleRel
             ]
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, TwoRelPage ) ( "block", "none" )) ]
-            [ Game.view model.viewSettings TwoRelationships.adapter model.game.twoRel homeworkControls TwoRel
+            [ Game.view model.viewSettings TwoRelationships.adapter model.game.twoRel homeworkControls Nothing TwoRel
             ]
         , div [ Attr.class "scenarioPage", Attr.style "display" (ifActive ( model.page, ThreeWayPage ) ( "block", "none" )) ]
-            [ Game.view model.viewSettings ThreeWay.adapter model.game.threeWay (text "") ThreeWay
+            [ Game.view model.viewSettings ThreeWay.adapter model.game.threeWay (text "") Nothing ThreeWay
             ]
         , case model.storedModel of
             Just _ ->

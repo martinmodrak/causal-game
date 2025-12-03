@@ -93,6 +93,7 @@ viewControls game =
     in
     div [ Attr.class "" ]
         [ h3 [] [ text "Homework scoring" ]
+        , p [] [ text "You have as many attempts as you like, only your best score counts." ]
         , p []
             [ text "Currently, you would get "
             , strong [] [ text (String.fromInt eval.score) ]

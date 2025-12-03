@@ -37,7 +37,7 @@ things =
 
 verbs : List String
 verbs =
-    [ "eats ", "excretes ", "hit by ", "loves ", "scared of ", "near to " ]
+    [ "eats ", "hit by ", "near to ", "exposed to ", "sits on ", "sees " ]
 
 
 nameGenerator : Int -> Random.Generator (List String)
