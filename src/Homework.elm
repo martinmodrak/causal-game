@@ -327,7 +327,7 @@ viewPopup game model =
     div [ Attr.class "popupBackground" ]
         [ div [ Attr.class "popup" ]
             [ p []
-                [ text "To submit your homework, fill in your name and group. Then use the link below to download a file verifying your results. Store the file on your device and send it as attachment to ", em [] [ text "martin.modrak@lfmotol.cuni.cz" ] ]
+                [ text "To submit your homework, fill in your name and group. Then use the link below to download a file verifying your results. Store the file on your device and upload it to Moodle as your solution for the homework." ]
             , p []
                 [ text "Your homework is currently worth ", strong [] [ text (String.fromInt score) ], text (" points out of " ++ String.fromInt maxScore ++ ".") ]
             , text "Your full name: "
