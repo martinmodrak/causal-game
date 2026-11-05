@@ -783,3 +783,17 @@ edgeListFromCause =
 
             LeftNeg ->
                 [ { from = id2, to = id1, label = contrib } ]
+
+
+anyRandomized : List Experiment -> Bool
+anyRandomized experiments =
+    List.any .randomized experiments
+
+
+randomizedHint : List Experiment -> Html Never
+randomizedHint experiments =
+    if anyRandomized experiments then
+        text ""
+
+    else
+        p [ Attr.class "guessHint" ] [ text "You need to run some randomized experiments to solve this scenario reliably!" ]

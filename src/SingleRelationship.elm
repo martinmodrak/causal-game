@@ -162,18 +162,21 @@ specToNames spec =
             ( "Error", "Error" )
 
 
-guessEval : Spec -> Guess -> GuessEval
-guessEval spec guess =
+guessEval : Spec -> List Experiment -> Guess -> GuessEval
+guessEval spec experiments guess =
     let
         ( name0, name1 ) =
             specToNames spec
     in
     if guess == spec.category then
-        ( 1.0, text "" )
+        ( 1.0, Causality.randomizedHint experiments )
 
     else
         ( 0.0
-        , Causality.causalityDescription name1 name0 spec.category
+        , div []
+            [ Causality.causalityDescription name1 name0 spec.category
+            , Causality.randomizedHint experiments
+            ]
         )
 
 

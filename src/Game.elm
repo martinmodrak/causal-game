@@ -78,7 +78,7 @@ type alias LogicAdapter expMsg guessMsg spec experiment outcome guess =
     , generator : spec -> experiment -> Random.Generator outcome
     , updateExperiment : expMsg -> experiment -> experiment
     , updateGuess : guessMsg -> guess -> guess
-    , guessEval : spec -> guess -> GuessEval
+    , guessEval : spec -> List experiment -> guess -> GuessEval
     , costExperiment : experiment -> Int
     }
 
@@ -322,8 +322,11 @@ getResults adapter history =
             case head.guess of
                 Just guess ->
                     let
+                        experiments =
+                            List.map .experiment head.data
+
                         eval =
-                            Tuple.first (adapter.guessEval head.spec guess)
+                            Tuple.first (adapter.guessEval head.spec experiments guess)
                     in
                     ( eval, computeCost adapter head )
                         :: getResults adapter rest
@@ -649,6 +652,7 @@ viewSingleHistory viewSettings adapter active id instance =
         --, viewViewSettings viewSettings
         , dataDesc
         , Html.Keyed.node "div" [ Attr.class "experiments" ] (withReverseIds experiments)
+        , div [ Attr.class "experimentsEnd" ] []
         ]
 
 
@@ -659,8 +663,11 @@ viewGuessResults :
     -> Html (Msg expMsg guessMsg)
 viewGuessResults adapter instance guess =
     let
+        experiments =
+            List.map .experiment instance.data
+
         ( correct, desc ) =
-            adapter.logic.guessEval instance.spec guess
+            adapter.logic.guessEval instance.spec experiments guess
 
         guessResultDescription =
             div []

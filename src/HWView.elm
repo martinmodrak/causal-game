@@ -342,6 +342,7 @@ viewIndex model =
                 , th [] [ text "Cost" ]
                 , th [] [ text "Filename" ]
                 , th [] [ text "Overlaps" ]
+                , th [] [ text "LLM" ]
                 , th [] [ text "View" ]
                 ]
                 :: List.map (viewSingleRec (model.recordsToLoad == 0) model.instanceDict) model.records
@@ -368,6 +369,15 @@ viewSingleRec allLoaded instanceDict ( info, rec ) =
         , td [] [ text (Round.round 0 (info.eval.avgCost / 1000) ++ "K") ]
         , td [] [ text info.file.name ]
         , td [] (List.map (\x -> span [] [ text x, text ", " ]) overlaps)
+        , td []
+            [ text
+                (if rec.state.llm_tick then
+                    "X"
+
+                 else
+                    ""
+                )
+            ]
         , td [] [ a [ Attr.href "#", Events.onClick (ShowRecord rec) ] [ text "View" ] ]
         ]
 
@@ -400,6 +410,10 @@ viewErrors errors =
 
 viewRecordDetail : HWRecord -> Html Msg
 viewRecordDetail rec =
+    let
+        sanitizePage =
+            \x -> { x | dismissGuessPopup = True }
+    in
     div [ Attr.class "topContainer" ]
         [ p []
             [ button [ Attr.type_ "_button", Events.onClick ShowIndex ] [ text "Back to list" ]
@@ -411,16 +425,16 @@ viewRecordDetail rec =
             ]
         , div
             [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view Game.Both Association.adapter rec.state.association (text "") Nothing identity)
+            [ suppressMsg (Game.view Game.Both Association.adapter (sanitizePage rec.state.association) (text "") Nothing identity)
             ]
         , div [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view Game.Both SingleRelationship.adapter rec.state.singleRel (text "") Nothing identity)
+            [ suppressMsg (Game.view Game.Both SingleRelationship.adapter (sanitizePage rec.state.singleRel) (text "") Nothing identity)
             ]
         , div [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view Game.Both TwoRelationships.adapter rec.state.twoRel (text "") Nothing identity)
+            [ suppressMsg (Game.view Game.Both TwoRelationships.adapter (sanitizePage rec.state.twoRel) (text "") Nothing identity)
             ]
         , div [ Attr.class "scenarioPage" ]
-            [ suppressMsg (Game.view Game.Both ThreeWay.adapter rec.state.threeWay (text "") Nothing identity)
+            [ suppressMsg (Game.view Game.Both ThreeWay.adapter (sanitizePage rec.state.threeWay) (text "") Nothing identity)
             ]
         ]
 

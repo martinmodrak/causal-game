@@ -127,14 +127,14 @@ generator spec experiment =
     Causality.outcomeGenerator spec.sorted experiment
 
 
-guessEval : Spec -> Guess -> Game.GuessEval
-guessEval spec guess =
+guessEval : Spec -> List Experiment -> Guess -> Game.GuessEval
+guessEval spec experiments guess =
     let
         ( name0, name1, nameUnobs ) =
             specToNames spec
     in
     if guess == spec.cause01 then
-        ( 1.0, text "" )
+        ( 1.0, Causality.randomizedHint experiments )
 
     else
         ( 0.0
@@ -142,6 +142,7 @@ guessEval spec guess =
             [ Causality.causalityDescription name0 name1 spec.cause01
             , Causality.causalityDescription nameUnobs name0 spec.causeUnobs0
             , Causality.causalityDescription nameUnobs name1 spec.causeUnobs1
+            , Causality.randomizedHint experiments
             ]
         )
 

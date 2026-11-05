@@ -155,8 +155,8 @@ specToNames spec =
             ( "Error", "Error" )
 
 
-guessEval : Spec -> Guess -> GuessEval
-guessEval spec guess =
+guessEval : Spec -> List Experiment -> Guess -> GuessEval
+guessEval spec _ guess =
     let
         ( name0, name1 ) =
             specToNames spec

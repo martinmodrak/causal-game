@@ -16,6 +16,7 @@ type alias GameState =
     , singleRel : SingleRelationship.Model
     , twoRel : TwoRelationships.Model
     , threeWay : ThreeWay.Model
+    , llm_tick : Bool
     }
 
 
@@ -39,6 +40,7 @@ gameEncoder game =
                     , ( "singleRel", GameJson.singleRelScenarioEncoder game.singleRel )
                     , ( "twoRel", GameJson.twoRelScenarioEncoder game.twoRel )
                     , ( "threeWay", GameJson.threeWayScenarioEncoder game.threeWay )
+                    , ( "llm_tick", E.bool game.llm_tick )
                     ]
                 )
 
@@ -57,12 +59,13 @@ gameDecoder : D.Decoder GameState
 gameDecoder =
     let
         rawDecoder =
-            D.map4
+            D.map5
                 GameState
                 (D.field "association" GameJson.associationScenarioDecoder)
                 (D.field "singleRel" GameJson.singleRelScenarioDecoder)
                 (D.field "twoRel" GameJson.twoRelScenarioDecoder)
                 (D.field "threeWay" GameJson.threeWayScenarioDecoder)
+                (D.oneOf [ D.field "llm_tick" D.bool, D.succeed False ])
 
         decryption =
             \enc -> Crypto.Strings.decrypt ps enc
