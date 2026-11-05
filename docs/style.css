@@ -145,6 +145,11 @@ h2.historyStart, .instance, .scenarioFooter, .afterHeader {
 
 .instance.history {
     border-top: 1px solid gray;
+    background-color: #e8e8e8;
+}
+
+.experimentsEnd {
+    clear:both;
 }
 
 .pageSelectionBox {
@@ -256,4 +261,13 @@ th.xName {
 
 .activeInstance {
     animation: glow 10s 1;
+}
+
+.guessHint {
+    font-style: italic;
+    color: darkred;
+}
+
+.llm_pick {
+    display:none;
 }
