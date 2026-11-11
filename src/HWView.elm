@@ -8,7 +8,7 @@ import Bytes.Encode
 import Game
 import GameJson
 import GameState exposing (GameState)
-import Homework
+import Homework exposing (getConfirmationCode)
 import Html exposing (..)
 import Html.Attributes as Attr
 import Html.Events as Events
@@ -75,6 +75,9 @@ type alias Model =
     , showing : Showing
     , csvDownload : Maybe String
     , instanceDict : InstanceDict
+    , confirmationName : String
+    , confirmationGroup : String
+    , confirmationScore : Int
     }
 
 
@@ -83,6 +86,9 @@ type Msg
     | RecordLoaded FileInfo (Result Http.Error HWRecord)
     | ShowIndex
     | ShowRecord HWRecord
+    | UpdateConfirmationName String
+    | UpdateConfirmationGroup String
+    | UpdateConfirmationScore String
     | Noop
 
 
@@ -144,6 +150,9 @@ init _ =
       , showing = All
       , csvDownload = Nothing
       , instanceDict = MultiBiDict.empty
+      , confirmationName = ""
+      , confirmationGroup = ""
+      , confirmationScore = 3
       }
     , Http.get
         { url = "hw_data/index.json"
@@ -210,6 +219,15 @@ update msg model =
 
         ShowRecord rec ->
             ( { model | showing = Single rec }, Cmd.none )
+
+        UpdateConfirmationName n ->
+            ( { model | confirmationName = n }, Cmd.none )
+
+        UpdateConfirmationGroup n ->
+            ( { model | confirmationGroup = n }, Cmd.none )
+
+        UpdateConfirmationScore n ->
+            ( { model | confirmationScore = String.toInt n |> Maybe.withDefault model.confirmationScore }, Cmd.none )
 
         Noop ->
             ( model, Cmd.none )
@@ -318,6 +336,19 @@ viewIndex : Model -> Html Msg
 viewIndex model =
     div []
         [ p []
+            [ text "Confirmation name: "
+            , input [ Attr.value model.confirmationName, Events.onInput UpdateConfirmationName ] []
+            , text " group: "
+            , input [ Attr.value model.confirmationGroup, Events.onInput UpdateConfirmationGroup ] []
+            , text " score: "
+            , input [ Attr.value (String.fromInt model.confirmationScore), Events.onInput UpdateConfirmationScore ] []
+            , if model.confirmationGroup == "" || model.confirmationName == "" || model.confirmationScore == 0 then
+                text ""
+
+              else
+                text ("conf: " ++ getConfirmationCode model.confirmationName model.confirmationGroup model.confirmationScore)
+            ]
+        , p []
             [ if model.recordsToLoad > 0 then
                 strong [] [ text ("Waiting for " ++ String.fromInt model.recordsToLoad ++ " records.") ]
 
