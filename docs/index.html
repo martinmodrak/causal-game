@@ -63,6 +63,8 @@ customElements.define('vega-plot',
     }
 );
 
+
+
 function startApp(loadState) {
     var flags;
     if(loadState) {
@@ -84,6 +86,17 @@ function startApp(loadState) {
         localStorage.setItem('causal-game-state', JSON.stringify(state));
     });
 
+    app.ports.downloadFile.subscribe(({ name, mime, content }) => {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+});
 }
 
 startApp(true);

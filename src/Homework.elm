@@ -10,6 +10,7 @@ import Html.Attributes as Attr
 import Html.Events as Events
 import Json.Decode
 import Json.Encode
+import Ports
 import Random
 import Round
 import TwoRelationships
@@ -17,7 +18,8 @@ import Utils
 
 
 type alias PreparedSubmission =
-    { url : String
+    { fileName : String
+    , content : String
     , confirmationCode : String
     }
 
@@ -36,6 +38,7 @@ type Msg
     | SetName String
     | SetGroup String
     | PrepareDownload
+    | DownloadRequested
 
 
 init : Model
@@ -83,6 +86,20 @@ update msg game model =
               }
             , Cmd.none
             )
+
+        DownloadRequested ->
+            case model.preparedSubmission of
+                Just submission ->
+                    ( model
+                    , Ports.downloadFile
+                        { name = submission.fileName
+                        , mime = "application/json"
+                        , content = submission.content
+                        }
+                    )
+
+                Nothing ->
+                    ( model, Cmd.none )
 
 
 viewControls : GameState.GameState -> Html Msg
@@ -153,7 +170,7 @@ viewControls game =
                   else
                     text ""
                 ]
-            , text "You cannot loose points by trying some more. Your progress is stored in your browser (you can close this window and return later)."
+            , text "You cannot lose points by trying some more. Your progress is stored in your browser (you can close this window and return later)."
             ]
         , p [] [ text "To ", strong [] [ text "complete the homework" ], text " you have to ", strong [] [ text " download " ], text " the results file!" ]
         , button [ Attr.type_ "button", Events.onClick SubmissionStart ] [ strong [] [ text "Download  result" ] ]
@@ -304,16 +321,14 @@ getConfirmationCode name group score =
 
 buildPreparedSubmission : GameState.GameState -> Model -> PreparedSubmission
 buildPreparedSubmission game model =
-    { url =
-        "data:application/json;base64,"
-            ++ (Json.Encode.object
-                    [ ( "base64name", Json.Encode.string (Base64String.encode model.name) )
-                    , ( "base64group", Json.Encode.string (Base64String.encode model.group) )
-                    , ( "state", GameState.gameEncoder game )
-                    ]
-                    |> Json.Encode.encode 0
-                    |> Base64String.encode
-               )
+    { fileName = "homework " ++ model.name ++ ".json"
+    , content =
+        Json.Encode.object
+            [ ( "base64name", Json.Encode.string (Base64String.encode model.name) )
+            , ( "base64group", Json.Encode.string (Base64String.encode model.group) )
+            , ( "state", GameState.gameEncoder game )
+            ]
+            |> Json.Encode.encode 0
     , confirmationCode = getConfirmationCode model.name model.group (.score (computeScore game))
     }
 
@@ -338,8 +353,8 @@ viewPopup game model =
             , br [] []
             , p [ Attr.class "downloadHW", Attr.class "left" ]
                 [ case model.preparedSubmission of
-                    Just submission ->
-                        a [ Attr.href submission.url, Attr.download ("homework " ++ model.name ++ ".json") ] [ strong [] [ text "Download homework file" ] ]
+                    Just _ ->
+                        button [ Attr.type_ "input", Events.onClick DownloadRequested ] [ strong [] [ text "Download homework file" ] ]
 
                     Nothing ->
                         if allowDownload model then

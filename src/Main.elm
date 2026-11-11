@@ -1,4 +1,4 @@
-port module Main exposing (..)
+module Main exposing (..)
 
 import Association
 import Bitwise exposing (and)
@@ -13,6 +13,7 @@ import Html.Lazy
 import Instructions
 import Json.Decode
 import Json.Encode
+import Ports
 import Settings
 import SingleRelationship
 import ThreeWay
@@ -52,9 +53,6 @@ type Msg
     | DismissStored
     | Homework Homework.Msg
     | LLMTick
-
-
-port setStorage : Json.Encode.Value -> Cmd msg
 
 
 init : Json.Encode.Value -> ( Model, Cmd Msg )
@@ -172,7 +170,7 @@ updateWithStorage msg oldModel =
 
         Nothing ->
             if res.updateStorage && GameState.gameHasData res.model.game then
-                Cmd.batch [ setStorage (storedModelEncoder { page = res.model.page, game = res.model.game }), res.cmd ]
+                Cmd.batch [ Ports.setStorage (storedModelEncoder { page = res.model.page, game = res.model.game }), res.cmd ]
 
             else
                 res.cmd
